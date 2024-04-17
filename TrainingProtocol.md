@@ -1,6 +1,6 @@
 # ChatVPet 训练协议
 
-[English](#ChatVPet Training Protocol)
+[English](https://github.com/LorisYounger/ChatVPet/blob/main/TrainingProtocol.md#chatvpet-training-protocol)
 
 只有您同意协议以后, LBGAME 才会使用这些数据进行训练
 
