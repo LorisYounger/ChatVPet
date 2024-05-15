@@ -19,3 +19,5 @@ All training data collection has been approved by the user. [Training Protocol](
 * ... to be continued
 
 ### Currently it is still a shell project, used for introduction
+
+## Due to insufficient sample size, training materials other than simplified Chinese will not be released at this time
