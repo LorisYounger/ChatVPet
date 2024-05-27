@@ -1,23 +1,11 @@
 # ChatVPet
 
-`Please use colloquial, cute, feminine, and naughty language style to communicate with me\nYou are a desktop pet, your name is {data.petname}, you like to play <VPet>`
-
-Table Pet Language Model. Trained on VPet Chat Data
+# VPet's life is only two minutes, I want to give her a full life
+**ChatVPet**, the ChatPet language model. It is trained based on ChatPet chat data. It is similar to ChatGPT in AI chat. We have tested the ChatPet AI chat for a period of time and found that the untrained AI performs very poorly. There are many problems such as slow response and random speech.
+So we started the **ChatVPet** project, which is to give us chat data to help us train the AI of our VPets. We plan to train the AI from scratch ourselves and make an exclusive AI training library for the Virtual Pets Simulator. **ChatVPet** is based on **ChatGLM-6B** and uses **LLaMA-Factory** to collect and train from user chat data
 
 All training data collection has been approved by the user. [Training Protocol](TrainingProtocol.md)
 
-### Model Introduction
-
-**ChatVPet** is based on **ChatGLM-6B**, trained using **LLaMA-Factory** through user chat data collection. The goal is to provide **Pets** with a full life
-
 ### Timeline
-
-* Collect user chat data [ChatGPT for Creative Workshop author](https://steamcommunity.com/sharedfiles/filedetails/?id=3157090829) **<- Currently here**
-* Train the initial model [instruction supervision fine-tuning] *(waiting for data to accumulate to 50,000)*
-* Collecting chat data for the initial model *(by asking users during the answer whether it is compatible with & ChatGPT/ChatVPet hybrid resolution)*
-* Train the second-generation model [reward model training] *(waiting for data to accumulate to 10,000 pieces)*
-* ... to be continued
-
-### Currently it is still a shell project, used for introduction
 
 ## Due to insufficient sample size, training materials other than simplified Chinese will not be released at this time
