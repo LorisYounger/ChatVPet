@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="icon.aseprite" />
+    <None Remove="icon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ChatGPT.API.Framework" Version="1.1.0" />
+    <PackageReference Include="VPet-Simulator.Windows.Interface" Version="1.1.0.40" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ChatVPet.ChatProcess\ChatVPet.ChatProcess.csproj" />
+  </ItemGroup>
+
+</Project>

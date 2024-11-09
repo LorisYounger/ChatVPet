@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35208.52
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatVPet.ChatProcess", "ChatVPet.ChatProcess\ChatVPet.ChatProcess.csproj", "{BCEEEF29-1F92-496B-9483-43E12E7B8713}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VPet.Plugin.ChatVPet", "VPet.Plugin.ChatVPet\VPet.Plugin.ChatVPet.csproj", "{E74A3E10-C3C6-40C2-8C5C-AF84731F8E92}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BCEEEF29-1F92-496B-9483-43E12E7B8713}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCEEEF29-1F92-496B-9483-43E12E7B8713}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCEEEF29-1F92-496B-9483-43E12E7B8713}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCEEEF29-1F92-496B-9483-43E12E7B8713}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E74A3E10-C3C6-40C2-8C5C-AF84731F8E92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E74A3E10-C3C6-40C2-8C5C-AF84731F8E92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E74A3E10-C3C6-40C2-8C5C-AF84731F8E92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E74A3E10-C3C6-40C2-8C5C-AF84731F8E92}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6CA79CC7-4A45-46A1-BAEC-5F0E427A2EFB}
+	EndGlobalSection
+EndGlobal
