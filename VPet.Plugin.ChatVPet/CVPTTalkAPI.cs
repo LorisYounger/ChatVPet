@@ -13,6 +13,7 @@ using Panuon.WPF.UI;
 using System.Windows.Input;
 using ChatVPet.ChatProcess;
 using static VPet_Simulator.Core.GraphInfo;
+using System.Threading;
 
 namespace VPet.Plugin.ChatVPet
 {
@@ -33,7 +34,7 @@ namespace VPet.Plugin.ChatVPet
                 ToolTip = "长按启用语音输入".Translate(),//TODO:未来做快捷键识别
                 Cursor = Cursors.Hand,
                 FontSize = 30,
-                Padding = new Thickness(5, 0, 0, 0),
+                Margin = new Thickness(5, 0, 0, 0),
             };
             ButtonHelper.SetCornerRadius(btnvoice, new CornerRadius(4));
             Grid.SetColumn(btnvoice, 3);
@@ -80,6 +81,7 @@ namespace VPet.Plugin.ChatVPet
                     else if (!string.IsNullOrWhiteSpace(pr.Reply))
                     {
                         var showtxt = Plugin.ShowToken ? null : "当前Token使用".Translate() + ": " + Plugin.temptoken;
+                        Thread.Sleep(50);//等个50毫秒让其他可能有的显示先显示
                         DisplayThinkToSayRndAutoNoForce(pr.Reply, showtxt);
                     }
                     if (pr.IsEnd || pr.IsError)
@@ -110,9 +112,9 @@ namespace VPet.Plugin.ChatVPet
         /// </summary>
         public void DisplayThinkToSayRndAutoNoForce(string text, string? desc = null)
         {
-            var think = MainPlugin.MW.Core.Graph.FindGraphs("think", AnimatType.C_End, MainPlugin.MW.Core.Save.Mode);
             if (Plugin.MW.Main.DisplayType.Name == "think")
             {
+                var think = MainPlugin.MW.Core.Graph.FindGraphs("think", AnimatType.C_End, MainPlugin.MW.Core.Save.Mode);
                 Action Next = () => { MainPlugin.MW.Main.SayRnd(text, true, desc); };
                 if (think.Count > 0)
                 {
@@ -122,6 +124,10 @@ namespace VPet.Plugin.ChatVPet
                 {
                     Next();
                 }
+            }
+            else
+            {
+                MainPlugin.MW.Main.SayRnd(text, false, desc);
             }
         }
         public override void Setting() => Plugin.Setting();

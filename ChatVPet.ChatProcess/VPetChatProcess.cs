@@ -116,13 +116,13 @@ namespace ChatVPet.ChatProcess
             var keywords = IKeyWords.GetKeyWords(words);
 
             List<string> knowledgeDataBases = KnowledgeDataBases.Select(x => (x, x.InCheck(message, words, keywords)))
-                .OrderBy(x => x.Item2)
-                .Take(MaxKnowledgeCount)
-                .Where(x => x.Item2 <= IInCheck.IgnoreValue).Select(x => x.x.KnowledgeData).ToList();
+                    .OrderBy(x => x.Item2).Take(MaxKnowledgeCount).Where(x => x.Item2 < IInCheck.IgnoreValue).Select(x => x.x.KnowledgeData).ToList();
             List<Tool> tools = Tools.Select(x => (x, x.InCheck(message, words, keywords)))
                 .OrderBy(x => x.Item2)
                 .Take(MaxToolCount)
-                .Where(x => x.Item2 <= IInCheck.IgnoreValue).Select(x => x.x).ToList();
+                .Where(x => x.Item2 < IInCheck.IgnoreValue).Select(x => x.x).ToList();
+            List<(Tool x, int)> test = Tools.Select(x => (x, x.InCheck(message, words, keywords)))
+                .OrderBy(x => x.Item2).ToList();
             List<string[]> history = new List<string[]>();
             if (Dialogues.Count > 0)
             {
@@ -198,6 +198,7 @@ namespace ChatVPet.ChatProcess
             string reply = res1[0];
             if (reply.Contains(Localization.Response))
                 reply = reply.Substring(Localization.Response.Length);
+
             //发送返回消息
             ReturnResponse.Invoke(new ProcessResponse()
             {
@@ -206,6 +207,7 @@ namespace ChatVPet.ChatProcess
                 IsError = false,
                 ListPosition = position++
             });
+
             //添加聊天记录到历史            
             Dialogues.Add(new Dialogue(message, reply, res1[1], (isToolMessage ? 0 : CalImportanceFunction([message, reply])), Localization));
 
@@ -233,11 +235,21 @@ namespace ChatVPet.ChatProcess
                 }
             }
 
+
+
             //工具消息多次调用
             if (toolreturn != "")
             {
                 if (control.ForceToStop || control.StopBeforeNext)
                 {
+                    //发送结束消息
+                    ReturnResponse.Invoke(new ProcessResponse()
+                    {
+                        Reply = "",
+                        IsEnd = true,
+                        IsError = false,
+                        ListPosition = position++
+                    });
                     return;
                 }
 
@@ -245,6 +257,12 @@ namespace ChatVPet.ChatProcess
                 message = toolreturn;
                 isToolMessage = true;
                 goto retrytool;
+            }
+            if (isToolMessage)
+            {
+                //最后一个ToolMessage可以有点重要性
+                var last = Dialogues.Last();
+                last.Importance = CalImportanceFunction([last.Question, last.Answer]);
             }
 
             //发送结束消息

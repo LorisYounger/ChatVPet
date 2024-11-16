@@ -125,7 +125,8 @@ namespace ChatVPet.ChatProcess
 
             public string ToolReturn => "Tool `{0}` return:\n```\n{1}\n```\n";
 
-            public string[] WordSplit(string text) => text.Split(' ');
+            public string[] WordSplit(string text) => text.ToLower().Split(' ').Select(x => x.Trim([',', '[', ']', '(', ')']))
+                .Where(x => x.Length != 0).ToArray();
         }
         /// <summary>
         /// 繁体中文

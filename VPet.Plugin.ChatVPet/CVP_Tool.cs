@@ -11,6 +11,7 @@ using System.Windows.Threading;
 using VPet_Simulator.Core;
 using VPet_Simulator.Windows.Interface;
 using static VPet_Simulator.Core.GraphInfo;
+using static VPet_Simulator.Core.WorkTimer;
 
 namespace VPet.Plugin.ChatVPet
 {
@@ -63,6 +64,11 @@ namespace VPet.Plugin.ChatVPet
             }
             var work = MW.Core.Graph.GraphConfig.Works[itemid];
             MW.Dispatcher.Invoke(() => MW.Main.ToolBar.StartWork(work.Double(MW.Set["workmenu"].GetInt("double_" + work.Name, 1))));
+            return null;
+        }
+        public string? ToolStopWork(Dictionary<string, string> args)
+        {
+            MW.Main.WorkTimer.Stop(reason: FinishWorkInfo.StopReason.MenualStop);
             return null;
         }
         public string? ToolDance(Dictionary<string, string> args)

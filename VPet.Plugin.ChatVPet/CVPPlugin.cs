@@ -104,8 +104,9 @@ namespace VPet.Plugin.ChatVPet
                     for (int i = 0; i < MW.Foods.Count; i++)
                     {
                         var x = MW.Foods[i];
-                        VPetChatProcess.AddKnowledgeDataBase("itemID: " + i.ToString() + '\n' +
-                            x.Description + $"\n{"类型".Translate()}: {x.Type.ToString().Translate()}");
+                        VPetChatProcess.AddKnowledgeDataBase("itemID: " + i.ToString() + '\n'
+                            + "物品名称: {0}\n类型: {1}".Translate(x.TranslateName, x.Type.ToString().Translate()) +
+                          '\n' + x.Description);
                     }
                     for (int i = 0; i < MW.Core.Graph.GraphConfig.Works.Count; i++)
                     {
@@ -117,7 +118,7 @@ namespace VPet.Plugin.ChatVPet
                     "自动{0}套餐:\n名称: {1}\n描述: {2}\n持续时间 {3}(天)".Translate(x.WorkType.ToString().Translate(), x.NameTrans, x.DescribeTrans
                     , x.Duration, x.LevelInNeed)).ToArray());
                     //添加自带的知识库
-                    VPetChatProcess.AddKnowledgeDataBase(Properties.Resources.VpetKnowledgeDataBase.Split('\n'));
+                    VPetChatProcess.AddKnowledgeDataBase(Properties.Resources.VpetKnowledgeDataBase.Replace("\r", "").Split('\n').Select(x => x.Translate()).ToArray());
                     //TODO 当前状态/统计动态知识库
                 }
                 //添加设置的知识库
@@ -126,20 +127,21 @@ namespace VPet.Plugin.ChatVPet
 
                 if (needinittool)
                 {
-                    VPetChatProcess.Tools.Add(new Tool("takeitem", "使用有物品id的物品,例如吃食物/正餐/零食/喝饮料/功能性/药品/送礼品".Translate(), ToolTakeItem, new List<Tool.Arg>()
+                    VPetChatProcess.Tools.Add(new Tool("takeitem", "使用有物品id的物品,例如(吃)食物/正餐/零食/(喝)饮料/功能性/药品/(送)礼品".Translate(), ToolTakeItem, new List<Tool.Arg>()
                         {
                             new Tool.Arg(){ Name = "itemID", Description = "(int)物品id, 没有物品ID的物品没法使用".Translate() }
                         }, VPetChatProcess.Localization));
-                    VPetChatProcess.Tools.Add(new Tool("doactive", "进行有活动id的活动,例如工作/玩耍/学习".Translate(), ToolDoWork, new List<Tool.Arg>()
+                    VPetChatProcess.Tools.Add(new Tool("doactive", "开始进行有活动id的活动,例如(去)工作(干活)/玩耍(玩)/学习(学)".Translate(), ToolDoWork, new List<Tool.Arg>()
                     {
                           new Tool.Arg(){ Name = "activeID", Description = "(int)活动id, 没有活动ID的活动无法进行".Translate() }
                     }, VPetChatProcess.Localization));
                     VPetChatProcess.Tools.Add(new Tool("dance", "让桌宠跳舞".Translate(), ToolDance, [], VPetChatProcess.Localization));
+                    VPetChatProcess.Tools.Add(new Tool("stopactive", "让桌宠停止(中断)当前进行的活动,例如(去)工作(干活)/玩耍(玩)/学习(学)".Translate(), ToolStopWork, [], VPetChatProcess.Localization));
                     VPetChatProcess.Tools.Add(new Tool("idle", "让桌宠发呆".Translate(), ToolIdel, [], VPetChatProcess.Localization));
-                    VPetChatProcess.Tools.Add(new Tool("sleep", "让桌宠睡觉".Translate(), ToolSleep, [], VPetChatProcess.Localization));
-                    VPetChatProcess.Tools.Add(new Tool("touchhead", "摸桌宠的头".Translate(), ToolTouchHead, [], VPetChatProcess.Localization));
-                    VPetChatProcess.Tools.Add(new Tool("touchbody", "摸桌宠的身体".Translate(), ToolTouchBody, [], VPetChatProcess.Localization));
-                    VPetChatProcess.Tools.Add(new Tool("move", "让桌宠移动位置".Translate(), ToolMove, [], VPetChatProcess.Localization));
+                    VPetChatProcess.Tools.Add(new Tool("sleep", "让桌宠睡觉(睡眠,就寝)".Translate(), ToolSleep, [], VPetChatProcess.Localization));
+                    VPetChatProcess.Tools.Add(new Tool("touchhead", "摸桌宠的头(脑袋)".Translate(), ToolTouchHead, [], VPetChatProcess.Localization));
+                    VPetChatProcess.Tools.Add(new Tool("touchbody", "摸桌宠的身体(肚子)".Translate(), ToolTouchBody, [], VPetChatProcess.Localization));
+                    VPetChatProcess.Tools.Add(new Tool("move", "让桌宠自由移动(走动,走路,去)".Translate(), ToolMove, [], VPetChatProcess.Localization));
                 }
                 //然后历史消息从设置中加载
                 if (File.Exists(ExtensionValue.BaseDirectory + @"\ChatVPetProcessHistory.json"))
