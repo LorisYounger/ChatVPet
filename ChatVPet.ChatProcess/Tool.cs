@@ -17,13 +17,15 @@ namespace ChatVPet.ChatProcess
         public Tool()
         {
             KeyWords = new Dictionary<string, int>();
+            Args = new List<Arg>();
         }
-        public Tool(string code, string descriptive, Func<Dictionary<string,string>, string?> toolFunction, ILocalization localization, bool isImportant = false)
+        public Tool(string code, string descriptive, Func<Dictionary<string, string>, string?> toolFunction, List<Arg> args, ILocalization localization, bool isImportant = false)
         {
             Code = code;
             Descriptive = descriptive;
             IsImportant = isImportant;
             ToolFunction = toolFunction;
+            Args = args;
             var Words = localization.WordSplit(descriptive);
             KeyWords = IKeyWords.GetKeyWords(Words);
             WordsCount = Words.Length;
@@ -34,7 +36,7 @@ namespace ChatVPet.ChatProcess
         /// 执行工具代码, 如果有返回值, 则返回值为工具的输出
         /// 注: 若无需AI进行二次处理,请退回null !!
         /// </summary>
-        public Func<Dictionary<string, string>, string?>? ToolFunction;
+        [JsonIgnore] public Func<Dictionary<string, string>, string?>? ToolFunction;
 
         /// <summary>
         /// 执行工具代码
@@ -46,7 +48,11 @@ namespace ChatVPet.ChatProcess
 
         public virtual int InCheck(string message, string[] keywords_list, Dictionary<string, int> keywords_dict)
         {
-            throw new NotImplementedException();
+            if (IsImportant)
+            {
+                return 0;
+            }
+            return Math.Max(10, IInCheck.IgnoreValue - ((IKeyWords)this).Score(keywords_dict, keywords_list.Length));
         }
 
         /// <summary>
@@ -70,7 +76,7 @@ namespace ChatVPet.ChatProcess
         /// <summary>
         /// 可选参数
         /// </summary>
-        public virtual List<Arg> Args { get; set; } = new List<Arg>();
+        public virtual List<Arg> Args { get; set; }
         /// <summary>
         /// 工具描述
         /// </summary>
@@ -78,8 +84,8 @@ namespace ChatVPet.ChatProcess
         /// <summary>
         /// 是否是重要的工具,必须加入到工具库中
         /// </summary>
-        public bool IsImportant { get; set; } = false;
-        public Dictionary<string, int> KeyWords { get; set; }
-        public int WordsCount { get; set; }
+        [JsonIgnore] public bool IsImportant { get; set; } = false;
+        [JsonIgnore] public Dictionary<string, int> KeyWords { get; set; }
+        [JsonIgnore] public int WordsCount { get; set; }
     }
 }

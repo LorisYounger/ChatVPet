@@ -5,7 +5,7 @@ VisualStudioVersion = 17.11.35208.52
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatVPet.ChatProcess", "ChatVPet.ChatProcess\ChatVPet.ChatProcess.csproj", "{BCEEEF29-1F92-496B-9483-43E12E7B8713}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VPet.Plugin.ChatVPet", "VPet.Plugin.ChatVPet\VPet.Plugin.ChatVPet.csproj", "{E74A3E10-C3C6-40C2-8C5C-AF84731F8E92}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VPet.Plugin.ChatVPet", "VPet.Plugin.ChatVPet\VPet.Plugin.ChatVPet.csproj", "{E74A3E10-C3C6-40C2-8C5C-AF84731F8E92}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

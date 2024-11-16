@@ -1,5 +1,6 @@
 ﻿using LinePutScript;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System.Collections.Generic;
 
 namespace ChatVPet.ChatProcess
@@ -20,7 +21,7 @@ namespace ChatVPet.ChatProcess
         /// <summary>
         /// GPT 调用方法
         /// </summary>
-        public GPTAsk? GPTAskFunction;
+        [JsonIgnore] public GPTAsk? GPTAskFunction;
         /// <summary>
         /// 重要性计算方法 判断该段消息是否重要
         /// </summary>
@@ -30,7 +31,7 @@ namespace ChatVPet.ChatProcess
         /// <summary>
         /// 
         /// </summary>
-        public CalculateImportance CalImportanceFunction = (x) => 0.5;
+        [JsonIgnore] public CalculateImportance CalImportanceFunction = (x) => 0.5;
 
         /// <summary>
         /// 知识数据库
@@ -48,12 +49,12 @@ namespace ChatVPet.ChatProcess
         /// <summary>
         /// 本地化方法
         /// </summary>
-        public ILocalization Localization;
+        [JsonIgnore] public ILocalization Localization;
 
         /// <summary>
         /// 系统描述
         /// </summary>
-        public string SystemDescription { get; } = "";
+        public string SystemDescription { get; set; } = "";
 
         /// <summary>
         /// ChatVPet 聊天处理流程
@@ -80,7 +81,8 @@ namespace ChatVPet.ChatProcess
         {
             foreach (var knowledge in knowledgedb)
             {
-                KnowledgeDataBases.Add(new KnowledgeDataBase(knowledge, Localization));
+                if (KnowledgeDataBases.Find(x => x.KnowledgeData == knowledge) == null)
+                    KnowledgeDataBases.Add(new KnowledgeDataBase(knowledge, Localization));
             }
         }
         /// <summary>
@@ -180,7 +182,7 @@ namespace ChatVPet.ChatProcess
                 });
                 return;
             }
-            else if (!respond.Contains(Localization.ToolCall) || !respond.Contains(Localization.Response))
+            else if (!respond.Contains(Localization.ToolCall))
             {
                 ReturnResponse.Invoke(new ProcessResponse()
                 {
@@ -193,7 +195,9 @@ namespace ChatVPet.ChatProcess
             }
 
             var res1 = Sub.Split(respond, '\n' + Localization.ToolCall + '\n', 1);
-            string reply = res1[0].Substring(Localization.Response.Length);
+            string reply = res1[0];
+            if (reply.Contains(Localization.Response))
+                reply = reply.Substring(Localization.Response.Length);
             //发送返回消息
             ReturnResponse.Invoke(new ProcessResponse()
             {
@@ -206,18 +210,22 @@ namespace ChatVPet.ChatProcess
             Dialogues.Add(new Dialogue(message, reply, res1[1], (isToolMessage ? 0 : CalImportanceFunction([message, reply])), Localization));
 
             List<ToolCall> toolcalls;
+            var jsetting = ToolCall.jsonsetting;
             if (!res1[1].StartsWith('[') || !res1[1].EndsWith(']'))
-                toolcalls = new List<ToolCall>();
+                if (res1[1].StartsWith('{') && res1[1].EndsWith('}'))
+                    toolcalls = new List<ToolCall>() { JsonConvert.DeserializeObject<ToolCall>(res1[1], jsetting) };
+                else
+                    toolcalls = new List<ToolCall>();
             else
-                toolcalls = JsonConvert.DeserializeObject<List<ToolCall>>(res1[1]) ?? new List<ToolCall>();
+                toolcalls = JsonConvert.DeserializeObject<List<ToolCall>>(res1[1], jsetting) ?? new List<ToolCall>();
             string toolreturn = "";
             //处理工具
             foreach (var tc in toolcalls)
             {
-                Tool? tool = Tools.Find(x => x.Code == tc.code);
+                Tool? tool = Tools.Find(x => x.Code == tc.Code);
                 if (tool != null)
                 {
-                    var ret = tool.RunToolFunction(tc.args);
+                    var ret = tool.RunToolFunction(tc.Args);
                     if (!string.IsNullOrWhiteSpace(ret))
                     {
                         toolreturn += string.Format(Localization.ToolReturn, JsonConvert.SerializeObject(tc), ret);

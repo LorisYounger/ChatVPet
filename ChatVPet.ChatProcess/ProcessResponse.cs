@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -47,12 +49,24 @@ namespace ChatVPet.ChatProcess
     public class ToolCall
     {
         /// <summary>
+        /// 推荐使用的json设置
+        /// </summary>
+        public static JsonSerializerSettings jsonsetting = new JsonSerializerSettings
+        {
+            ContractResolver = new DefaultContractResolver
+            {
+                NamingStrategy = new CamelCaseNamingStrategy() { ProcessDictionaryKeys = true, OverrideSpecifiedNames = false }
+            },
+            // 允许忽略大小写
+            MissingMemberHandling = MissingMemberHandling.Ignore,
+        };
+        /// <summary>
         /// 调用工具方法
         /// </summary>
-        public string code { get; set; } = "";
+        public string Code { get; set; } = "";
         /// <summary>
         /// 调用参数
         /// </summary>
-        public Dictionary<string, string> args { get; set; } = new Dictionary<string, string>();
+        public Dictionary<string, string> Args { get; set; } = new Dictionary<string, string>();
     }
 }

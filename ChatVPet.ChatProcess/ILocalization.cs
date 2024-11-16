@@ -97,7 +97,7 @@ namespace ChatVPet.ChatProcess
 
             public string ToolCall => "工具调用:";
 
-            public string ToolCallContent => "{工具json}";
+            public string ToolCallContent => "[{\"Code\":\"toolcode\",\"Args\":{\"argsname\":\"argscontent\"}}]";
 
             public string ToolReturn => "工具 `{0}` 返回:\n```\n{1}\n```\n";
 
@@ -121,11 +121,35 @@ namespace ChatVPet.ChatProcess
 
             public string ToolCall => "Tool Call:";
 
-            public string ToolCallContent => "{Tool json}";
+            public string ToolCallContent => "[{\"Code\":\"toolcode\",\"Args\":{\"argsname\":\"argscontent\"}}]";
 
             public string ToolReturn => "Tool `{0}` return:\n```\n{1}\n```\n";
 
             public string[] WordSplit(string text) => text.Split(' ');
+        }
+        /// <summary>
+        /// 繁体中文
+        /// </summary>
+        public class LChineseTraditional : ILocalization
+        {
+            public string ToolSetFollows => "工具集如下:";
+
+            public string DataBaseFollows => "數據庫如下:";
+
+            public string ResponseFormatFollows => "回覆格式如下:";
+
+            public string Response => "回覆:";
+
+            public string ResponseContent => "{回覆內容}";
+
+            public string ToolCall => "工具調用:";
+
+            public string ToolCallContent => "[{\"Code\":\"toolcode\",\"Args\":{\"argsname\":\"argscontent\"}}]";
+
+            public string ToolReturn => "工具 `{0}` 返回:\n```\n{1}\n```\n";
+
+            public JiebaNet.Segmenter.JiebaSegmenter Segmenter = new JiebaNet.Segmenter.JiebaSegmenter();
+            public string[] WordSplit(string text) => Segmenter.Cut(text).ToArray();
         }
     }
 }

@@ -25,9 +25,9 @@ namespace VPet.Plugin.ChatVPet
     /// </summary>
     public partial class winSetting : Window
     {
-        ChatVPetPlugin plugin;
+        CVPPlugin plugin;
         long totalused = 0;
-        public winSetting(ChatVPetPlugin plugin)
+        public winSetting(CVPPlugin plugin)
         {
             InitializeComponent();
             Resources = Application.Current.Resources;
@@ -84,7 +84,7 @@ namespace VPet.Plugin.ChatVPet
             //if (l != null)
             //    plugin.CGPTClient.Completions["vpet"].messages.AddRange(l);
             //plugin.KeepHistory = (int)niKeepHistory.Value.Value;
-            plugin.ShowToken = (bool)swShowToken.IsChecked;
+            plugin.ShowToken = swShowToken.IsChecked ?? false;
             plugin.Save();
             this.Close();
         }

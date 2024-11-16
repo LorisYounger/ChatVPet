@@ -7,6 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="1210_ChatVPetProcess\**" />
+    <EmbeddedResource Remove="1210_ChatVPetProcess\**" />
+    <None Remove="1210_ChatVPetProcess\**" />
+    <Page Remove="1210_ChatVPetProcess\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="icon.aseprite" />
     <None Remove="icon.png" />
   </ItemGroup>
@@ -18,6 +25,21 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ChatVPet.ChatProcess\ChatVPet.ChatProcess.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>
