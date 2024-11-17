@@ -4,83 +4,198 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:VPet.Plugin.ChatVPet" mc:Ignorable="d"
         xmlns:ll="clr-namespace:LinePutScript.Localization.WPF;assembly=LinePutScript.Localization.WPF"
-        xmlns:pu="clr-namespace:Panuon.WPF.UI;assembly=Panuon.WPF.UI" Title="{ll:Str 'ChatVPetProcess API 设置'}" Width="450"
-        FontSize="16" Height="Auto" ResizeMode="NoResize" WindowState="Normal" SizeToContent="Height">
+        xmlns:pu="clr-namespace:Panuon.WPF.UI;assembly=Panuon.WPF.UI" Title="{ll:Str 'ChatVPetProcess API 设置'}"
+        Width="500" FontSize="16" Height="Auto" ResizeMode="NoResize" WindowState="Normal" SizeToContent="Height">
     <Window.Resources>
         <ResourceDictionary Source="/VPet-Simulator.Windows.Interface;component/ResourceStyle.xaml" />
     </Window.Resources>
-    <Grid Margin="16">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="15" />
-            <ColumnDefinition />
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="40" />
-            <RowDefinition Height="40" />
-            <RowDefinition Height="40" />
-            <RowDefinition Height="40" />
-            <RowDefinition Height="Auto" MinHeight="40" />
-            <RowDefinition Height="40" />
-            <RowDefinition Height="40" />
-            <RowDefinition Height="40" />
-            <RowDefinition/>
-            <RowDefinition Height="40" />
-            <RowDefinition Height="40" />
-            <RowDefinition Height="40" />
-        </Grid.RowDefinitions>
-        <TextBlock Text="API URL" VerticalAlignment="Center" />
-        <TextBlock Grid.Row="2" Text="{ll:Str Web代理}" VerticalAlignment="Center" />
-        <TextBlock Grid.Row="1" Text="API Key" VerticalAlignment="Center" />
-        <TextBlock Grid.Row="3" Text="Model" VerticalAlignment="Center" />
-        <TextBlock Grid.Row="4" Text="{ll:Str 初始化文本}" VerticalAlignment="Center" />
-        <TextBlock Grid.Row="5" Text="{ll:Str 温度}" VerticalAlignment="Center" />
-        <TextBlock Grid.Row="6" Text="{ll:Str 最大花费}" VerticalAlignment="Center" />
-        <TextBlock Grid.Row="7" Text="{ll:Str 累计花费}" VerticalAlignment="Center" />
-        <TextBlock Grid.Row="9" Text="{ll:Str 提交内容}" VerticalAlignment="Center" />
-        <TextBlock Grid.Row="10" Text="{ll:Str Token显示}" VerticalAlignment="Center" />
-        <TextBlock Grid.Row="11" Text="{ll:Str 完成设置}" VerticalAlignment="Center" />
-        <TextBox x:Name="tbAPIURL" Grid.Row="0" Grid.Column="2" Style="{DynamicResource StandardTextBoxStyle}"
-                FontSize="16" pu:TextBoxHelper.Watermark="{ll:Str 'API 链接 一般为 api.openai.com/v1/chat/completions'}"
-                Text="https://api.openai.com/v1/chat/completions"
-                ToolTip="{ll:Str 'API 链接 一般为 api.openai.com/v1/chat/completions'}" Margin="0,5,0,5" />
-        <TextBox x:Name="tbAPIKey" Grid.Row="1" Grid.Column="2" Style="{DynamicResource StandardTextBoxStyle}"
-                FontSize="16" pu:TextBoxHelper.Watermark="{ll:Str '从 OpenAI 获得的 APIKEY 一般`sk-`开头'}"
-                ToolTip="{ll:Str '从 OpenAI 获得的 APIKEY 一般`sk-`开头'}" VerticalAlignment="Top" Margin="0,2,0,0" />
-        <TextBox x:Name="tbWebProxy" Grid.Row="2" Grid.Column="2" Style="{DynamicResource StandardTextBoxStyle}"
-                FontSize="16" pu:TextBoxHelper.Watermark="{ll:Str '没有可不填. HTTP 代理服务器 或 SOCKS 代理服务器等 WEB代理链接'}"
-                ToolTip="{ll:Str '没有可不填. HTTP 代理服务器 或 SOCKS 代理服务器等 WEB代理链接'}" VerticalAlignment="Top" Margin="0,2,0,0" />
-        <ComboBox x:Name="cbModel" Style="{DynamicResource StandardComboBoxStyle}" Grid.Row="3" Grid.Column="2"
-                SelectedIndex="0" IsEditable="True" Margin="0,5,0,5">
-            <ComboBoxItem Content="gpt-4o-mini" />
-            <ComboBoxItem Content="gpt-4o" />
-            <ComboBoxItem Content="gpt-3.5-turbo" />
-            <ComboBoxItem Content="gpt-4-turbo" />
-            <ComboBoxItem Content="gpt-4" />
-        </ComboBox>
-        <TextBox x:Name="tbSystem" Grid.Row="4" Grid.Column="2" Style="{DynamicResource StandardTextBoxStyle}"
-                FontSize="16" pu:TextBoxHelper.Watermark="{ll:Str '不会被忘记的初始化关键字, 字越多越贵'}"
-                ToolTip="{ll:Str '不会被忘记的初始化关键字, 字越多越贵'}" AcceptsReturn="True" TextWrapping="WrapWithOverflow"
-                Height="Auto" MaxHeight="100" VerticalScrollBarVisibility="Visible"
-                Text="请使用口语化的、可爱的、女性化的、调皮的语言风格和我交流. &#13;你是一只桌宠, 你的名字叫{Name}, 你喜欢玩 虚拟主播模拟器. &#13;你需要尝试体会我与你对话中的感情、产生自己的情感并尽可能给出可爱的回答"
-                Margin="0,5,0,5" />
-        <TextBox x:Name="tbTemp" Grid.Row="5" Grid.Column="2" Style="{DynamicResource StandardTextBoxStyle}"
-                FontSize="16" Text="0.6" pu:TextBoxHelper.InputLimit="Digit,Point"
-                pu:TextBoxHelper.Watermark="{ll:Str '0-2之间 0.2更稳定 0.8更随机'}" ToolTip="{ll:Str '0-2之间 0.2更稳定 0.8更随机'}"
-                Margin="0,5,0,5" />
-        <TextBox x:Name="tbMaxToken" Grid.Row="6" Grid.Column="2" Style="{DynamicResource StandardTextBoxStyle}"
-                FontSize="16" Text="4096" pu:TextBoxHelper.InputLimit="Digit"
-                pu:TextBoxHelper.Watermark="{ll:Str '允许最大花费Token数量'}" ToolTip="{ll:Str '允许最大花费Token数量'}"
-                Margin="0,5,0,5" />
-        <Label x:Name="lbSpend" Grid.Row="7" Grid.Column="2" Content="0 Token" Background="{x:Null}"
-                VerticalAlignment="Center" HorizontalAlignment="Left" Margin="5,0,0,0"
-                ToolTip="{ll:Str '累计在此花费的Token个数'}" />
-        <pu:Switch x:Name="swShowToken" Grid.Row="10" Grid.Column="2" VerticalAlignment="Center"
-                Content="{ll:Str '在聊天记录中显示消耗的Token数量'}" />
-        <pu:Switch x:Name="swSubmitLog" Grid.Row="9" Grid.Column="2" VerticalAlignment="Center"
-                Content="{ll:Str '提交聊天记录给 LBGAME 以改进ChatVPet'}" />
-        <Button x:Name="btnSave" pu:ButtonHelper.CornerRadius="4" Content="{ll:Str 保存设置}" Margin="4,4,4,4"
-                Grid.Column="2" Background="{DynamicResource SecondaryLight}" Padding="1" Grid.Row="11"
-                Click="btnSave_Click" />
-    </Grid>
+    <StackPanel>
+        <TabControl pu:TabControlHelper.CanHeaderPanelScroll="True" pu:TabControlHelper.ItemsCornerRadius="4"
+                pu:TabControlHelper.ItemsHeight="NaN"
+                pu:TabControlHelper.ItemsHoverBackground="{DynamicResource PrimaryLight}"
+                pu:TabControlHelper.ItemsPadding="10,7"
+                pu:TabControlHelper.ItemsSelectedBackground="{DynamicResource PrimaryDark}"
+                pu:TabControlHelper.ItemsSelectedForeground="{DynamicResource DARKPrimaryText}" Background="Transparent"
+                BorderThickness="0" Foreground="{DynamicResource PrimaryText}" Margin="5,5,5,0">
+            <TabItem Header="{ll:Str 基本设置}">
+                <Grid Margin="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="15" />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="Auto" MinHeight="40" />
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="40" />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition Height="40" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="API URL" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="2" Text="{ll:Str Web代理}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="1" Text="API Key" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="3" Text="Model" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="4" Text="{ll:Str 初始化文本}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="5" Text="{ll:Str 温度}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="7" Text="{ll:Str 累计花费}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="9" Text="{ll:Str 提交内容}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="10" Text="{ll:Str Token显示}" VerticalAlignment="Center" />
+                    <TextBox x:Name="tbAPIURL" Grid.Row="0" Grid.Column="2"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16"
+                            pu:TextBoxHelper.Watermark="{ll:Str 'API 链接 一般为 api.openai.com/v1/chat/completions'}"
+                            Text="https://api.openai.com/v1/chat/completions"
+                            ToolTip="{ll:Str 'API 链接 一般为 api.openai.com/v1/chat/completions'}" Margin="0,5,0,5" />
+                    <TextBox x:Name="tbAPIKey" Grid.Row="1" Grid.Column="2"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16"
+                            pu:TextBoxHelper.Watermark="{ll:Str '从 OpenAI 获得的 APIKEY 一般`sk-`开头'}"
+                            ToolTip="{ll:Str '从 OpenAI 获得的 APIKEY 一般`sk-`开头'}" VerticalAlignment="Top" Margin="0,2,0,0" />
+                    <TextBox x:Name="tbWebProxy" Grid.Row="2" Grid.Column="2"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16"
+                            pu:TextBoxHelper.Watermark="{ll:Str '没有可不填. HTTP 代理服务器 或 SOCKS 代理服务器等 WEB代理链接'}"
+                            ToolTip="{ll:Str '没有可不填. HTTP 代理服务器 或 SOCKS 代理服务器等 WEB代理链接'}" VerticalAlignment="Top"
+                            Margin="0,2,0,0" />
+                    <ComboBox x:Name="cbModel" Style="{DynamicResource StandardComboBoxStyle}" Grid.Row="3"
+                            Grid.Column="2" SelectedIndex="0" IsEditable="True" Margin="0,5,0,5">
+                        <ComboBoxItem Content="gpt-4o-mini" />
+                        <ComboBoxItem Content="gpt-4o" />
+                        <ComboBoxItem Content="gpt-3.5-turbo" />
+                        <ComboBoxItem Content="gpt-4-turbo" />
+                        <ComboBoxItem Content="gpt-4" />
+                    </ComboBox>
+                    <TextBox x:Name="tbSystem" Grid.Row="4" Grid.Column="2"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16"
+                            pu:TextBoxHelper.Watermark="{ll:Str '不会被忘记的初始化关键字, 字越多越贵'}"
+                            ToolTip="{ll:Str '不会被忘记的初始化关键字, 字越多越贵'}" AcceptsReturn="True"
+                            TextWrapping="WrapWithOverflow" Height="Auto" MaxHeight="100"
+                            VerticalScrollBarVisibility="Visible"
+                            Text="请使用口语化的、可爱的、女性化的、调皮的语言风格和我交流. &#13;你是一只桌宠, 你的名字叫{Name}, 你喜欢玩 虚拟主播模拟器. &#13;你需要尝试体会我与你对话中的感情、产生自己的情感并尽可能给出可爱的回答"
+                            Margin="0,5,0,5" />
+                    <TextBox x:Name="tbTemp" Grid.Row="5" Grid.Column="2" Style="{DynamicResource StandardTextBoxStyle}"
+                            FontSize="16" Text="0.6" pu:TextBoxHelper.InputLimit="Digit,Point"
+                            pu:TextBoxHelper.Watermark="{ll:Str '0-2之间 0.2更稳定 0.8更随机'}"
+                            ToolTip="{ll:Str '0-2之间 0.2更稳定 0.8更随机'}" Margin="0,5,0,5" />
+                    <Label x:Name="lbSpend" Grid.Row="7" Grid.Column="2" Content="0 Token" Background="{x:Null}"
+                            VerticalAlignment="Center" HorizontalAlignment="Left" Margin="5,0,0,0"
+                            ToolTip="{ll:Str '累计在此花费的Token个数'}" />
+                    <pu:Switch x:Name="swShowToken" Grid.Row="10" Grid.Column="2" VerticalAlignment="Center"
+                            Content="{ll:Str '在聊天记录中显示消耗的Token数量'}" />
+                    <pu:Switch x:Name="swSubmitLog" Grid.Row="9" Grid.Column="2" VerticalAlignment="Center" Margin="0,5">
+                        <TextBlock TextWrapping="WrapWithOverflow">
+                        <Run Text="{ll:Str '提交聊天记录给 LBGAME 以改进ChatVPet Process'}" />                      
+                   <Hyperlink Click="Hyperlink_Click"><Run Text="{ll:Str '项目地址'}" /></Hyperlink>   
+                   <Hyperlink Click="Hyperlink_Click_1"><Run Text="{ll:Str '训练协议'}" /></Hyperlink>
+                        </TextBlock>
+                    </pu:Switch>
+                </Grid>
+            </TabItem>
+            <TabItem Header="{ll:Str 其他设置}">
+                <Grid Margin="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="15" />
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="15" />
+                        <ColumnDefinition Width="2*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" MinHeight="40" />
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="Auto" MinHeight="40" />
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="40" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="{ll:Str 语音输入}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="1" Text="{ll:Str 语音密钥}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="2" Text="{ll:Str 语音区域}" VerticalAlignment="Center" />
+
+                    <pu:Switch Grid.Column="2" Grid.ColumnSpan="3">
+                        <TextBlock Text="{ll:Str '启用语音输入,需要 Azure ai-speech'}" TextWrapping="WrapWithOverflow" />
+                    </pu:Switch>
+                    <TextBox x:Name="tbSpeachKey" Grid.Row="1" Grid.Column="2"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text=""
+                            ToolTip="{ll:Str 'Azure 语音秘钥, 需要有 Azure ai-speech'}"
+                            pu:TextBoxHelper.Watermark="{ll:Str 'Azure 语音秘钥, 需要有 Azure ai-speech'}" Margin="0,5,0,5"
+                            Grid.ColumnSpan="3" />
+                    <TextBox x:Name="tbSpeachregion" Grid.Row="2" Grid.Column="2"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text=""
+                            ToolTip="{ll:Str 'Azure 语音区域, 需要有 Azure ai-speech'}"
+                            pu:TextBoxHelper.Watermark="{ll:Str 'Azure 语音区域, 需要有 Azure ai-speech'}" Margin="0,5,0,5"
+                            Grid.ColumnSpan="3" />
+                    <TextBlock Grid.Row="3" Text="{ll:Str 最大聊天记录}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="4" Text="{ll:Str 最大工具库}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="5" Text="{ll:Str 最大知识库}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="6" Text="{ll:Str 单次最大花费}" VerticalAlignment="Center" />
+                    <TextBox x:Name="tbMaxToken" Grid.Row="6" Grid.Column="2"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="4096"
+                            pu:TextBoxHelper.InputLimit="Digit" pu:TextBoxHelper.Watermark="200+"
+                            ToolTip="{ll:Str '允许最大花费Token数量'}" Margin="0,5,0,5" />
+                    <TextBlock Grid.Row="7" Text="{ll:Str 最大回合}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="6" Text="{ll:Str '可能的最大花费为 单次最大花费 x 最大花费'}" VerticalAlignment="Center"
+                            Grid.Column="4" Grid.ColumnSpan="1" TextWrapping="WrapWithOverflow" Grid.RowSpan="2" />
+                    <TextBlock Grid.Row="5" Text="{ll:Str '知识库越多越消耗Token'}" VerticalAlignment="Center" Grid.Column="4"
+                            TextWrapping="WrapWithOverflow" />
+                    <TextBox x:Name="tbMaxRound" Grid.Row="7" Grid.Column="2"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="5"
+                            pu:TextBoxHelper.InputLimit="Digit" ToolTip="{ll:Str '允许工具调用消息循环回合数'}" Margin="0,5,0,5"
+                            pu:TextBoxHelper.Watermark="0-10" />
+                    <TextBox x:Name="tbMaxKnow" Grid.Row="5" Grid.Column="2"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="10"
+                            pu:TextBoxHelper.InputLimit="Digit" ToolTip="{ll:Str '允许最大知识库个数数量'}" Margin="0,5,0,5"
+                            pu:TextBoxHelper.Watermark="5-20" />
+                    <TextBox x:Name="tbMaxTool" Grid.Row="4" Grid.Column="2"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="10"
+                            pu:TextBoxHelper.InputLimit="Digit" ToolTip="{ll:Str '允许最大工具库个数数量'}" Margin="0,5,0,5"
+                            pu:TextBoxHelper.Watermark="5-20" />
+                    <TextBlock Grid.Row="4" Text="{ll:Str '工具库越多越消耗Token'}" VerticalAlignment="Center" Grid.Column="4"
+                            TextWrapping="WrapWithOverflow" />
+                    <TextBox x:Name="tbMaxHistory" Grid.Row="3" Grid.Column="2"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="20"
+                            pu:TextBoxHelper.InputLimit="Digit" ToolTip="{ll:Str '允许单次记忆最大聊天记录'}" Margin="0,5,0,5"
+                            pu:TextBoxHelper.Watermark="5-50" />
+                    <TextBlock Grid.Row="3" Text="{ll:Str 'ChatVPet会保留所有的聊天记录(记忆)\&#13;将会会智能化整理为指定数量记忆作为输入'}"
+                            VerticalAlignment="Center" Grid.Column="4" TextWrapping="WrapWithOverflow" />
+                </Grid>
+            </TabItem>
+            <TabItem Header="{ll:Str 知识库设置}">
+                <StackPanel Margin="5">
+                    <TextBlock Text="{ll:Str '在此处添加你的自定义知识库,一行一条\&#13;知识库内容并不会直接添加进聊天,而是根据算法智能判断,以节省判断.'}"
+                            TextWrapping="WrapWithOverflow" />
+                    <TextBox x:Name="tbKnow" Style="{DynamicResource StandardTextBoxStyle}" AcceptsReturn="True"
+                            TextWrapping="WrapWithOverflow" MaxHeight="600" VerticalScrollBarVisibility="Visible"
+                            Margin="5" MinHeight="60"
+                            pu:TextBoxHelper.Watermark="{ll:Str '在此处添加你的自定义知识库,一行一条\&#13;知识库内容并不会直接添加进聊天,而是根据算法智能判断,以节省判断.'}" />
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="{ll:Str 数据库预览}">
+                <StackPanel>
+                    <TextBox x:Name="tbSeachDB" Style="{DynamicResource StandardTextBoxStyle}"
+                            pu:TextBoxHelper.Watermark="{ll:Str '输入文本搜索数据库'}" />
+                    <TabControl>
+                        <TabItem Header="{ll:Str 知识库}">
+                            <ListBox x:Name="lbKnow" />
+                        </TabItem>
+                        <TabItem Header="{ll:Str 工具库}">
+                            <ListBox x:Name="lbTool" />
+                        </TabItem>
+                        <TabItem Header="{ll:Str 聊天记录}">
+                            <ListBox x:Name="lbHistory" />
+                        </TabItem>
+                    </TabControl>
+                </StackPanel>
+
+            </TabItem>
+        </TabControl>
+        <Rectangle Height="3" Fill="{DynamicResource SecondaryDarker}" Margin="5,0,5,0" />
+        <Button pu:ButtonHelper.CornerRadius="4" Content="{ll:Str 保存设置}" Margin="5"
+                Background="{DynamicResource SecondaryLight}" Padding="2" Click="btnSave_Click" />
+    </StackPanel>
 </Window>

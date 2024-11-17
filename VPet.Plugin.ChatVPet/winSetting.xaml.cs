@@ -27,6 +27,15 @@ namespace VPet.Plugin.ChatVPet
     {
         CVPPlugin plugin;
         long totalused = 0;
+        private void Hyperlink_Click(object sender, RoutedEventArgs e)
+        {
+            ExtensionFunction.StartURL("https://github.com/LorisYounger/ChatVPet");
+        }
+
+        private void Hyperlink_Click_1(object sender, RoutedEventArgs e)
+        {
+            ExtensionFunction.StartURL("https://github.com/LorisYounger/ChatVPet/blob/main/TrainingProtocol.md");
+        }
         public winSetting(CVPPlugin plugin)
         {
             InitializeComponent();
