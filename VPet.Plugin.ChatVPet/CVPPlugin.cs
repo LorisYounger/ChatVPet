@@ -119,7 +119,8 @@ namespace VPet.Plugin.ChatVPet
                     , x.Duration, x.LevelInNeed)).ToArray());
                     //添加自带的知识库
                     VPetChatProcess.AddKnowledgeDataBase(Properties.Resources.VpetKnowledgeDataBase.Replace("\r", "").Split('\n').Select(x => x.Translate()).ToArray());
-                    //TODO 当前状态/统计动态知识库
+                    //当前状态
+                    VPetChatProcess.KnowledgeDataBases.Add(new ChatVPet.dynKnowDB.DynKDBStatic(MW, VPetChatProcess.Localization));
                 }
                 //添加设置的知识库
                 VPetChatProcess.AddKnowledgeDataBase(KnowledgeDataBase.Split('\n'));
