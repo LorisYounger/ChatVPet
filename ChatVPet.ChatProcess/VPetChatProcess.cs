@@ -121,8 +121,12 @@ namespace ChatVPet.ChatProcess
                 .OrderBy(x => x.Item2)
                 .Take(MaxToolCount)
                 .Where(x => x.Item2 < IInCheck.IgnoreValue).Select(x => x.x).ToList();
-            List<(Tool x, int)> test = Tools.Select(x => (x, x.InCheck(message, words, keywords)))
-                .OrderBy(x => x.Item2).ToList();
+            //List<(Tool x, int)> test = new List<(Tool x, int)>();
+            //foreach(var tool in Tools)
+            //{
+            //    var s = tool.InCheck(message, words, keywords);
+            //    test.Add((tool, s));
+            //}
             List<string[]> history = new List<string[]>();
             if (Dialogues.Count > 0)
             {
@@ -194,7 +198,11 @@ namespace ChatVPet.ChatProcess
                 return;
             }
 
-            var res1 = Sub.Split(respond, '\n' + Localization.ToolCall + '\n', 1);
+            var res1 = Sub.Split(respond, '\n' + Localization.ToolCall + '\n', 1).Select(x => x.Trim([' ', '\n', '\r'])).ToList();
+            if (res1.Count < 2)
+            {
+                res1.Add("[]");
+            }
             string reply = res1[0];
             if (reply.Contains(Localization.Response))
                 reply = reply.Substring(Localization.Response.Length);

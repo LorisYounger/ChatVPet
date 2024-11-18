@@ -11,6 +11,7 @@ using System.Windows.Threading;
 using VPet_Simulator.Core;
 using VPet_Simulator.Windows.Interface;
 using static VPet_Simulator.Core.GraphInfo;
+using static VPet_Simulator.Core.Main;
 using static VPet_Simulator.Core.WorkTimer;
 
 namespace VPet.Plugin.ChatVPet
@@ -102,7 +103,25 @@ namespace VPet.Plugin.ChatVPet
         }
         public string? ToolSleep(Dictionary<string, string> args)
         {
-            MW.Main.DisplaySleep();
+            var m = MW.Main;
+            if (m.State == Main.WorkingState.Nomal)
+                m.DisplaySleep(true);
+            else if (m.State != Main.WorkingState.Sleep)
+            {
+                m.WorkTimer.Stop(() => m.DisplaySleep(true), WorkTimer.FinishWorkInfo.StopReason.MenualStop);
+            }
+            return null;
+        }
+        public string? ToolWakeup(Dictionary<string, string> args)
+        {
+            var m = MW.Main;
+            if (m.State == Main.WorkingState.Sleep)
+            {
+                if (m.Core.Save.Mode == IGameSave.ModeType.Ill)
+                    return null;
+                m.State = WorkingState.Nomal;
+                m.Display(GraphType.Sleep, AnimatType.C_End, m.DisplayNomal);
+            }
             return null;
         }
         public string? ToolMove(Dictionary<string, string> args)

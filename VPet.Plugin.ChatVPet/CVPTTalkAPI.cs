@@ -81,7 +81,7 @@ namespace VPet.Plugin.ChatVPet
                     else if (!string.IsNullOrWhiteSpace(pr.Reply))
                     {
                         var showtxt = Plugin.ShowToken ? null : "当前Token使用".Translate() + ": " + Plugin.temptoken;
-                        Thread.Sleep(50);//等个50毫秒让其他可能有的显示先显示
+                        Thread.Sleep(100);//等个100毫秒让其他可能有的显示先显示
                         DisplayThinkToSayRndAutoNoForce(pr.Reply, showtxt);
                     }
                     if (pr.IsEnd || pr.IsError)
@@ -115,7 +115,7 @@ namespace VPet.Plugin.ChatVPet
             if (Plugin.MW.Main.DisplayType.Name == "think")
             {
                 var think = MainPlugin.MW.Core.Graph.FindGraphs("think", AnimatType.C_End, MainPlugin.MW.Core.Save.Mode);
-                Action Next = () => { MainPlugin.MW.Main.SayRnd(text, true, desc); };
+                Action Next = () => { MainPlugin.MW.Main.SayRnd(text, false, desc); };
                 if (think.Count > 0)
                 {
                     MainPlugin.MW.Main.Display(think[Function.Rnd.Next(think.Count)], Next);
