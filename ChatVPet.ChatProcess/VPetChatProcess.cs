@@ -206,7 +206,7 @@ namespace ChatVPet.ChatProcess
             string reply = res1[0];
             if (reply.Contains(Localization.Response))
                 reply = reply.Substring(Localization.Response.Length);
-
+            reply = reply.Trim([' ', '\n', '\r']);
             //发送返回消息
             ReturnResponse.Invoke(new ProcessResponse()
             {

@@ -59,6 +59,12 @@ namespace ChatVPet.ChatProcess
             },
             // 允许忽略大小写
             MissingMemberHandling = MissingMemberHandling.Ignore,
+            // 忽略报错
+            Error = (sender, args) =>
+            {
+                Console.WriteLine($"Error: {args.ErrorContext.Error.Message}");
+                args.ErrorContext.Handled = true; // 处理错误，避免抛出异常
+            }
         };
         /// <summary>
         /// 调用工具方法
