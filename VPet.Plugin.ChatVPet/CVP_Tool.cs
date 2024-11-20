@@ -31,7 +31,7 @@ namespace VPet.Plugin.ChatVPet
             {
                 return null;
             }
-            VPet_Simulator.Windows.Interface.Food item = MW.Foods[itemid];
+            Food item = MW.Foods[itemid];
             //看是什么模式
             if (MW.Set.EnableFunction)
             {//$10以内的食物允许赊账

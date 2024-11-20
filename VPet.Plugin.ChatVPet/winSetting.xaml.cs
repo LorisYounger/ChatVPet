@@ -17,6 +17,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using VPet_Simulator.Windows.Interface;
+using Microsoft.CognitiveServices.Speech.Audio;
+using Microsoft.CognitiveServices.Speech;
 
 namespace VPet.Plugin.ChatVPet
 {
@@ -117,6 +119,11 @@ namespace VPet.Plugin.ChatVPet
             plugin.TalkAPI.btnvoice.Visibility = swVoiceEnable.IsChecked ?? false ? Visibility.Visible : Visibility.Collapsed;
 #pragma warning restore CS8602 // 解引用可能出现空引用。
             plugin.AllowSubmit = swSubmitLog.IsChecked ?? false;
+            plugin.Recognizer?.Dispose();
+            SpeechConfig speechConfig = SpeechConfig.FromSubscription(plugin.AzureKey, plugin.AzureRegion);
+            speechConfig.SpeechRecognitionLanguage = plugin.AzureRecognitionLanguage;
+            var audioConfig = AudioConfig.FromDefaultMicrophoneInput();
+            plugin.Recognizer = new SpeechRecognizer(speechConfig, audioConfig);
             plugin.Save();
             this.Close();
         }
