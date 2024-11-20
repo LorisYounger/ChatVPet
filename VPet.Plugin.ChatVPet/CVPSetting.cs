@@ -1,4 +1,5 @@
 ﻿using LinePutScript;
+using LinePutScript.Localization.WPF;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,6 +49,47 @@ namespace VPet.Plugin.ChatVPet
         {
             get => MW.Set["CGPTV"][(gint)"TokenCount"];
             set => MW.Set["CGPTV"][(gint)"TokenCount"] = value;
+        }
+
+        public string AzureKey
+        {
+            get => MW.Set["CGPTV"][(gstr)"AzureKey"] ?? "";
+            set => MW.Set["CGPTV"][(gstr)"AzureKey"] = value;
+        }
+        public string AzureRegion
+        {
+            get => MW.Set["CGPTV"][(gstr)"AzureRegion"] ?? "";
+            set => MW.Set["CGPTV"][(gstr)"AzureRegion"] = value;
+        }
+        public bool AzureVoiceEnable
+        {
+            get => MW.Set["CGPTV"][(gbol)"AzureVoiceEnable"];
+            set => MW.Set["CGPTV"][(gbol)"AzureVoiceEnable"] = value;
+        }
+        public string AzureRecognitionLanguage
+        {
+            get
+            {
+                var lang = MW.Set["CGPTV"][(gstr)"AzureRecognitionLanguage"];
+                if (string.IsNullOrWhiteSpace(lang))
+                {
+                    switch (LocalizeCore.CurrentCulture)
+                    {
+                        case "zh-Hans":
+                            lang = "zh-CN";
+                            break;
+                        case "zh-Hant":
+                            lang = "zh-HK";
+                            break;
+                        default:
+                            lang = "en-US";
+                            break;
+                    }
+                    AzureRecognitionLanguage = lang;
+                }
+                return lang;
+            }
+            set => MW.Set["CGPTV"][(gstr)"AzureRecognitionLanguage"] = value;
         }
     }
 }

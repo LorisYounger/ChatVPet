@@ -63,6 +63,20 @@ namespace VPet.Plugin.ChatVPet
                 tbSystem.Text = "请使用口语化的、可爱的、女性化的、调皮的语言风格和我交流. 你是一只桌宠, 你的名字叫{Name}, 你喜欢玩 虚拟主播模拟器. 你需要尝试体会我与你对话中的感情、产生自己的情感并尽可能给出可爱的回答".Translate();
             //niKeepHistory.Value = plugin.KeepHistory;
             swShowToken.IsChecked = plugin.ShowToken;
+            swSubmitLog.IsChecked = plugin.AllowSubmit;
+
+
+            //第二页
+            tbSpeachKey.Text = plugin.AzureKey;
+            tbSpeachregion.Text = plugin.AzureRegion;
+            tbSpeachRecognitionLanguage.Text = plugin.AzureRecognitionLanguage;
+            swVoiceEnable.IsChecked = plugin.AzureVoiceEnable;
+
+
+            //显示现有知识库
+
+
+
         }
         private void btnSave_Click(object sender, RoutedEventArgs e)
         {
@@ -94,8 +108,22 @@ namespace VPet.Plugin.ChatVPet
             //    plugin.CGPTClient.Completions["vpet"].messages.AddRange(l);
             //plugin.KeepHistory = (int)niKeepHistory.Value.Value;
             plugin.ShowToken = swShowToken.IsChecked ?? false;
+
+            plugin.AzureKey = tbSpeachKey.Text;
+            plugin.AzureRegion = tbSpeachregion.Text;
+            plugin.AzureRecognitionLanguage = tbSpeachRecognitionLanguage.Text;
+            plugin.AzureVoiceEnable = swVoiceEnable.IsChecked ?? false;
+#pragma warning disable CS8602 // 解引用可能出现空引用。
+            plugin.TalkAPI.btnvoice.Visibility = swVoiceEnable.IsChecked ?? false ? Visibility.Visible : Visibility.Collapsed;
+#pragma warning restore CS8602 // 解引用可能出现空引用。
+            plugin.AllowSubmit = swSubmitLog.IsChecked ?? false;
             plugin.Save();
             this.Close();
+        }
+
+        private void TextBlock_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            ExtensionFunction.StartURL("https://learn.microsoft.com/azure/ai-services/speech-service/language-support?tabs=stt#speech-to-text");
         }
     }
 }

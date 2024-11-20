@@ -107,17 +107,19 @@
                         <RowDefinition Height="Auto" MinHeight="40" />
                         <RowDefinition Height="40" />
                         <RowDefinition Height="40" />
-                        <RowDefinition Height="Auto" MinHeight="40" />
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="40" />
                         <RowDefinition Height="40" />
                         <RowDefinition Height="40" />
                         <RowDefinition Height="40" />
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Text="{ll:Str 语音输入}" VerticalAlignment="Center" />
+                    <TextBlock Text="{ll:Str 语音输入}" VerticalAlignment="Center" />
                     <TextBlock Grid.Row="1" Text="{ll:Str 语音密钥}" VerticalAlignment="Center" />
                     <TextBlock Grid.Row="2" Text="{ll:Str 语音区域}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="3" Text="{ll:Str 语音语言}" VerticalAlignment="Center" />
 
-                    <pu:Switch Grid.Column="2" Grid.ColumnSpan="3">
+                    <pu:Switch x:Name="swVoiceEnable" Grid.Column="2" Grid.ColumnSpan="3">
                         <TextBlock Text="{ll:Str '启用语音输入,需要 Azure ai-speech'}" TextWrapping="WrapWithOverflow" />
                     </pu:Switch>
                     <TextBox x:Name="tbSpeachKey" Grid.Row="1" Grid.Column="2"
@@ -130,39 +132,47 @@
                             ToolTip="{ll:Str 'Azure 语音区域, 需要有 Azure ai-speech'}"
                             pu:TextBoxHelper.Watermark="{ll:Str 'Azure 语音区域, 需要有 Azure ai-speech'}" Margin="0,5,0,5"
                             Grid.ColumnSpan="3" />
-                    <TextBlock Grid.Row="3" Text="{ll:Str 最大聊天记录}" VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="4" Text="{ll:Str 最大工具库}" VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="5" Text="{ll:Str 最大知识库}" VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="6" Text="{ll:Str 单次最大花费}" VerticalAlignment="Center" />
-                    <TextBox x:Name="tbMaxToken" Grid.Row="6" Grid.Column="2"
+                    <TextBox x:Name="tbSpeachRecognitionLanguage" Grid.Row="3" Grid.Column="2"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text=""
+                            ToolTip="{ll:Str '语音输入语言'}" pu:TextBoxHelper.Watermark="{ll:Str 'Azure 语音输入语言, 例如zh-CN'}"
+                            Margin="0,5,0,5" />
+                    <TextBlock Grid.Row="3" Text="{ll:Str '查看支持语言列表'}" VerticalAlignment="Center" Grid.Column="4"
+                            Foreground="{DynamicResource DARKPrimaryDarker}" TextDecorations="Underline"
+                            MouseDown="TextBlock_MouseDown" />
+                    <TextBlock Grid.Row="4" Text="{ll:Str 最大聊天记录}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="5" Text="{ll:Str 最大工具库}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="6" Text="{ll:Str 最大知识库}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="7" Text="{ll:Str 单次最大花费}" VerticalAlignment="Center" />
+                    <TextBox x:Name="tbMaxToken" Grid.Row="7" Grid.Column="2"
                             Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="4096"
                             pu:TextBoxHelper.InputLimit="Digit" pu:TextBoxHelper.Watermark="200+"
-                            ToolTip="{ll:Str '允许最大花费Token数量'}" Margin="0,5,0,5" />
-                    <TextBlock Grid.Row="7" Text="{ll:Str 最大回合}" VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="6" Text="{ll:Str '可能的最大花费为 单次最大花费 x 最大花费'}" VerticalAlignment="Center"
-                            Grid.Column="4" Grid.ColumnSpan="1" TextWrapping="WrapWithOverflow" Grid.RowSpan="2" />
-                    <TextBlock Grid.Row="5" Text="{ll:Str '知识库越多越消耗Token'}" VerticalAlignment="Center" Grid.Column="4"
+                            ToolTip="{ll:Str '允许最大花费Token数量'}" Margin="0,5,15,5" Grid.ColumnSpan="2" />
+                    <TextBlock Grid.Row="8" Text="{ll:Str 最大回合}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="7" Text="{ll:Str '可能的最大花费为 单次最大花费 x 最大花费'}" VerticalAlignment="Top"
+                            Grid.Column="4" Grid.ColumnSpan="1" TextWrapping="WrapWithOverflow" Grid.RowSpan="2"
+                            Margin="0,20,0,0" />
+                    <TextBlock Grid.Row="6" Text="{ll:Str '知识库越多越消耗Token'}" VerticalAlignment="Center" Grid.Column="4"
                             TextWrapping="WrapWithOverflow" />
-                    <TextBox x:Name="tbMaxRound" Grid.Row="7" Grid.Column="2"
+                    <TextBox x:Name="tbMaxRound" Grid.Row="8" Grid.Column="2"
                             Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="5"
-                            pu:TextBoxHelper.InputLimit="Digit" ToolTip="{ll:Str '允许工具调用消息循环回合数'}" Margin="0,5,0,5"
-                            pu:TextBoxHelper.Watermark="0-10" />
-                    <TextBox x:Name="tbMaxKnow" Grid.Row="5" Grid.Column="2"
+                            pu:TextBoxHelper.InputLimit="Digit" ToolTip="{ll:Str '允许工具调用消息循环回合数'}" Margin="0,5,15,5"
+                            pu:TextBoxHelper.Watermark="0-10" Grid.ColumnSpan="2" />
+                    <TextBox x:Name="tbMaxKnow" Grid.Row="6" Grid.Column="2"
                             Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="10"
-                            pu:TextBoxHelper.InputLimit="Digit" ToolTip="{ll:Str '允许最大知识库个数数量'}" Margin="0,5,0,5"
-                            pu:TextBoxHelper.Watermark="5-20" />
-                    <TextBox x:Name="tbMaxTool" Grid.Row="4" Grid.Column="2"
+                            pu:TextBoxHelper.InputLimit="Digit" ToolTip="{ll:Str '允许最大知识库个数数量'}" Margin="0,5,15,5"
+                            pu:TextBoxHelper.Watermark="5-20" Grid.ColumnSpan="2" />
+                    <TextBox x:Name="tbMaxTool" Grid.Row="5" Grid.Column="2"
                             Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="10"
-                            pu:TextBoxHelper.InputLimit="Digit" ToolTip="{ll:Str '允许最大工具库个数数量'}" Margin="0,5,0,5"
-                            pu:TextBoxHelper.Watermark="5-20" />
-                    <TextBlock Grid.Row="4" Text="{ll:Str '工具库越多越消耗Token'}" VerticalAlignment="Center" Grid.Column="4"
+                            pu:TextBoxHelper.InputLimit="Digit" ToolTip="{ll:Str '允许最大工具库个数数量'}" Margin="0,5,15,5"
+                            pu:TextBoxHelper.Watermark="5-20" Grid.ColumnSpan="2" />
+                    <TextBlock Grid.Row="5" Text="{ll:Str '工具库越多越消耗Token'}" VerticalAlignment="Center" Grid.Column="4"
                             TextWrapping="WrapWithOverflow" />
-                    <TextBox x:Name="tbMaxHistory" Grid.Row="3" Grid.Column="2"
+                    <TextBox x:Name="tbMaxHistory" Grid.Row="4" Grid.Column="2"
                             Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="20"
-                            pu:TextBoxHelper.InputLimit="Digit" ToolTip="{ll:Str '允许单次记忆最大聊天记录'}" Margin="0,5,0,5"
-                            pu:TextBoxHelper.Watermark="5-50" />
-                    <TextBlock Grid.Row="3" Text="{ll:Str 'ChatVPet会保留所有的聊天记录(记忆)\&#13;将会会智能化整理为指定数量记忆作为输入'}"
-                            VerticalAlignment="Center" Grid.Column="4" TextWrapping="WrapWithOverflow" />
+                            pu:TextBoxHelper.InputLimit="Digit" ToolTip="{ll:Str '允许单次记忆最大聊天记录'}"
+                            VerticalAlignment="Center" pu:TextBoxHelper.Watermark="5-50" />
+                    <TextBlock Grid.Row="4" Text="{ll:Str 'ChatVPet会保留所有的聊天记录(记忆)\&#13;将会会智能化整理为指定数量记忆作为输入'}"
+                            VerticalAlignment="Top" Grid.Column="4" TextWrapping="WrapWithOverflow" />
                 </Grid>
             </TabItem>
             <TabItem Header="{ll:Str 知识库设置}">

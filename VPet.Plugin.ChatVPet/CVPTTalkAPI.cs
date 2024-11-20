@@ -14,17 +14,28 @@ using System.Windows.Input;
 using ChatVPet.ChatProcess;
 using static VPet_Simulator.Core.GraphInfo;
 using System.Threading;
+using Microsoft.CognitiveServices.Speech;
 
 namespace VPet.Plugin.ChatVPet
 {
     public class CVPTTalkAPI : TalkBox
     {
+        public TextBox tb;
+        public Button btnvoice;
         public CVPTTalkAPI(CVPPlugin mainPlugin) : base(mainPlugin)
         {
             Plugin = mainPlugin;
             Grid mg = ((Grid)((Border)Content).Child);
+            foreach (var v in mg.Children)
+            {
+                if (v is TextBox t)
+                {
+                    tb = t;
+                    break;
+                }
+            }
             mg.ColumnDefinitions.Add(new ColumnDefinition() { Width = new System.Windows.GridLength(0.5, System.Windows.GridUnitType.Star) });
-            var btnvoice = new Button()
+            btnvoice = new Button()
             {
                 Content = "\uEF50",
                 FontFamily = (FontFamily)Application.Current.Resources["RemixIcon"],
@@ -35,10 +46,36 @@ namespace VPet.Plugin.ChatVPet
                 Cursor = Cursors.Hand,
                 FontSize = 30,
                 Margin = new Thickness(5, 0, 0, 0),
+                Visibility = Plugin.AzureVoiceEnable ? Visibility.Visible : Visibility.Collapsed
             };
+            btnvoice.MouseDown += (s, e) => Task.Run(VoiceRecognize);
+            btnvoice.MouseUp += (s, e) => continuevoice = false;
             ButtonHelper.SetCornerRadius(btnvoice, new CornerRadius(4));
             Grid.SetColumn(btnvoice, 3);
             mg.Children.Add(btnvoice);
+        }
+        private bool? continuevoice = false;
+        private void VoiceRecognize()
+        {
+            //如果没有语音识别或者正在进行语音识别则返回
+            if (Plugin.Recognizer == null)
+                return;
+            if (continuevoice != null)
+            {
+                continuevoice = true;
+                return;
+            }
+            continuevoice = true;
+            while (continuevoice == true)
+            {
+                var rr = Plugin.Recognizer.RecognizeOnceAsync().Result;
+                if (string.IsNullOrEmpty(rr.Text))
+                {
+                    continue;
+                }
+                Dispatcher.Invoke(() => tb.AppendText(rr.Text));
+            }
+            continuevoice = null;
         }
         protected CVPPlugin Plugin;
         public override string APIName => "ChatVPetProcess";

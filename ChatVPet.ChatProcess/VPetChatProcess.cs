@@ -223,11 +223,16 @@ namespace ChatVPet.ChatProcess
             var jsetting = ToolCall.jsonsetting;
             if (!res1[1].StartsWith('[') || !res1[1].EndsWith(']'))
                 if (res1[1].StartsWith('{') && res1[1].EndsWith('}'))
-                    toolcalls = new List<ToolCall>() { JsonConvert.DeserializeObject<ToolCall>(res1[1], jsetting) };
+                {
+                    toolcalls = new List<ToolCall>();
+                    var tc = JsonConvert.DeserializeObject<ToolCall>(res1[1], jsetting);
+                    if (tc != null)
+                        toolcalls.Add(tc);
+                }
                 else
                     toolcalls = new List<ToolCall>();
             else
-                toolcalls = JsonConvert.DeserializeObject<List<ToolCall>>(res1[1], jsetting) ?? new List<ToolCall>();
+                toolcalls = JsonConvert.DeserializeObject<List<ToolCall>>(res1[1], jsetting) ?? [];
             string toolreturn = "";
             //处理工具
             foreach (var tc in toolcalls)

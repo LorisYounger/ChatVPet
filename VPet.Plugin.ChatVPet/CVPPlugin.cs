@@ -12,6 +12,8 @@ using VPet_Simulator.Windows.Interface;
 using LinePutScript.Localization.WPF;
 using ChatVPet.ChatProcess;
 using Newtonsoft.Json;
+using Microsoft.CognitiveServices.Speech;
+using Microsoft.CognitiveServices.Speech.Audio;
 
 namespace VPet.Plugin.ChatVPet
 {
@@ -41,8 +43,10 @@ namespace VPet.Plugin.ChatVPet
             //}
         }
         public ChatGPTClient? CGPTClient;
+        public SpeechRecognizer? Recognizer;
         bool needinitknowledge = false;
         bool needinittool = false;
+        public CVPTTalkAPI? TalkAPI;
         //TODO: 2轮加载Plugin
         public override void LoadPlugin()
         {
@@ -64,8 +68,8 @@ namespace VPet.Plugin.ChatVPet
                 MW.Core.Graph.CommConfig["CVPTools"] = VPetChatProcess.Tools;
                 needinittool = true;
             }
-
-            MW.TalkAPI.Add(new CVPTTalkAPI(this));
+            TalkAPI = new CVPTTalkAPI(this);
+            MW.TalkAPI.Add(TalkAPI);
             var menuItem = new MenuItem()
             {
                 Header = "ChatVPetProcess".Translate(),
@@ -130,7 +134,7 @@ namespace VPet.Plugin.ChatVPet
 
 
                     if (needinittool)
-                    {                        
+                    {
                         VPetChatProcess.Tools.Add(new Tool("dance", "让桌宠跳舞(舞)".Translate(), ToolDance, [], VPetChatProcess.Localization));
                         VPetChatProcess.Tools.Add(new Tool("stopactive", "让桌宠停止(中断)当前进行的活动,例如(结束,别去)工作(干活)/玩耍(玩)/学习(学)".Translate(), ToolStopWork, [], VPetChatProcess.Localization));
                         VPetChatProcess.Tools.Add(new Tool("idle", "让桌宠发呆(呆)".Translate(), ToolIdel, [], VPetChatProcess.Localization));
@@ -139,7 +143,7 @@ namespace VPet.Plugin.ChatVPet
                         VPetChatProcess.Tools.Add(new Tool("touchhead", "摸桌宠的头(脑袋)".Translate(), ToolTouchHead, [], VPetChatProcess.Localization));
                         VPetChatProcess.Tools.Add(new Tool("touchbody", "摸桌宠的身体(肚子)".Translate(), ToolTouchBody, [], VPetChatProcess.Localization));
                         VPetChatProcess.Tools.Add(new Tool("move", "让桌宠自由移动(走动,走路,去)".Translate(), ToolMove, [], VPetChatProcess.Localization));
-                        VPetChatProcess.Tools.Add(new Tool("takeitem", "使用有物品id的物品,例如(吃)食物/正餐/零食/(喝)饮料/功能性/药品/(送)礼品".Translate(), ToolTakeItem, new List<Tool.Arg>()
+                        VPetChatProcess.Tools.Add(new Tool("takeitem", "购买并使用有物品id的物品,例如(吃)食物/正餐/零食/(喝)饮料/功能性/药品/(送)礼品".Translate(), ToolTakeItem, new List<Tool.Arg>()
                         {
                             new Tool.Arg(){ Name = "itemID", Description = "(int)物品id, 没有物品ID的物品没法使用".Translate() }
                         }, VPetChatProcess.Localization));
@@ -160,6 +164,14 @@ namespace VPet.Plugin.ChatVPet
                         CGPTClient = ChatGPTClient.Load(File.ReadAllText(ExtensionValue.BaseDirectory + @"\ChatGPTSetting.json"));
                         if (CGPTClient != null && CGPTClient.Completions.TryGetValue("vpet", out var vpet))
                             VPetChatProcess.SystemDescription = vpet.messages[0].content;
+                    }
+
+                    if (AzureVoiceEnable)
+                    {
+                        SpeechConfig speechConfig = SpeechConfig.FromSubscription(AzureKey, AzureRegion);
+                        speechConfig.SpeechRecognitionLanguage = AzureRecognitionLanguage;
+                        var audioConfig = AudioConfig.FromDefaultMicrophoneInput();
+                        Recognizer = new SpeechRecognizer(speechConfig, audioConfig);
                     }
                 }
                 catch (Exception e)
