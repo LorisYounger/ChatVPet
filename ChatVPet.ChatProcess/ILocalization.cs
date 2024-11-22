@@ -97,7 +97,7 @@ namespace ChatVPet.ChatProcess
 
             public string ToolCall => "工具调用:";
 
-            public string ToolCallContent => "[{\"Code\":\"toolcode\",\"Args\":[{\"argsname\":\"argscontent\"}]}]";
+            public string ToolCallContent => "[{\"Code\":\"toolcode\",\"Args\":{\"argsname\":\"argscontent\"}}]";
 
             public string ToolReturn => "工具 `{0}` 返回:\n```\n{1}\n```\n";
 
@@ -121,7 +121,7 @@ namespace ChatVPet.ChatProcess
 
             public string ToolCall => "Tool Call:";
 
-            public string ToolCallContent => "[{\"Code\":\"toolcode\",\"Args\":[{\"argsname\":\"argscontent\"}]}]";
+            public string ToolCallContent => "[{\"Code\":\"toolcode\",\"Args\":{\"argsname\":\"argscontent\"}}]";
 
             public string ToolReturn => "Tool `{0}` return:\n```\n{1}\n```\n";
 
@@ -145,7 +145,7 @@ namespace ChatVPet.ChatProcess
 
             public string ToolCall => "工具調用:";
 
-            public string ToolCallContent => "[{\"Code\":\"toolcode\",\"Args\":[{\"argsname\":\"argscontent\"}]}]";
+            public string ToolCallContent => "[{\"Code\":\"toolcode\",\"Args\":{\"argsname\":\"argscontent\"}}]";
 
             public string ToolReturn => "工具 `{0}` 返回:\n```\n{1}\n```\n";
 
