@@ -127,7 +127,6 @@ namespace VPet.Plugin.ChatVPet
                     else if (!string.IsNullOrWhiteSpace(pr.Reply))
                     {
                         var showtxt = Plugin.ShowToken ? null : "当前Token使用".Translate() + ": " + Plugin.temptoken;
-                        Thread.Sleep(100);//等个100毫秒让其他可能有的显示先显示
                         DisplayThinkToSayRndAutoNoForce(pr.Reply, showtxt);
                     }
                     if (pr.IsEnd || pr.IsError)
@@ -153,6 +152,7 @@ namespace VPet.Plugin.ChatVPet
                 DisplayThinkToSayRnd("API调用失败".Translate() + $",{str}\n{e}");//, GraphCore.Helper.SayType.Serious);
             }
         }
+        bool istalksuccess = false;
         /// <summary>
         /// 显示思考结束并说话 (不强制切动画,智能化处理)
         /// </summary>
@@ -161,7 +161,8 @@ namespace VPet.Plugin.ChatVPet
             if (Plugin.MW.Main.DisplayType.Name == "think")
             {
                 var think = MainPlugin.MW.Core.Graph.FindGraphs("think", AnimatType.C_End, MainPlugin.MW.Core.Save.Mode);
-                Action Next = () => { MainPlugin.MW.Main.SayRnd(text, true, desc); };
+                istalksuccess = false;
+                Action Next = () => { istalksuccess = true; MainPlugin.MW.Main.SayRnd(text, true, desc); };
                 if (think.Count > 0)
                 {
                     MainPlugin.MW.Main.Display(think[Function.Rnd.Next(think.Count)], Next);
@@ -170,6 +171,14 @@ namespace VPet.Plugin.ChatVPet
                 {
                     Next();
                 }
+                Task.Run(() =>
+                {
+                    Thread.Sleep(2000);
+                    if (!istalksuccess)
+                    {
+                        MainPlugin.MW.Main.SayRnd(text, false, desc);
+                    }
+                });
             }
             else
             {

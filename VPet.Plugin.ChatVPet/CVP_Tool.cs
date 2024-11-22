@@ -103,6 +103,7 @@ namespace VPet.Plugin.ChatVPet
         }
         public string? ToolSleep(Dictionary<string, string> args)
         {
+            MW.Main.WorkTimer.Stop(reason: FinishWorkInfo.StopReason.MenualStop);
             var m = MW.Main;
             if (m.State == Main.WorkingState.Nomal)
                 m.DisplaySleep(true);
