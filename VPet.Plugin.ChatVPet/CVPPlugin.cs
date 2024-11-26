@@ -14,6 +14,7 @@ using ChatVPet.ChatProcess;
 using Newtonsoft.Json;
 using Microsoft.CognitiveServices.Speech;
 using Microsoft.CognitiveServices.Speech.Audio;
+using VPet_Simulator.Core;
 
 namespace VPet.Plugin.ChatVPet
 {
@@ -132,7 +133,6 @@ namespace VPet.Plugin.ChatVPet
                     //添加设置的知识库                  
                     VPetChatProcess.AddKnowledgeDataBase(KnowledgeDataBase.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
-
                     if (needinittool)
                     {
                         VPetChatProcess.Tools.Add(new Tool("dance", "让桌宠跳舞(舞)".Translate(), ToolDance, [], VPetChatProcess.Localization));
@@ -151,6 +151,10 @@ namespace VPet.Plugin.ChatVPet
                         {
                           new Tool.Arg(){ Name = "activeID", Description = "(int)活动id, 没有活动ID的活动无法进行".Translate() }
                         }, VPetChatProcess.Localization));
+
+                        foreach (ISub sub in MW.Set["diy"])
+                            VPetChatProcess.Tools.Add(new Tool(sub.Name, sub.Name, (x) => { RunDIY(sub.Info); return null; }, [], VPetChatProcess.Localization));
+
                     }
                     //然后历史消息从设置中加载
                     if (File.Exists(ExtensionValue.BaseDirectory + @"\ChatVPetProcessHistory.json"))
@@ -184,6 +188,7 @@ namespace VPet.Plugin.ChatVPet
         {
             if (CGPTClient != null)
                 File.WriteAllText(ExtensionValue.BaseDirectory + @"\ChatGPTSetting.json", CGPTClient.Save());
+            File.WriteAllText(ExtensionValue.BaseDirectory + @"\ChatVPetProcessHistory.json", JsonConvert.SerializeObject(VPetChatProcess.Dialogues));
         }
         public override void Setting()
         {

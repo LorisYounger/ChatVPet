@@ -3,6 +3,7 @@ using LinePutScript.Localization.WPF;
 using Panuon.WPF.UI;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -165,6 +166,64 @@ namespace VPet.Plugin.ChatVPet
             temptoken = resp.usage.total_tokens;
             TokenCount = temptoken;
             return reply;
+        }
+        public void RunDIY(string content)
+        {
+            if (content.Contains(@":\"))
+            {
+                try
+                {
+                    ProcessStartInfo startInfo = new ProcessStartInfo();
+                    startInfo.FileName = content;
+                    startInfo.UseShellExecute = false;
+                    Process.Start(startInfo);
+                }
+                catch
+                {
+                    try
+                    {
+                        try
+                        {
+                            Process.Start(content);
+                        }
+                        catch
+                        {
+                            var psi = new ProcessStartInfo
+                            {
+                                FileName = content,
+                                UseShellExecute = true
+                            };
+                            Process.Start(psi);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBoxX.Show("快捷键运行失败:无法运行指定内容".Translate() + '\n' + e.Message);
+                    }
+                }
+            }
+            else if (content.Contains("://"))
+            {
+                try
+                {
+                    ExtensionFunction.StartURL(content);
+                }
+                catch (Exception e)
+                {
+                    MessageBoxX.Show("快捷键运行失败:无法运行指定内容".Translate() + '\n' + e.Message);
+                }
+            }
+            else
+            {
+                try
+                {
+                    System.Windows.Forms.SendKeys.SendWait(content);
+                }
+                catch (Exception e)
+                {
+                    MessageBoxX.Show("快捷键运行失败:无法运行指定内容".Translate() + '\n' + e.Message);
+                }
+            }
         }
     }
 }

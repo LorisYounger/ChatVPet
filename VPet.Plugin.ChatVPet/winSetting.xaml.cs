@@ -19,6 +19,7 @@ using System.Windows.Shapes;
 using VPet_Simulator.Windows.Interface;
 using Microsoft.CognitiveServices.Speech.Audio;
 using Microsoft.CognitiveServices.Speech;
+using ChatVPet.ChatProcess;
 
 namespace VPet.Plugin.ChatVPet
 {
@@ -38,6 +39,9 @@ namespace VPet.Plugin.ChatVPet
         {
             ExtensionFunction.StartURL("https://github.com/LorisYounger/ChatVPet/blob/main/TrainingProtocol.md");
         }
+        List<string> Knowledges = new List<string>();
+        List<string> Dialogues = new List<string>();
+        List<string> Tools = new List<string>();
         public winSetting(CVPPlugin plugin)
         {
             InitializeComponent();
@@ -76,9 +80,18 @@ namespace VPet.Plugin.ChatVPet
 
 
             //显示现有知识库
+            tbKnow.Text = plugin.KnowledgeDataBase;
+            Knowledges.AddRange(plugin.VPetChatProcess.KnowledgeDataBases.Select(x => x.KnowledgeData));
+            foreach (var item in plugin.VPetChatProcess.Dialogues)
+            {
+                Dialogues.Add("Q:" + item.Question);
+                Dialogues.Add("A:" + item.Answer);
+            }
+            Tools.AddRange(plugin.VPetChatProcess.Tools.Select(x => x.Code + ": " + x.Descriptive));
 
-
-
+            lbKnow.ItemsSource = Knowledges;
+            lbHistory.ItemsSource = Dialogues;
+            lbTool.ItemsSource = Tools;
         }
         private void btnSave_Click(object sender, RoutedEventArgs e)
         {
@@ -133,6 +146,24 @@ namespace VPet.Plugin.ChatVPet
         private void TextBlock_MouseDown(object sender, MouseButtonEventArgs e)
         {
             ExtensionFunction.StartURL("https://learn.microsoft.com/azure/ai-services/speech-service/language-support?tabs=stt#speech-to-text");
+        }
+
+        private void tbSeachDB_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                string search = tbSeachDB.Text;
+                if (!string.IsNullOrEmpty(search))
+                {
+                    lbKnow.ItemsSource = Knowledges;
+                    lbHistory.ItemsSource = Dialogues;
+                    lbTool.ItemsSource = Tools;
+                    return;
+                }
+                lbKnow.ItemsSource = Knowledges.Where(x => x.Contains(search));
+                lbHistory.ItemsSource = Dialogues.Where(x => x.Contains(search));
+                lbTool.ItemsSource = Tools.Where(x => x.Contains(search));
+            }
         }
     }
 }

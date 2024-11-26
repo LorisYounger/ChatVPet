@@ -84,8 +84,17 @@
                             VerticalAlignment="Center" HorizontalAlignment="Left" Margin="5,0,0,0"
                             ToolTip="{ll:Str '累计在此花费的Token个数'}" />
                     <pu:Switch x:Name="swShowToken" Grid.Row="10" Grid.Column="2" VerticalAlignment="Center"
-                            Content="{ll:Str '在聊天记录中显示消耗的Token数量'}" />
-                    <pu:Switch x:Name="swSubmitLog" Grid.Row="9" Grid.Column="2" VerticalAlignment="Center" Margin="0,5">
+                            Content="{ll:Str '在聊天记录中显示消耗的Token数量'}" Background="Transparent"
+                            ToggleBrush="{DynamicResource PrimaryDark}" ToggleShadowColor="{x:Null}" ToggleSize="14"
+                            BorderBrush="{DynamicResource PrimaryDark}" BoxHeight="18" BoxWidth="35"
+                            CheckedBackground="{DynamicResource Primary}" CheckedBorderBrush="{DynamicResource Primary}"
+                            CheckedToggleBrush="{DynamicResource DARKPrimaryText}" />
+                    <pu:Switch x:Name="swSubmitLog" Grid.Row="9" Grid.Column="2" VerticalAlignment="Center" Margin="0,5"
+                            Background="Transparent" ToggleBrush="{DynamicResource PrimaryDark}"
+                            ToggleShadowColor="{x:Null}" ToggleSize="14" BorderBrush="{DynamicResource PrimaryDark}"
+                            BoxHeight="18" BoxWidth="35" CheckedBackground="{DynamicResource Primary}"
+                            CheckedBorderBrush="{DynamicResource Primary}"
+                            CheckedToggleBrush="{DynamicResource DARKPrimaryText}">
                         <TextBlock TextWrapping="WrapWithOverflow">
                         <Run Text="{ll:Str '提交聊天记录给 LBGAME 以改进ChatVPet Process'}" />                      
                    <Hyperlink Click="Hyperlink_Click"><Run Text="{ll:Str '项目地址'}" /></Hyperlink>   
@@ -119,7 +128,11 @@
                     <TextBlock Grid.Row="2" Text="{ll:Str 语音区域}" VerticalAlignment="Center" />
                     <TextBlock Grid.Row="3" Text="{ll:Str 语音语言}" VerticalAlignment="Center" />
 
-                    <pu:Switch x:Name="swVoiceEnable" Grid.Column="2" Grid.ColumnSpan="3">
+                    <pu:Switch x:Name="swVoiceEnable" Grid.Column="2" Grid.ColumnSpan="3" Background="Transparent"
+                            ToggleBrush="{DynamicResource PrimaryDark}" ToggleShadowColor="{x:Null}" ToggleSize="14"
+                            BorderBrush="{DynamicResource PrimaryDark}" BoxHeight="18" BoxWidth="35"
+                            CheckedBackground="{DynamicResource Primary}" CheckedBorderBrush="{DynamicResource Primary}"
+                            CheckedToggleBrush="{DynamicResource DARKPrimaryText}">
                         <TextBlock Text="{ll:Str '启用语音输入,需要 Azure ai-speech'}" TextWrapping="WrapWithOverflow" />
                     </pu:Switch>
                     <TextBox x:Name="tbSpeachKey" Grid.Row="1" Grid.Column="2"
@@ -184,8 +197,8 @@
                     <TextBlock Text="{ll:Str '在此处添加你的自定义知识库,一行一条\&#13;知识库内容并不会直接添加进聊天,而是根据算法智能判断,以节省判断.'}"
                             TextWrapping="WrapWithOverflow" />
                     <TextBox x:Name="tbKnow" Style="{DynamicResource StandardTextBoxStyle}" AcceptsReturn="True"
-                            TextWrapping="WrapWithOverflow" MaxHeight="600" VerticalScrollBarVisibility="Auto"
-                            HorizontalScrollBarVisibility="Auto" Margin="5" MinHeight="60"
+                            TextWrapping="WrapWithOverflow" MaxHeight="500" VerticalScrollBarVisibility="Auto"
+                            HorizontalScrollBarVisibility="Auto" Margin="5" MinHeight="60" Height="Auto"
                             pu:TextBoxHelper.Watermark="{ll:Str '在此处添加你的自定义知识库,一行一条\&#13;知识库内容并不会直接添加进聊天,而是根据算法智能判断,以节省判断.'}"
                             Grid.Row="1" />
                 </Grid>
@@ -193,16 +206,16 @@
             <TabItem Header="{ll:Str 数据库预览}">
                 <StackPanel>
                     <TextBox x:Name="tbSeachDB" Style="{DynamicResource StandardTextBoxStyle}"
-                            pu:TextBoxHelper.Watermark="{ll:Str '输入文本搜索数据库'}" />
+                            pu:TextBoxHelper.Watermark="{ll:Str '输入文本搜索数据库'}" PreviewKeyDown="tbSeachDB_PreviewKeyDown" />
                     <TabControl>
                         <TabItem Header="{ll:Str 知识库}">
-                            <ListBox x:Name="lbKnow" />
+                            <ListBox x:Name="lbKnow" MaxHeight="500" />
                         </TabItem>
                         <TabItem Header="{ll:Str 工具库}">
-                            <ListBox x:Name="lbTool" />
+                            <ListBox x:Name="lbTool" MaxHeight="500" />
                         </TabItem>
                         <TabItem Header="{ll:Str 聊天记录}">
-                            <ListBox x:Name="lbHistory" />
+                            <ListBox x:Name="lbHistory" MaxHeight="500" />
                         </TabItem>
                     </TabControl>
                 </StackPanel>
