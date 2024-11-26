@@ -1,0 +1,151 @@
+长按启用语音输入#Long press to enable voice input:|
+物品名称: {0}\n类型: {1}#Item Name: {0}\nType: {1}:|
+Work#Work:|
+活动名称: {0}\n类型 {1}\n持续时间: {2}分钟#Activity Name: {0}\nType {1}\nDuration: {2}minutes:|
+Study#Study:|
+Play#Play:|
+自动{0}套餐:\n名称: {1}\n描述: {2}\n持续时间 {3}(天)#Auto {0}Package:\nName: {1}\nDescription: {2}\nDuration {3}(days):|
+报名就送《从入门到放弃》，《从入门到跑路》。#Sign up and get a free copy of From Start to Quit, From Start to Run.:|
+虚拟桌宠模拟器是由LBGAME开发的一款桌宠软件, 桌宠的开发者是洛里斯杨远, 桌宠的画师是叶书文， 桌宠的插画师是OOZ， 桌宠的编剧是吉娜#Virtual Table Pets Simulator is a Table Pets software developed by LBGAME, the developer of Table Pets is Loris Yang Yuan, the artist of Table Pets is Ye Shuwen, the illustrator of Table Pets is OOZ, the writer of Table Pets is Gina:|
+{0}的生日是8月14#{0}'s birthday is August 14th.:|
+{0}最喜欢的是主人#{0}'s favorite person is his master:|
+{0}第二喜欢做的事是打游戏。第一喜欢的事是和主人一起打游戏#{0}Second favorite thing to do is play games. {0}First favorite thing to do is play games with his owner:|
+{0}最喜欢吃的东西是全部好吃的！#{0}Favorite thing to eat is all good food!:|
+桌宠喜欢听着歌跳舞#TablePet likes to dance to songs.:|
+桌宠拍了很多照片在照片图库里#TablePet took a lot of pictures in the photo gallery:|
+桌宠很喜欢被主人摸头#Table pet loves to be petted by its owner:|
+桌宠对主人的好感度是隐藏的，才不告诉主人#Table pet's favoritism towards her owner is hidden, so she doesn't tell her owner.:|
+商店更好买可以赊账10块钱以下的食物来应急#Store Better Buy can buy food on credit for up to 10 dollars for emergencies.:|
+商店更好买自动购买要收取20%配送费#Store Better Buys charges 20% delivery fee for automatic purchases.:|
+工作学习等互动会消耗体力和心情，通过睡觉或者吃东西等恢复#Interactions such as working and studying drain stamina and mood, which can be restored by sleeping or eating.:|
+饱腹度和口渴度会随着时间和互动消耗，在更好买吃东西恢复#Satiety and thirst are depleted by time and interactions, and can be restored by eating at a Better Buy.:|
+更好买里自动购买也包括让桌宠自己买礼物，这可能会花费一大笔钱，然后担心记得关闭#Auto-buying in BetterBuy also includes letting table pets buy their own gifts, which can cost a lot of money, and then worrying about remembering to turn it off.:|
+在更好买里，所有物品都有喜好度。就是如果你在短时间内连续购买使用一个物品，他的效果就会下降，最高降至50%，会随着时间恢复100%。要给桌宠买不一样的东西#In Better Buy, all items have preferences. That is, if you buy and use an item in a short period of time in a row, his effectiveness drops, up to 50%, and will recover 100% over time. To buy different things for table favorites:|
+不同的互动持续时间，消耗体力、心情、饱腹度和口渴度都不同。收益也不相同#Different interaction durations consume different amounts of stamina, mood, satiety and thirst. The benefits are also different:|
+不同的互动有不一样的等级要求，桌宠达到该等级才能进行该互动#Different interactions have different level requirements, table pets can only perform that interaction when they reach that level:|
+互动可以调整倍率，调高倍率可以让你的互动收益更高，当然消耗也高了，还有等级要求#Interactions can be adjusted to a higher multiplier, so that your interactions are more profitable, but of course the consumption is also higher, and there is also a level requirement.:|
+可以把喜欢的互动收藏起来，这样可以在收藏栏里快捷开始#You can bookmark your favorite interactions so that you can start them quickly in the bookmark bar.:|
+当启动游戏你会拥有一只可爱的桌宠，桌宠会拥有Lv 1的等级和100的金钱还有一些开局的基础状态#When you start the game, you will have a cute table pet, the table pet will have a level of Lv 1 and 100 money, and some of the basic state of the game.:|
+Lv指的是桌宠的等级通过获得经验升级#Lv refers to the level of the pet, which is raised by gaining experience.:|
+金钱指的是桌宠的金钱，和经验通过互动获取#Money is the money of the pet, and experience is gained through interactions.:|
+体力指的是桌宠工作学习等互动会消耗体力，通过睡觉或者吃东西等恢复#Stamina refers to your pet's stamina, which will be consumed by interactions such as working and studying, and will be recovered by sleeping or eating.:|
+心情指的是桌宠工作学习等互动会消耗心情，通过摸头或者吃东西等恢复#Mood refers to the mood of the table pet, which is consumed by interactions such as working and studying, and is recovered by touching the head or eating something.:|
+饱腹度和口渴度指的是，桌宠饱腹度和口渴度会随着时间和互动消耗，在更好买吃东西恢复#Satiety and thirst means that the table pet's satiety and thirst will be consumed with time and interaction, and will be recovered through better buying and eating.:|
+桌宠隐藏的值分别为健康和好感度，可以通过聊天询问或统计总结了解#The hidden values of table pets are health and goodwill, which can be understood through chatting and asking or stats summary:|
+健康指的是，桌宠吃了掉健康的食物或者心情长时间处于难过状态会导致健康值下降，降低到一定数值的时候桌宠会进入生病状态#Health refers to the table pet eating unhealthy food or feeling sad for a long time will lead to a decline in the health value, down to a certain value when the table pet will enter the sick state:|
+好感度指的是桌宠开心聊天玩耍互动等会增加好感度，好感度可以解锁桌宠语音和照片，还可以对养成提供加成#Favorability refers to the table pet happy chatting and playing interaction will increase the favorability, favorability can unlock the table pet voice and photos, but also can provide a bonus to the development:|
+开局的金钱只够投喂桌宠一小段时间，而且如果开启了自动喂食的话，可能很快就消耗光开局的金钱#The amount of money in the opening game is only enough to feed the table pet for a short period of time, and if you turn on auto-feeding, you may consume all the money in the opening game very quickly.:|
+桌宠有4种基本状态，分别是开心、一般、难过、生病#The table pet has 4 basic statuses: Happy, Normal, Sad, and Sick.:|
+在心情值在90%以上时候桌宠会进入开心状态，动画会有所变化。会持续增加好感度#When the mood value is above 90%, the table pet will enter the happy state and the animation will change. The animation will change and the favorability will continue to increase:|
+在心情值在90%—50%时候桌宠会进入一般状态，动画会有所变化#When the mood value is 90%-50%, the pet will enter the normal state, and the animation will change.:|
+在心情值在50%以下时候桌宠会进入难过状态，动画会有所变化。会持续降低健康值#When the mood value is below 50%, the table pet will enter the sad state, and the animation will change. The health value will continue to decrease.:|
+在健康值降低到一定数值的时候桌宠会进入生病状态，会进入生病动画#When the health value reaches a certain value, the pet will enter the sick state and the sick animation will change.:|
+当启动游戏时，游戏会加载订阅过的MOD（双击可以跳过）#When starting the game, the game will load the subscribed mods (double click to skip):|
+启用了对话功能，对桌宠点击右键，你可以与桌宠进行对话#Conversation is enabled, right click on the table pet and you can have a conversation with the table pet.:|
+光标移动到面板栏，会弹出数据面板，你可以看到桌宠现在的状态，包括等级、金钱、体力、心情、饱腹度和口渴度的数值#Cursor move to the panel bar, it will pop up the data panel, you can see the current status of the table pet, including level, money, stamina, mood, satiety and thirst values:|
+面板上等级代表了桌宠的成长；花费金钱可以在"更好买"界面为桌宠购入物品#The level on the panel represents your pet's growth; spend money to buy items for your pet in the “Better Buy” screen.:|
+面板上体力、心情、饱腹度和口渴度代表了桌宠的不同状态，这些状态影响桌宠的表现以及当前的养成#Stamina, Mood, Fullness and Thirst on the panel represent the different states of the pet, which affect its performance and current level of development.:|
+面板右上角出现的小标代表你在游玩时没有触发不符合游戏设计的数值变化（如收益极高、消耗极低的工作）#The small markers that appear in the upper right corner of the panel mean that you are playing without triggering a change in value that is not in line with the game's design (e.g., a job that is extremely rewarding and consumes very little).:|
+点击右上角的详情，可以查看统计面板，记录桌宠的相关统计信息，也可以查看统计总结#Click on Details in the upper right corner to view the stats panel, which records stats related to table pets, as well as a stats summary:|
+左键点击互动，可以看到若干个选项，不同的选项可以让桌宠进行不同的行动#Left-click on Interactions to see several options, different options allow the table pet to perform different actions:|
+自定需要在设置面板设置，例如打开网页，可以用来打开网页，打开steam或者输入快捷键等#Customization needs to be set in the settings panel, e.g. open web page, which can be used to open web page, open steam or input shortcut keys, etc.:|
+当桌宠在闲置等状态时，桌宠会随机触发不同的动作。不同状态下的桌宠会触发不同的动作#When the table pet is in idle state, etc., the table pet will trigger different actions randomly. Different actions are triggered for different table pets in different states:|
+你可以左键点击/挥动鼠标，对桌宠的头/身子等部分进行互动，桌宠会触发不同的动作。触摸后桌宠会减少体力，并增加心情#You can left click/wave the mouse to interact with the head/body of the table pet, and the table pet will trigger different actions. Touching the table pet will decrease its stamina and increase its mood.:|
+长按桌宠的右边脸颊，可以捏捏桌宠的脸，同样会触发对应动作，且减少体力并增加心情#Press and hold the right cheek of the table pet to pinch the face of the table pet, which also triggers the corresponding action, and reduces the stamina and increases the mood.:|
+右键桌宠任意部分会弹出对话框，若选择了使用桌宠选项式聊天功能，还会弹出对话选项#Right-clicking on any part of the pet will bring up a dialog box, and if you choose to use the pet's optional chat feature, it will also bring up a conversation option.:|
+点击桌宠除了身体和头其他部分，桌宠会对你说话，说话可能会触发特别的效果并显示在消息框的右下方（如增加体力和心情）#Clicking on any part of the pet other than the body and head will cause the pet to speak to you, which may trigger special effects that will appear in the bottom right of the message box (such as increased stamina and mood).:|
+如果希望移动桌宠位置，可以左键长按上半部分，一定时间后，桌宠会被鼠标提起，你可以按紧左键移动鼠标来移动桌宠的位置当你松开左键放下桌宠后，桌宠会到达鼠标移动到的地方。如果希望调整触发提起需要的时间，可以在设置中调整长按间隔#If you wish to move the table pet's position, you can left click and long press on the upper part of the table pet, after a certain amount of time, the table pet will be lifted by the mouse, you can press the left button firmly to move the mouse to move the table pet's position when you release the left button to put down the table pet, the table pet will arrive at the place where the mouse moved to. If you want to adjust the time it takes to trigger the lift, you can adjust the long press interval in the settings.:|
+启用桌宠移动后，桌宠可能会在你的桌面上随机移动。关闭后，桌宠仍然会执行移动动作，但不会移动位置#When table favor movement is enabled, the table favor may move randomly across your desktop. When turned off, the table favor will still perform the move action, but will not move positionally:|
+桌宠共有4种移动方式：走路，爬行，攀爬，飘落。如果希望调整桌宠移动的逻辑，可以在设置中调整相关参数#There are 4 types of table favor movement: walking, crawling, climbing, and floating down. If you want to adjust the logic of the table pet's movement, you can adjust the relevant parameters in the settings.:|
+当电脑播放声音后，桌宠会根据声音音量的大小触发相应的跳舞动作。如果希望调整触发跳舞的音量，可以在设置中调整触发音量和高潮音量#When the computer plays a sound, the table pet will trigger a dance according to the volume of the sound. If you want to adjust the dancing volume, you can adjust the trigger volume and climax volume in the settings.:|
+桌宠像你一样需要吃饭喝水，在"更好买"界面可以花费金钱补充桌宠的状态#The table pet needs to eat and drink just like you do, you can spend money to replenish the table pet's status in the “Better Buy” screen.:|
+当开始某个互动后，桌宠会进行对应的行动，并出现一个工作数据板。可以点击该板左上角的按钮，切换不同的数据显示。在任何时候，你都可以点击数据板下方的"停止项目"以结束本次项目并回到闲置状态，停止后先前获得的收益将会保留#When you start an interaction, your pet will perform the corresponding action, and a job board will appear. You can click on the buttons in the upper left corner of the board to toggle between different data displays. At any time, you can click “Stop Project” at the bottom of the panel to end the project and return to the idle state, where the previous gain will be retained.:|
+在互动期间，桌宠会像闲置状态时一样触发待机动作，不用担心，收益仍然在正常结算#During the interaction, the table pet will trigger a standby action as if it was idle, don't worry, the earnings will still be paid out as normal.:|
+如果希望时刻看到桌宠，不希望后续打开的窗口覆盖桌宠显示，可以启用将"桌宠置于顶层"功能#If you want to see your favorite at all times, and don't want subsequent windows to override your favorite, you can enable the “Favor on top” feature.:|
+当使用任何软件的全屏功能时，桌宠将不会显示，如果仍然希望看到桌宠，请将全屏的窗口设置为"无边框窗口化"等类似设置。有的软件的全屏设置可能为"无边框窗口化"而非真正的全屏，所以"全屏"后将会看到桌宠#When using the full screen function of any software, the table favor will not be displayed, if you still want to see the table favor, please set the full screen window to “Windowed with no border” or similar settings. Some software's full screen setting may be “borderless windowing” instead of real full screen, so you will see the table favor after “full screen”.:|
+如果不希望点击到桌宠形成误触，影响正常操作，可以启用"鼠标穿透"功能。此时点击桌宠将会无效，而是点击到桌宠后的窗口#If you don't want to click on the table favor to form a false touch, which will affect the normal operation, you can enable the “mouse through” function. At this time, clicking on the table favor will be invalid, but clicking on the window after the table favor.:|
+如果希望桌宠快速在"置于顶层"和"鼠标穿透"状态之间切换的话可以打开快速切换小标，即可不用打开设置进行状态切换#If you want your favorite to switch between “On Top” and “Mouse Through” quickly, you can turn on the Quick Switch icon, so you don't have to open the settings to switch states.:|
+在设置里可以切换桌宠的语言，游戏自带简体中文、繁体中文和英语#In the settings you can switch the language of your desktop favorite, the game comes with Simplified Chinese, Traditional Chinese and English.:|
+在设置里可以调整渲染分辨率，可以调整游戏显示的清晰度，分辨率越高，桌宠越清晰。建议根据实际需求进行调整，以获得更好的体验#In the settings you can adjust the rendering resolution, you can adjust the clarity of the game display, the higher the resolution, the clearer the table favor. It is recommended to adjust according to the actual demand to get a better experience.:|
+在设置里可以调整字体好主题，可以对游戏出现的文本字体进行调整。游戏自带若干主题和字体，你可以根据自己喜好进行调整。同时创意工坊也支持添加新的主题和字体#In the settings you can adjust the font good theme, you can adjust the font of the text that appears in the game. The game comes with several themes and fonts that you can adjust according to your preferences. Meanwhile, Creative Workshop also supports adding new themes and fonts.:|
+在设置里可以指定桌宠下次启动出现的位置。勾选"退出位置"后，桌宠下次启动将出现在上一次退出时所在的位置。如果取消勾选，则可以自行指定启动位置（输入坐标或点击当前位置），桌宠每一次启动位置将固定在设置的位置#In the settings, you can specify the location where the table favor will appear next time you start the game. If you check the “Exit Location” box, the next time your pet will appear in the same location as the last time you exited the game. If unchecked, you can specify your own startup location (enter coordinates or click current location), and your pet will be fixed at the set location every time it starts up.:|
+在设置里可以调整桌宠的消息框，桌宠说的话将通过消息框显示。勾选"将消息置于外部"，消息框将生成在桌宠下端。若不勾选，消息框将生成在桌宠内部靠下#In the settings, you can adjust the message box of the desk pet, what the desk pet says will be shown in the message box. By checking the “Place messages outside” box, the message box will be generated at the bottom of the desk pet. If unchecked, the message box will be generated at the bottom of the desk favorite.:|
+在设置里可以设置开机启动，允许桌宠开机启动来陪伴你。勾选"开机启动"后，桌宠将从本地开机启动。同时勾选"从Steam启动"后，桌宠将在Steam而不是本地启动#In Settings, you can set Startup to allow your desk pet to start up and keep you company. By checking the “Startup” box, the desk pet will start up locally. If you check the “Boot from Steam” box, your desk pet will boot from Steam instead of locally.:|
+卸载游戏前，请确认"开机启动"已经取消勾选，否则Steam可能会一直提示安装该游戏#Before uninstalling the game, please make sure “Boot from” is unchecked, otherwise Steam may keep prompting you to install the game.:|
+如果勾选"在任务切换其中隐藏窗口"，则使用"ALT+TAB"等方式切换窗口时，将不会选择到桌宠的窗口#If you check “Hide window in task switching”, the window of your desktop favorite will not be selected when you switch windows with “ALT+TAB”.:|
+在设置里可以设置自动保存频率，可以选择当前存档保存的频率，使得游戏存档能够时刻存储游戏最新进度#In the settings you can set the autosave frequency, you can choose how often the current archive is saved, so that the game archive can always store the latest progress of the game.:|
+正常关闭游戏时，游戏会自动保存一次存档#When you close the game normally, the game will automatically save the archive once.:|
+在设置里可以清理缓存，清除游戏根目录下的cache文件夹。清除后下次启动时将重新生成动画#In the settings you can clear the cache, which clears the cache folder in the game root directory. After clearing the cache, the animation will be regenerated on next startup:|
+在设置里可以开启桌宠多开，允许使用多个存档， 并同时启动多个桌宠，存档具有独立的设置和数据#In the settings you can turn on table favor multiplayer, which allows you to use multiple archives and start multiple table favors at the same time, with separate settings and data for the archives.:|
+在设置里可以关闭数据计算，关闭后该游戏的数值计算将停止，且任何操作都不会使数值产生变化。如：使用金钱时在"更好买"购买超出该金钱的物品，购买操作能够正常执行，且桌宠出现对应动作，但金钱不会变化，物品的数值也不会变化到桌宠的各项数值。当数据计算关闭时，可以选择桌宠显示的状态#In the settings you can turn off the data calculation. When you do this, the calculation of the game's values stops, and no operation will cause the values to change. For example, if you use money to buy an item that exceeds that amount of money in “Better Buy”, the purchase will be executed normally and the table pet will show the corresponding action, but the money will not change, and the value of the item will not change to the value of the table pet. When data calculation is turned off, you can choose the state of the table favor's display.:|
+在设置里可以设置计算间隔，设置桌宠多久结算一次数值。总体来说，间隔越长，消耗和赚取越慢；间隔越短，消耗和赚取越快。你可以根据自己实际体验进行调整#In the settings, you can set the calculation interval and set how often the table pet settles the values. Overall, the longer the interval, the slower the consumption and earning; the shorter the interval, the faster the consumption and earning. You can adjust it according to your actual experience:|
+在设置里可以设置互动周期，设置桌宠多久触发一次动作。间隔越长，桌宠触发动作频率越低，一般会表现为默认挂机动作；间隔越短，桌宠触发动作更频繁。触发动作包括挂机动作、移动等#In the settings, you can set the interaction period to set how often the table pet triggers an action. The longer the interval, the lower the frequency of triggered actions by table pets, which will usually be shown as default hang-up actions; the shorter the interval, the more frequent the triggered actions by table pets. Trigger actions include hang-up action, movement, etc.:|
+启用智能移动后，如果在智能移动判断时间间隔内没有与桌宠进行互动，桌宠执行移动动作时将不会移动位置。通过设置智能移动判断时间间隔，可以调整桌宠将在多久之后不再移动位置，直到下次互动解除。如果希望桌宠能在你的屏幕上移动位置，关闭此功能#After enabling Smart Move, if there is no interaction with the table pet within the Smart Move judgment interval, the table pet will not move its position when performing the move action. By setting the Smart Move judgment interval, you can adjust how long the table pet will not move its position until the next interaction is lifted. If you want the table favorite to move on your screen, turn off this feature.:|
+在设置里可以设置桌宠移动区域，可以控制你的桌宠可以在哪些区域移动#In the settings you can set the area in which your table pet can move, you can control the area in which your table pet can move.:|
+在设置里可以设置长按间隔，如果希望调整触发提起需要的时间，可以调整滑动条以设定长按间隔。长按间隔越低，需要长按触发的时间越短，建议根据自身需要进行调整#You can set the long press interval in the settings. If you wish to adjust the time it takes to trigger a lift, you can adjust the slider to set the long press interval. If you want to adjust the press interval, you can adjust the slider to set the press interval. The lower the press interval is, the shorter the press trigger time will be, so we suggest you to adjust it according to your needs.:|
+在设置里可以设置桌宠跳舞的触发音量，当声音达到设置的值时，桌宠将触发跳舞动作，直到声音低于该值#In the settings, you can set the trigger volume for the table pet to dance, when the sound reaches the set value, the table pet will trigger the dance action until the sound falls below the set value.:|
+在设置里可以设置桌宠跳舞的高潮音量，该设置的值不会低于触发音量，当声音达到该值时，会触发另一套跳舞动作，直到声音低于该值#In the settings, you can set the climax volume of the table pet dance, the set value will not be lower than the trigger volume, when the sound reaches the set value, it will trigger another set of dance moves until the sound is lower than the set value.:|
+在设置里可以设置自动超模MOD优化，会自动计算合理价格，该功能默认开启，开启后，对于MOD的超模内容,游戏会自动计算合理价格，包括更好买的所有超模物品，互动的各种超模项目。关闭该功能后，MOD的物品/互动内容会按照MOD作者设定的数值计算，使用超模物品/互动会导致数据菜单栏未超模图标消失。不小心使用超模物品/互动，可通过回档取回图标#In the settings, you can set the automatic supermodel mod optimization, it will automatically calculate the reasonable price, this function is on by default, after turning on, for the supermodel content of the mod, the game will automatically calculate the reasonable price, including all the supermodel items that are better to buy, and all kinds of supermodel items that are interactive. When this function is turned off, the mod's items/interactions will be calculated according to the values set by the mod author, and the use of overmodeled items/interactions will result in the disappearance of the overmodeled icon in the data menu bar. If you accidentally use an overmodeled item/interaction, you can retrieve the icon by going back to the archive.:|
+该游戏支持通过本地和创意工坊导入MOD。你可以在创意工坊寻找你想要的MOD，也可以将MOD放入本地路径#The game supports importing mods locally and through the Creative Workshop, where you can find the mods you want or put them in your local path.:|
+投喂和互动均有收藏功能，你可以收藏自己喜欢的食物或互动，快捷使用#Feeding and interaction have collection function, you can collect your favorite food or interaction for quick use.:|
+日程表是用来给桌宠安排一天的日常的托管功能。（该功能只能在游戏开启时生效）#Schedule is a hosting function used to arrange the day's routine for table pets. (This feature only works when the game is on):|
+添加日程表前要先在机构购买套餐，工作中介和培训机构分别对应工作和学习的日常托管功能#Before you add a schedule, you have to buy a package from an organization. The Work Agency and Training Agency correspond to the daily hosting function for work and study, respectively:|
+办理工作中介的套餐可以让你在日程表中添加工作互动，办理培训机构的套餐可以让你在日程表中添加学习互动#The Work Agency package allows you to add work interactions to your schedule, and the Training Organization package allows you to add study interactions to your schedule.:|
+分别有不同的套餐可供购买，每种套餐的抽成/效率、可用等级、办理费用均不同，可以根据需要选择#There are different packages available for purchase, each with different commission/efficiency, availability levels, and processing fees, so you can choose according to your needs.:|
+办理工作中介和培训机构的套餐后可以在当前套餐查看#The current package can be viewed after applying for work agency and training organization packages.:|
+日程表添加的互动等级不能高过套餐的可用等级。总工作时间不能大于70%则不能开始日程表#The interaction level added to the schedule cannot be higher than the available level of the package. You can't start a schedule if the total working time is not more than 70%.:|
+日程表期间可以手动停止日程。手动使用互动也会打断日程表，需要重新开始#You can stop the schedule manually during the schedule. Manually using interactions also interrupts the schedule and needs to be restarted.:|
+你可以创建或加入访客表，和你的好友进行联机#You can create or join guest tables to connect with your friends:|
+照片图库里有桌宠所有表情包、CG、宣传图等，会持续更新。可以通过要求解锁各种桌宠的图片，可以进行筛选，还可以导出图片。点击已解锁的图片可以查看图片详情，有图片名称、解锁日期和图片简介。可以复制到剪切板或单独保存。图片有多种解锁方法，达成即可永久解锁#The photo gallery contains all the emoticons, CGs, and promotional images of the table pets, and will be updated continuously. You can unlock pictures of various table pets by request, you can filter them, and you can export them. Click on an unlocked image to view the image details, with image name, unlock date and image profile. It can be copied to the clipboard or saved separately. There are several ways to unlock the picture, and you can unlock it permanently by reaching it.:|
+如果体验完原版，可以体验桌宠丰富多彩的MOD。桌宠开源，支持各种mod、创意工坊#If you experience the original version, you can experience the table pets colorful mod. table pets open source, support for a variety of mods, creative workshop!:|
+桌宠名称:{0},金钱(钱),数据,体力,心情,饱腹度,口渴度,好感度,当前状态#Table pet name: {0}, money (money), data, stamina, mood, satiety, thirst, favorability, current status:|
+让桌宠跳舞(舞)#Dance the table pet.:|
+让桌宠停止(中断)当前进行的活动,例如(结束,别去)工作(干活)/玩耍(玩)/学习(学)#Stop (interrupt) the current activity, e.g. (end, don't go) work/play/study.:|
+让桌宠发呆(呆)#Let the table pet daze (dances):|
+让桌宠睡觉(睡眠,就寝)#Let the table pet sleep (go to bed):|
+让桌宠起床(别睡了)#Wake up your pet (Don't sleep):|
+摸桌宠的头(脑袋)#Touch your pet's head.:|
+摸桌宠的身体(肚子)#Touch your pet's body.:|
+让桌宠自由移动(走动,走路,去)#Let the pet move freely(walk, go):|
+购买并使用有物品id的物品,例如(吃)食物/正餐/零食/(喝)饮料/功能性/药品/(送)礼品#Purchase and use items with item ids, e.g. (eat) food/meals/snacks/(drink) beverages/functionality/medicines/(give) gifts.:|
+(int)物品id, 没有物品ID的物品没法使用#(int) item id, items without item id cannot be used.:|
+开始进行有活动id的活动,例如(去)工作(干活)/玩耍(玩)/学习(学).#Start an activity that has an activity id, e.g. (go)work/play/study.:|
+(int)活动id, 没有活动ID的活动无法进行#(int) activity id, activity cannot be performed without activity id.:|
+ChatVPetProcess API 设置#ChatVPetProcess API Settings:|
+基本设置#Basic settings:|
+Web代理#Web Proxy:|
+没有可不填. HTTP 代理服务器 或 SOCKS 代理服务器等 WEB代理链接#No, you can leave it blank. HTTP proxy server or SOCKS proxy server, etc. WEB proxy link.:|
+累计在此花费的Token个数#Cumulative number of tokens spent here:|
+提交聊天记录给 LBGAME 以改进ChatVPet Process#Submit chat logs to LBGAME to improve the ChatVPet Process.:|
+其他设置#Other Settings:|
+语音输入#Voice Input:|
+语音密钥#Voice Key:|
+语音区域#Voice Region:|
+语音语言#Speech Language:|
+启用语音输入,需要 Azure ai-speech#Enable voice input, requires Azure ai-speech:|
+Azure 语音秘钥, 需要有 Azure ai-speech#Azure speech key, requires Azure ai-speech:|
+Azure 语音区域, 需要有 Azure ai-speech#Azure voice region, required Azure ai-speech:|
+语音输入语言#Speech input language:|
+Azure 语音输入语言, 例如zh-CN#Azure speech input language, e.g. zh-CN:|
+查看支持语言列表#See the list of supported languages:|
+最大聊天记录#Max Chats:|
+最大工具库#Max Tools:|
+最大知识库#Max Knowledge Base:|
+单次最大花费#Max Spend Per Session:|
+允许最大花费Token数量#Max Token Spend Allowed:|
+最大回合#Max Rounds:|
+可能的最大花费为 单次最大花费 x 最大花费#Maximum possible spend is Maximum single spend x Maximum spend:|
+知识库越多越消耗Token#More knowledge bases consume more tokens:|
+允许工具调用消息循环回合数#Number of rounds allowed for tool call message loops:|
+允许最大知识库个数数量#Maximum number of knowledge bases allowed:|
+允许最大工具库个数数量#Maximum number of tool libraries allowed:|
+工具库越多越消耗Token#More toolbases consume Token:|
+允许单次记忆最大聊天记录#Maximum chats allowed to be memorized in a single session:|
+ChatVPet会保留所有的聊天记录(记忆)\r将会会智能化整理为指定数量记忆作为输入#ChatVPet will keep all the chats (memories) \r will be intelligently organized into a specified number of memories as an input:|
+知识库设置#Knowledge Base Settings:|
+在此处添加你的自定义知识库,一行一条\r知识库内容并不会直接添加进聊天,而是根据算法智能判断,以节省判断.#Add your customized knowledge base here, a line of \r knowledge base content will not be added directly into the chat, but according to the algorithm intelligent judgment to save judgment.:|
+数据库预览#Database Preview:|
+输入文本搜索数据库#Enter text to search the database:|
+知识库#Knowledge Base:|
+工具库#Tools:|
+聊天记录#Chat Transcripts:|

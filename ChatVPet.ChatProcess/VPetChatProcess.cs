@@ -195,6 +195,13 @@ namespace ChatVPet.ChatProcess
                     IsError = true,
                     ListPosition = position++
                 });
+                //ReturnResponse.Invoke(new ProcessResponse()
+                //{
+                //    Reply = reply,
+                //    IsEnd = true,
+                //    IsError = false,
+                //    ListPosition = position++
+                //});
                 return;
             }
 
