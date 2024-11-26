@@ -154,7 +154,11 @@ namespace VPet.Plugin.ChatVPet
             completions.messages.Add(new Message() { role = Message.RoleType.user, content = message });
             var resp = completions.GetResponse(CGPTClient.APIUrl, CGPTClient.APIKey, CGPTClient.Proxy);
             var reply = resp.GetMessageContent();
-            if (resp.choices[0].finish_reason == "length")
+            if (resp.choices.Length == 0)
+            {
+                return "请检查API token设置".Translate();
+            }
+            else if (resp.choices[0].finish_reason == "length")
             {
                 reply += " ...";
             }

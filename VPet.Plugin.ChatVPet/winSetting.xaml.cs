@@ -124,6 +124,8 @@ namespace VPet.Plugin.ChatVPet
             speechConfig.SpeechRecognitionLanguage = plugin.AzureRecognitionLanguage;
             var audioConfig = AudioConfig.FromDefaultMicrophoneInput();
             plugin.Recognizer = new SpeechRecognizer(speechConfig, audioConfig);
+
+            plugin.KnowledgeDataBase = tbKnow.Text;
             plugin.Save();
             this.Close();
         }

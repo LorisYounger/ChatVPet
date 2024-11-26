@@ -176,14 +176,19 @@
                 </Grid>
             </TabItem>
             <TabItem Header="{ll:Str 知识库设置}">
-                <StackPanel Margin="5">
+                <Grid Margin="5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
                     <TextBlock Text="{ll:Str '在此处添加你的自定义知识库,一行一条\&#13;知识库内容并不会直接添加进聊天,而是根据算法智能判断,以节省判断.'}"
                             TextWrapping="WrapWithOverflow" />
                     <TextBox x:Name="tbKnow" Style="{DynamicResource StandardTextBoxStyle}" AcceptsReturn="True"
-                            TextWrapping="WrapWithOverflow" MaxHeight="600" VerticalScrollBarVisibility="Visible"
-                            Margin="5" MinHeight="60"
-                            pu:TextBoxHelper.Watermark="{ll:Str '在此处添加你的自定义知识库,一行一条\&#13;知识库内容并不会直接添加进聊天,而是根据算法智能判断,以节省判断.'}" />
-                </StackPanel>
+                            TextWrapping="WrapWithOverflow" MaxHeight="600" VerticalScrollBarVisibility="Auto"
+                            HorizontalScrollBarVisibility="Auto" Margin="5" MinHeight="60"
+                            pu:TextBoxHelper.Watermark="{ll:Str '在此处添加你的自定义知识库,一行一条\&#13;知识库内容并不会直接添加进聊天,而是根据算法智能判断,以节省判断.'}"
+                            Grid.Row="1" />
+                </Grid>
             </TabItem>
             <TabItem Header="{ll:Str 数据库预览}">
                 <StackPanel>
