@@ -1,0 +1,6 @@
+Microsoft.CognitiveServices.Speech.extension.audio.sys.dll:|ignore#true:|
+Microsoft.CognitiveServices.Speech.extension.codec.dll:|ignore#true:|
+Microsoft.CognitiveServices.Speech.extension.kws.dll:|ignore#true:|
+Microsoft.CognitiveServices.Speech.extension.kws.ort.dll:|ignore#true:|
+Microsoft.CognitiveServices.Speech.extension.lu.dll:|ignore#true:|
+Microsoft.CognitiveServices.Speech.core.dll:|ignore#true:|
