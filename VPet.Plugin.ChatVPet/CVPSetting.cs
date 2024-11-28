@@ -91,5 +91,24 @@ namespace VPet.Plugin.ChatVPet
             }
             set => MW.Set["CGPTV"][(gstr)"AzureRecognitionLanguage"] = value;
         }
+
+        public int MaxHistoryCount
+        {
+            get => MW.Set["CGPTV"].GetInt("MaxHistoryCount", 20);
+            set => MW.Set["CGPTV"][(gint)"MaxHistoryCount"] = value;
+        }
+
+        public int MaxToolCount
+        {
+            get => MW.Set["CGPTV"].GetInt("MaxToolCount", 10);
+            set => MW.Set["CGPTV"][(gint)"MaxToolCount"] = value;
+        }
+
+        public int MaxKnowledgeCount
+        {
+            get => MW.Set["CGPTV"].GetInt("MaxKnowledgeCount", 10);
+            set => MW.Set["CGPTV"][(gint)"MaxKnowledgeCount"] = value;
+        }
+
     }
 }

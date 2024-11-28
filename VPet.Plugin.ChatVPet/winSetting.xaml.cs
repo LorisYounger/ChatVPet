@@ -77,7 +77,11 @@ namespace VPet.Plugin.ChatVPet
             tbSpeachregion.Text = plugin.AzureRegion;
             tbSpeachRecognitionLanguage.Text = plugin.AzureRecognitionLanguage;
             swVoiceEnable.IsChecked = plugin.AzureVoiceEnable;
-
+            tbMaxHistory.Text = plugin.MaxHistoryCount.ToString();
+            tbMaxKnow.Text = plugin.MaxKnowledgeCount.ToString();
+            tbMaxTool.Text = plugin.MaxToolCount.ToString();
+            tbMaxRound.Text = plugin.MaxRecallCount.ToString();
+            
 
             //显示现有知识库
             tbKnow.Text = plugin.KnowledgeDataBase;
@@ -137,6 +141,13 @@ namespace VPet.Plugin.ChatVPet
             speechConfig.SpeechRecognitionLanguage = plugin.AzureRecognitionLanguage;
             var audioConfig = AudioConfig.FromDefaultMicrophoneInput();
             plugin.Recognizer = new SpeechRecognizer(speechConfig, audioConfig);
+
+            plugin.MaxHistoryCount = int.Parse(tbMaxHistory.Text);
+            plugin.MaxKnowledgeCount = int.Parse(tbMaxKnow.Text);
+            plugin.MaxToolCount = int.Parse(tbMaxTool.Text);
+            plugin.MaxRecallCount = int.Parse(tbMaxRound.Text);
+
+
 
             plugin.KnowledgeDataBase = tbKnow.Text;
             plugin.Save();

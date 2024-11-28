@@ -149,7 +149,7 @@ namespace VPet.Plugin.ChatVPet
                         }, VPetChatProcess.Localization));
                         VPetChatProcess.Tools.Add(new Tool("doactive", "开始进行有活动id的活动,例如(去)工作(干活)/玩耍(玩)/学习(学).".Translate(), ToolDoWork, new List<Tool.Arg>()
                         {
-                          new Tool.Arg(){ Name = "activeID", Description = "(int)活动id, 没有活动ID的活动无法进行".Translate() }
+                            new Tool.Arg(){ Name = "activeID", Description = "(int)活动id, 没有活动ID的活动无法进行".Translate() }
                         }, VPetChatProcess.Localization));
 
                         foreach (ISub sub in MW.Set["diy"])
@@ -195,8 +195,6 @@ namespace VPet.Plugin.ChatVPet
             new winSetting(this).ShowDialog();
         }
         public override string PluginName => "ChatVPetProcess";
-
-
 
     }
 }
