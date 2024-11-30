@@ -11,6 +11,12 @@
 
 由于样本数量原因,本项目暂不支持除了简体中文以外的提交内容,其他语言支持敬请期待.
 
+## 相关开源内容
+
+* [ChatVPetProcess](./ChatVPetProcess.md)
+
+  ChatVPetProcess 是一个用于处理和模拟自然语言交互的聊天系统。它通过整合 GPT 模型、知识库和工具，实现了对用户输入的自然语言的理解和处理。
+
 ## 时间线
 
 * 征集用户聊天数据 [ChatGPT for 创意工坊作者](https://steamcommunity.com/sharedfiles/filedetails/?id=3157090829) **<-目前在这**
