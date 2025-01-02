@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,7 +10,7 @@ namespace ChatVPet.ChatProcess
     /// <summary>
     /// 聊天历史记录
     /// </summary>
-    public class Dialogue : IKeyWords, IInCheck
+    public class Dialogue : Iw2vSource, IInCheck
     {
         /// <summary>
         /// 问题
@@ -25,25 +26,10 @@ namespace ChatVPet.ChatProcess
         /// </summary>
         public string ToolCall { get; set; } = "";
         /// <summary>
-        /// 关键字组
-        /// </summary>
-        public Dictionary<string, int> KeyWords { get; set; } = new Dictionary<string, int>();
-        /// <summary>
         /// 重要性
         /// </summary>
-        public double Importance { get; set; } = 0.5;
-        /// <summary>
-        /// 该知识库词语总数
-        /// </summary>
-        public int WordsCount { get; set; }
-        public int InCheck(string message, string[] keywords_list, Dictionary<string, int> keywords_dict)
-        {
-            if (Importance == 1)
-            {
-                return 0;
-            }
-            return Math.Max(10, IInCheck.IgnoreValue - (int)(((IKeyWords)this).Score(keywords_dict, keywords_list.Length) * 2 * Importance));
-        }
+        public float Importance { get; set; } = 2;
+
         /// <summary>
         /// 转换为消息
         /// </summary>
@@ -51,17 +37,27 @@ namespace ChatVPet.ChatProcess
         {
             return [Question, localization.Response + "\n" + Answer + "\n" + localization.ToolCall + "\n" + ToolCall];
         }
-        public Dialogue() { }
-        public Dialogue(string question, string answer, string toolCall,double importance, ILocalization localization)
+
+        public float InCheck(string message, float similarity) => IInCheck.InCheck(message, similarity, this);
+
+        public Dialogue() { KeyWords = ""; }
+        public Dialogue(string question, string answer, string toolCall, double importance, ILocalization localization)
         {
             Question = question;
             Answer = answer;
             ToolCall = toolCall;
-            var Words = localization.WordSplit(question + answer);
-            KeyWords = IKeyWords.GetKeyWords(Words);
-            Importance = importance;
-            WordsCount = Words.Length;
-        }
+            KeyWords = string.Join(" ", localization.WordSplit(question + answer));
 
+        }
+        /// <summary>
+        /// 关键字组
+        /// </summary>
+        public string KeyWords { get; set; }
+
+        /// <summary>
+        /// 向量
+        /// </summary>
+        [JsonIgnore]
+        public float[]? Vector { get; set; }
     }
 }

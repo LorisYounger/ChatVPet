@@ -9,16 +9,16 @@ using VPet_Simulator.Windows.Interface;
 
 namespace VPet.Plugin.ChatVPet.dynKnowDB
 {
+    /// <summary>
+    /// 桌宠动态知识库
+    /// </summary>
     public class DynKDBStatic : KnowledgeDataBase
     {
         IMainWindow MW;
         public DynKDBStatic(IMainWindow mw, ILocalization localization)
         {
             MW = mw;
-            var Words = localization.WordSplit("桌宠名称:{0},金钱(钱),数据,体力,心情,饱腹度,口渴度,好感度,当前状态".Translate(MW.GameSavesData.GameSave.Name));
-
-            KeyWords = IKeyWords.GetKeyWords(Words);
-            WordsCount = Words.Length;
+            KeyWords = string.Join(" ", localization.WordSplit("桌宠名称:{0},金钱(钱),数据,体力,心情,饱腹度,口渴度,好感度,当前状态".Translate(MW.GameSavesData.GameSave.Name)));
         }
         public override string KnowledgeData
         {

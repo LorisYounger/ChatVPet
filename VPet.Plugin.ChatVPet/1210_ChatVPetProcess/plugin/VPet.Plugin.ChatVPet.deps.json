@@ -8,16 +8,16 @@
     ".NETCoreApp,Version=v8.0": {
       "VPet.Plugin.ChatVPet/1.0.0": {
         "dependencies": {
-          "ChatGPT.API.Framework": "1.1.0",
+          "ChatGPT.API.Framework": "1.1.2",
           "ChatVPet.ChatProcess": "1.0.0",
-          "Microsoft.CognitiveServices.Speech": "1.41.1",
+          "Microsoft.CognitiveServices.Speech": "1.42.0",
           "VPet-Simulator.Windows.Interface": "1.1.0.40"
         },
         "runtime": {
           "VPet.Plugin.ChatVPet.dll": {}
         }
       },
-      "ChatGPT.API.Framework/1.1.0": {
+      "ChatGPT.API.Framework/1.1.2": {
         "dependencies": {
           "Newtonsoft.Json": "13.0.3"
         },
@@ -58,43 +58,43 @@
           }
         }
       },
-      "Microsoft.CognitiveServices.Speech/1.41.1": {
+      "Microsoft.CognitiveServices.Speech/1.42.0": {
         "runtime": {
           "lib/netstandard2.0/Microsoft.CognitiveServices.Speech.csharp.dll": {
-            "assemblyVersion": "1.41.1.28",
-            "fileVersion": "1.41.1.28"
+            "assemblyVersion": "1.42.0.28",
+            "fileVersion": "1.42.0.28"
           }
         },
         "runtimeTargets": {
           "runtimes/linux-arm/lib/netstandard2.0/Microsoft.CognitiveServices.Speech.csharp.dll": {
             "rid": "linux-arm",
             "assetType": "runtime",
-            "assemblyVersion": "1.41.1.28",
-            "fileVersion": "1.41.1.28"
+            "assemblyVersion": "1.42.0.28",
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/linux-arm64/lib/netstandard2.0/Microsoft.CognitiveServices.Speech.csharp.dll": {
             "rid": "linux-arm64",
             "assetType": "runtime",
-            "assemblyVersion": "1.41.1.28",
-            "fileVersion": "1.41.1.28"
+            "assemblyVersion": "1.42.0.28",
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/linux-x64/lib/netstandard2.0/Microsoft.CognitiveServices.Speech.csharp.dll": {
             "rid": "linux-x64",
             "assetType": "runtime",
-            "assemblyVersion": "1.41.1.28",
-            "fileVersion": "1.41.1.28"
+            "assemblyVersion": "1.42.0.28",
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/osx-arm64/lib/netstandard2.0/Microsoft.CognitiveServices.Speech.csharp.dll": {
             "rid": "osx-arm64",
             "assetType": "runtime",
-            "assemblyVersion": "1.41.1.28",
-            "fileVersion": "1.41.1.28"
+            "assemblyVersion": "1.42.0.28",
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/osx-x64/lib/netstandard2.0/Microsoft.CognitiveServices.Speech.csharp.dll": {
             "rid": "osx-x64",
             "assetType": "runtime",
-            "assemblyVersion": "1.41.1.28",
-            "fileVersion": "1.41.1.28"
+            "assemblyVersion": "1.42.0.28",
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/android-arm/native/libMicrosoft.CognitiveServices.Speech.core.so": {
             "rid": "android-arm",
@@ -364,32 +364,32 @@
           "runtimes/win-arm/native/Microsoft.CognitiveServices.Speech.core.dll": {
             "rid": "win-arm",
             "assetType": "native",
-            "fileVersion": "1.41.1.28"
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/win-arm/native/Microsoft.CognitiveServices.Speech.extension.audio.sys.dll": {
             "rid": "win-arm",
             "assetType": "native",
-            "fileVersion": "1.41.1.28"
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/win-arm/native/Microsoft.CognitiveServices.Speech.extension.lu.dll": {
             "rid": "win-arm",
             "assetType": "native",
-            "fileVersion": "1.41.1.28"
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/win-arm64/native/Microsoft.CognitiveServices.Speech.core.dll": {
             "rid": "win-arm64",
             "assetType": "native",
-            "fileVersion": "1.41.1.28"
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/win-arm64/native/Microsoft.CognitiveServices.Speech.extension.audio.sys.dll": {
             "rid": "win-arm64",
             "assetType": "native",
-            "fileVersion": "1.41.1.28"
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/win-arm64/native/Microsoft.CognitiveServices.Speech.extension.kws.dll": {
             "rid": "win-arm64",
             "assetType": "native",
-            "fileVersion": "1.41.1.28"
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/win-arm64/native/Microsoft.CognitiveServices.Speech.extension.kws.ort.dll": {
             "rid": "win-arm64",
@@ -399,27 +399,27 @@
           "runtimes/win-arm64/native/Microsoft.CognitiveServices.Speech.extension.lu.dll": {
             "rid": "win-arm64",
             "assetType": "native",
-            "fileVersion": "1.41.1.28"
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.core.dll": {
             "rid": "win-x64",
             "assetType": "native",
-            "fileVersion": "1.41.1.28"
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.extension.audio.sys.dll": {
             "rid": "win-x64",
             "assetType": "native",
-            "fileVersion": "1.41.1.28"
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.extension.codec.dll": {
             "rid": "win-x64",
             "assetType": "native",
-            "fileVersion": "1.41.1.28"
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.extension.kws.dll": {
             "rid": "win-x64",
             "assetType": "native",
-            "fileVersion": "1.41.1.28"
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.extension.kws.ort.dll": {
             "rid": "win-x64",
@@ -429,27 +429,27 @@
           "runtimes/win-x64/native/Microsoft.CognitiveServices.Speech.extension.lu.dll": {
             "rid": "win-x64",
             "assetType": "native",
-            "fileVersion": "1.41.1.28"
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.core.dll": {
             "rid": "win-x86",
             "assetType": "native",
-            "fileVersion": "1.41.1.28"
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.audio.sys.dll": {
             "rid": "win-x86",
             "assetType": "native",
-            "fileVersion": "1.41.1.28"
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.codec.dll": {
             "rid": "win-x86",
             "assetType": "native",
-            "fileVersion": "1.41.1.28"
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.kws.dll": {
             "rid": "win-x86",
             "assetType": "native",
-            "fileVersion": "1.41.1.28"
+            "fileVersion": "1.42.0.28"
           },
           "runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.kws.ort.dll": {
             "rid": "win-x86",
@@ -459,7 +459,135 @@
           "runtimes/win-x86/native/Microsoft.CognitiveServices.Speech.extension.lu.dll": {
             "rid": "win-x86",
             "assetType": "native",
-            "fileVersion": "1.41.1.28"
+            "fileVersion": "1.42.0.28"
+          }
+        }
+      },
+      "Microsoft.ML/4.0.0": {
+        "dependencies": {
+          "Microsoft.ML.CpuMath": "4.0.0",
+          "Microsoft.ML.DataView": "4.0.0",
+          "Newtonsoft.Json": "13.0.3",
+          "System.CodeDom": "8.0.0",
+          "System.Collections.Immutable": "8.0.0",
+          "System.Memory": "4.6.0",
+          "System.Reflection.Emit.Lightweight": "4.7.0",
+          "System.Threading.Channels": "8.0.0"
+        },
+        "runtime": {
+          "lib/netstandard2.0/Microsoft.ML.Core.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "4.0.24.56302"
+          },
+          "lib/netstandard2.0/Microsoft.ML.Data.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "4.0.24.56302"
+          },
+          "lib/netstandard2.0/Microsoft.ML.KMeansClustering.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "4.0.24.56302"
+          },
+          "lib/netstandard2.0/Microsoft.ML.PCA.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "4.0.24.56302"
+          },
+          "lib/netstandard2.0/Microsoft.ML.StandardTrainers.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "4.0.24.56302"
+          },
+          "lib/netstandard2.0/Microsoft.ML.Transforms.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "4.0.24.56302"
+          }
+        },
+        "runtimeTargets": {
+          "runtimes/linux-arm/native/libLdaNative.so": {
+            "rid": "linux-arm",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-arm/native/libLdaNative.so.dbg": {
+            "rid": "linux-arm",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-arm64/native/libLdaNative.so": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-arm64/native/libLdaNative.so.dbg": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libLdaNative.so": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-x64/native/libLdaNative.so.dbg": {
+            "rid": "linux-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/osx-arm64/native/libLdaNative.dylib": {
+            "rid": "osx-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/osx-arm64/native/libLdaNative.dylib.dwarf": {
+            "rid": "osx-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/osx-x64/native/libLdaNative.dylib": {
+            "rid": "osx-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/osx-x64/native/libLdaNative.dylib.dwarf": {
+            "rid": "osx-x64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-arm64/native/LdaNative.dll": {
+            "rid": "win-arm64",
+            "assetType": "native",
+            "fileVersion": "0.2200.24.56302"
+          },
+          "runtimes/win-x64/native/LdaNative.dll": {
+            "rid": "win-x64",
+            "assetType": "native",
+            "fileVersion": "0.2200.24.56302"
+          },
+          "runtimes/win-x86/native/LdaNative.dll": {
+            "rid": "win-x86",
+            "assetType": "native",
+            "fileVersion": "0.2200.24.56302"
+          }
+        }
+      },
+      "Microsoft.ML.CpuMath/4.0.0": {
+        "dependencies": {
+          "System.Numerics.Tensors": "8.0.0"
+        },
+        "runtime": {
+          "lib/net6.0/Microsoft.ML.CpuMath.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "4.0.24.56302"
+          }
+        }
+      },
+      "Microsoft.ML.DataView/4.0.0": {
+        "dependencies": {
+          "System.Collections.Immutable": "8.0.0",
+          "System.Memory": "4.6.0"
+        },
+        "runtime": {
+          "lib/netstandard2.0/Microsoft.ML.DataView.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "4.0.24.56302"
           }
         }
       },
@@ -490,6 +618,19 @@
           }
         }
       },
+      "System.CodeDom/8.0.0": {},
+      "System.Collections.Immutable/8.0.0": {},
+      "System.Memory/4.6.0": {},
+      "System.Numerics.Tensors/8.0.0": {
+        "runtime": {
+          "lib/net8.0/System.Numerics.Tensors.dll": {
+            "assemblyVersion": "8.0.0.0",
+            "fileVersion": "8.0.23.53103"
+          }
+        }
+      },
+      "System.Reflection.Emit.Lightweight/4.7.0": {},
+      "System.Threading.Channels/8.0.0": {},
       "VPet-Simulator.Core/1.1.0.40": {
         "dependencies": {
           "LinePutScript": "1.11.8",
@@ -518,6 +659,7 @@
         "dependencies": {
           "Faithlife.JiebaNet.Segmenter": "0.1.1",
           "LinePutScript": "1.11.8",
+          "Microsoft.ML": "4.0.0",
           "Newtonsoft.Json": "13.0.3"
         },
         "runtime": {
@@ -535,12 +677,12 @@
       "serviceable": false,
       "sha512": ""
     },
-    "ChatGPT.API.Framework/1.1.0": {
+    "ChatGPT.API.Framework/1.1.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-Fq8IsgMqSnQHU+sVPdotElCwicIRm9BvlWPtntjeZu1sYsWUAKVQiZ09i4pDrQGRrUcTVG0BWezBsaIU+IAgew==",
-      "path": "chatgpt.api.framework/1.1.0",
-      "hashPath": "chatgpt.api.framework.1.1.0.nupkg.sha512"
+      "sha512": "sha512-KbgHj04IGrpnWkKNl8En2LwDyh1PCzenxPi1+Mf8YFjuV0LoMPJtAqacWY6B5qMiDOXmuHtnzNKZ6cZyJFCy7Q==",
+      "path": "chatgpt.api.framework/1.1.2",
+      "hashPath": "chatgpt.api.framework.1.1.2.nupkg.sha512"
     },
     "Faithlife.JiebaNet.Segmenter/0.1.1": {
       "type": "package",
@@ -563,12 +705,33 @@
       "path": "lineputscript.localization.wpf/1.0.7",
       "hashPath": "lineputscript.localization.wpf.1.0.7.nupkg.sha512"
     },
-    "Microsoft.CognitiveServices.Speech/1.41.1": {
+    "Microsoft.CognitiveServices.Speech/1.42.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-0572dYGk4eR2tFQly5t1wGCHzpqX6t6mHozVUPSjoEauI5HC0bT5bYfE+foCpIX4/bZlycMyLfqnsQ2TTuIfuw==",
-      "path": "microsoft.cognitiveservices.speech/1.41.1",
-      "hashPath": "microsoft.cognitiveservices.speech.1.41.1.nupkg.sha512"
+      "sha512": "sha512-NNsLzj5qX2t7AS55rRWQGu4m7M4OSzMd1/5I8heVYhvcq18GyOX3baPGkGAMlhugvCoREXMlWCaH4SBzwZZ2mg==",
+      "path": "microsoft.cognitiveservices.speech/1.42.0",
+      "hashPath": "microsoft.cognitiveservices.speech.1.42.0.nupkg.sha512"
+    },
+    "Microsoft.ML/4.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-MFzWjiYVHts3XKzyyVBINhvaLkUBy7KOLRowdyXmu1UUYGYQYYUdgAPNV8cHsLeikbzXLt05ehRiweGzF/3alQ==",
+      "path": "microsoft.ml/4.0.0",
+      "hashPath": "microsoft.ml.4.0.0.nupkg.sha512"
+    },
+    "Microsoft.ML.CpuMath/4.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-hIIguq5lO309euKyF0ZiMmpBX5pGvz/0Tpj6aAIiqfRMz/yOVn3JoiPdpjPkRI+1Zkih0fWwu0eTjEkjuDI+6A==",
+      "path": "microsoft.ml.cpumath/4.0.0",
+      "hashPath": "microsoft.ml.cpumath.4.0.0.nupkg.sha512"
+    },
+    "Microsoft.ML.DataView/4.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-qFLqB+uv+DQvm3xsKeQ83sjw/0Hh9LxZkCDnHOC2lc869yLBXHEtggf+7GccRXYNoB/PnaveRVuWQk3s3uuZKw==",
+      "path": "microsoft.ml.dataview/4.0.0",
+      "hashPath": "microsoft.ml.dataview.4.0.0.nupkg.sha512"
     },
     "Newtonsoft.Json/13.0.3": {
       "type": "package",
@@ -590,6 +753,48 @@
       "sha512": "sha512-vUWAE0moyvQENh/dLSR7qiBoRVkMAEHR+SI5wWLm6BDQ+cNCR6BbNo17eFRKT+UVOMPSEUi8yClEAV0Hzn1vFQ==",
       "path": "panuon.wpf.ui/1.2.4.2",
       "hashPath": "panuon.wpf.ui.1.2.4.2.nupkg.sha512"
+    },
+    "System.CodeDom/8.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-WTlRjL6KWIMr/pAaq3rYqh0TJlzpouaQ/W1eelssHgtlwHAH25jXTkUphTYx9HaIIf7XA6qs/0+YhtLEQRkJ+Q==",
+      "path": "system.codedom/8.0.0",
+      "hashPath": "system.codedom.8.0.0.nupkg.sha512"
+    },
+    "System.Collections.Immutable/8.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-AurL6Y5BA1WotzlEvVaIDpqzpIPvYnnldxru8oXJU2yFxFUy3+pNXjXd1ymO+RA0rq0+590Q8gaz2l3Sr7fmqg==",
+      "path": "system.collections.immutable/8.0.0",
+      "hashPath": "system.collections.immutable.8.0.0.nupkg.sha512"
+    },
+    "System.Memory/4.6.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-OEkbBQoklHngJ8UD8ez2AERSk2g+/qpAaSWWCBFbpH727HxDq5ydVkuncBaKcKfwRqXGWx64dS6G1SUScMsitg==",
+      "path": "system.memory/4.6.0",
+      "hashPath": "system.memory.4.6.0.nupkg.sha512"
+    },
+    "System.Numerics.Tensors/8.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-fhODzTe9ON9IzmRfyVeA6L8yXOciMtpq1YufkRVBliggcVKZE+XDxqIn46+yF4PWR6wNPuDpXtPpuY86VcKxUA==",
+      "path": "system.numerics.tensors/8.0.0",
+      "hashPath": "system.numerics.tensors.8.0.0.nupkg.sha512"
+    },
+    "System.Reflection.Emit.Lightweight/4.7.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-a4OLB4IITxAXJeV74MDx49Oq2+PsF6Sml54XAFv+2RyWwtDBcabzoxiiJRhdhx+gaohLh4hEGCLQyBozXoQPqA==",
+      "path": "system.reflection.emit.lightweight/4.7.0",
+      "hashPath": "system.reflection.emit.lightweight.4.7.0.nupkg.sha512"
+    },
+    "System.Threading.Channels/8.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-CMaFr7v+57RW7uZfZkPExsPB6ljwzhjACWW1gfU35Y56rk72B/Wu+sTqxVmGSk4SFUlPc3cjeKND0zktziyjBA==",
+      "path": "system.threading.channels/8.0.0",
+      "hashPath": "system.threading.channels.8.0.0.nupkg.sha512"
     },
     "VPet-Simulator.Core/1.1.0.40": {
       "type": "package",

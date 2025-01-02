@@ -12,23 +12,21 @@ namespace ChatVPet.ChatProcess
     /// </summary>
     /// virtual 意味着你可以继承重写个动态工具库
     /// 不想重写也可以使用 ToolFunction 来实现
-    public class Tool : IInCheck, IKeyWords
+    public class Tool : IInCheck, Iw2vSource
     {
         public Tool()
         {
-            KeyWords = new Dictionary<string, int>();
+            KeyWords = "";
             Args = new List<Arg>();
         }
-        public Tool(string code, string descriptive, Func<Dictionary<string, string>, string?> toolFunction, List<Arg> args, ILocalization localization, bool isImportant = false)
+        public Tool(string code, string descriptive, Func<Dictionary<string, string>, string?> toolFunction, List<Arg> args, ILocalization localization, double important = 2)
         {
             Code = code;
             Descriptive = descriptive;
-            IsImportant = isImportant;
+            Importance = (float)important;
             ToolFunction = toolFunction;
             Args = args;
-            var Words = localization.WordSplit(descriptive);
-            KeyWords = IKeyWords.GetKeyWords(Words);
-            WordsCount = Words.Length;
+            KeyWords = string.Join(" ", localization.WordSplit(descriptive));
         }
 
 
@@ -46,14 +44,10 @@ namespace ChatVPet.ChatProcess
         /// 注: 若无需AI进行二次处理,请退回null !!</returns>
         public virtual string? RunToolFunction(Dictionary<string, string> args) => ToolFunction?.Invoke(args);
 
-        public virtual int InCheck(string message, string[] keywords_list, Dictionary<string, int> keywords_dict)
-        {
-            if (IsImportant)
-            {
-                return 0;
-            }
-            return Math.Max(10, IInCheck.IgnoreValue - ((IKeyWords)this).Score(keywords_dict, keywords_list.Length));
-        }
+        /// <summary>
+        /// 重要性
+        /// </summary>
+        public float Importance { get; set; } = 2;
 
         /// <summary>
         /// 执行的代码
@@ -82,10 +76,16 @@ namespace ChatVPet.ChatProcess
         /// </summary>
         public virtual string Descriptive { get; set; } = "";
         /// <summary>
-        /// 是否是重要的工具,必须加入到工具库中
+        /// 关键字组
         /// </summary>
-        [JsonIgnore] public bool IsImportant { get; set; } = false;
-        [JsonIgnore] public Dictionary<string, int> KeyWords { get; set; }
-        [JsonIgnore] public int WordsCount { get; set; }
+        [JsonIgnore]
+        public string KeyWords { get; set; }
+        /// <summary>
+        /// 向量
+        /// </summary>
+        [JsonIgnore]
+        public float[]? Vector { get; set; }
+        public float InCheck(string message, float similarity) => IInCheck.InCheck(message, similarity, this);
+
     }
 }

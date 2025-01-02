@@ -177,6 +177,8 @@ namespace VPet.Plugin.ChatVPet
                         var audioConfig = AudioConfig.FromDefaultMicrophoneInput();
                         Recognizer = new SpeechRecognizer(speechConfig, audioConfig);
                     }
+
+                    VPetChatProcess.W2VEngine = new W2VEngine(VPetChatProcess);
                 }
                 catch (Exception e)
                 {

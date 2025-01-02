@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,45 +12,38 @@ namespace ChatVPet.ChatProcess
     /// 知识数据库 
     /// </summary>
     /// virtual 意味着你可以继承重写个动态知识库
-    public class KnowledgeDataBase : IKeyWords, IInCheck
+    public class KnowledgeDataBase : Iw2vSource, IInCheck
     {
         public KnowledgeDataBase()
         {
-            KeyWords = new Dictionary<string, int>();
+            KeyWords = "";
         }
-        public KnowledgeDataBase(string knowledgeData, ILocalization localization, bool isImportant = false)
+        public KnowledgeDataBase(string knowledgeData, ILocalization localization, double important = 2)
         {
             KnowledgeData = knowledgeData;
-            IsImportant = isImportant;
-            var Words = localization.WordSplit(knowledgeData);
-            KeyWords = IKeyWords.GetKeyWords(Words);
-            WordsCount = Words.Length;
+            Importance = (float)important;
+            KeyWords = string.Join(" ", localization.WordSplit(knowledgeData));
         }
-        /// <summary>
-        /// 关键字组
-        /// </summary>
-        public virtual Dictionary<string, int> KeyWords { get; set; }
+
         /// <summary>
         /// 知识库数据
         /// </summary>
         public virtual string KnowledgeData { get; set; } = "";
         /// <summary>
-        /// 是否是重要的知识库,必须加入到知识库中
+        /// 重要性
         /// </summary>
-        public virtual bool IsImportant { get; set; } = false;
+        public float Importance { get; set; } = 2;
         /// <summary>
-        /// 该知识库词语总数
+        /// 关键字组
         /// </summary>
-        public int WordsCount { get; set; }
+        public string KeyWords { get; set; }
+        /// <summary>
+        /// 向量
+        /// </summary>
+        [JsonIgnore]
+        public float[]? Vector { get; set; }
 
-        public int InCheck(string message, string[] keywords_list, Dictionary<string, int> keywords_dict)
-        {
-            if (IsImportant)
-            {
-                return 0;
-            }
-            return Math.Max(10, IInCheck.IgnoreValue - ((IKeyWords)this).Score(keywords_dict, keywords_list.Length));
-        }
+        public float InCheck(string message, float similarity) => IInCheck.InCheck(message, similarity, this);
 
     }
 }

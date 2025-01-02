@@ -10,6 +10,7 @@ namespace ChatVPet.ChatProcess
     /// </summary>
     public class VPetChatProcess
     {
+
         /// <summary>
         /// GPT 调用方法
         /// </summary>
@@ -23,15 +24,15 @@ namespace ChatVPet.ChatProcess
         /// </summary>
         [JsonIgnore] public GPTAsk? GPTAskFunction;
         /// <summary>
-        /// 重要性计算方法 判断该段消息是否重要
+        /// 重要性计算方法 判断该段消息是否重要 (eg:可以通过机器学习为每个消息打分)
         /// </summary>
         /// <param name="message">消息[0]Ask [1]Reply</param>
         /// <returns>分数, 范围:0-1</returns>
-        public delegate double CalculateImportance(string[] message);
+        public delegate float CalculateImportance(string[] message);
         /// <summary>
-        /// 
+        /// 重要性计算方法 判断该段消息是否重要
         /// </summary>
-        [JsonIgnore] public CalculateImportance CalImportanceFunction = (x) => 0.5;
+        [JsonIgnore] public CalculateImportance CalImportanceFunction = (x) => 1;
 
         /// <summary>
         /// 知识数据库
@@ -97,6 +98,16 @@ namespace ChatVPet.ChatProcess
         /// 消息最大工具数
         /// </summary>
         public int MaxToolCount { get; set; } = 10;
+
+        /// <summary>
+        /// 词向量引擎
+        /// </summary>
+        public W2VEngine? W2VEngine { get; set; }
+
+        /// <summary>
+        /// 错误格式兼容
+        /// </summary>
+        public bool ErrorFormatCompatible = false;
         /// <summary>
         /// 消息输入聊天内容并获得回复 [注:默认卡线程等待回复,如在UI线程,记得TaskNew]
         /// </summary>
@@ -109,24 +120,42 @@ namespace ChatVPet.ChatProcess
             {
                 throw new Exception("GPTAskFunction is null");
             }
+            if (W2VEngine == null)
+            {
+                throw new Exception("W2VEngine is null");
+            }
+
 
             int position = 0;
 
-            var words = Localization.WordSplit(message);
-            var keywords = IKeyWords.GetKeyWords(words);
+            var vector = W2VEngine.GetQueryVector(message);
+            ////为所有知识库和工具添加向量 已经自动更新
+            //W2VEngine.GetQueryVector(Tools);
+            //W2VEngine.GetQueryVector(KnowledgeDataBases);
+            //W2VEngine.GetQueryVector(Dialogues);
 
-            List<string> knowledgeDataBases = KnowledgeDataBases.Select(x => (x, x.InCheck(message, words, keywords)))
-                    .OrderBy(x => x.Item2).Take(MaxKnowledgeCount).Where(x => x.Item2 < IInCheck.IgnoreValue).Select(x => x.x.KnowledgeData).ToList();
-            List<Tool> tools = Tools.Select(x => (x, x.InCheck(message, words, keywords)))
-                .OrderBy(x => x.Item2)
-                .Take(MaxToolCount)
-                .Where(x => x.Item2 < IInCheck.IgnoreValue).Select(x => x.x).ToList();
-            //List<(Tool x, int)> test = new List<(Tool x, int)>();
-            //foreach(var tool in Tools)
-            //{
-            //    var s = tool.InCheck(message, words, keywords);
-            //    test.Add((tool, s));
-            //}
+            List<string> kdbs = KnowledgeDataBases.Select(x => (x, x.InCheck(message, W2VEngine.ComputeCosineSimilarity(x.Vector!, vector))))
+                    .OrderBy(x => x.Item2).Take(MaxKnowledgeCount).Where(x => x.Item2 < IInCheck.IgnoreValue)
+                    .Select(x => x.x.KnowledgeData).ToList();
+            List<Tool> tools = Tools.Select(x => (x, x.InCheck(message, W2VEngine.ComputeCosineSimilarity(x.Vector!, vector))))
+                .OrderBy(x => x.Item2).Take(MaxToolCount).Where(x => x.Item2 < IInCheck.IgnoreValue).Select(x => x.x).ToList();
+
+#if DEBUG
+            List<(Tool x, float)> testTool = new List<(Tool x, float)>();
+            foreach (var tool in Tools)
+            {
+                var s = tool.InCheck(message, W2VEngine.ComputeCosineSimilarity(tool.Vector!, vector));
+                testTool.Add((tool, s));
+            }
+            List<(KnowledgeDataBase x, float)> testKDB = new List<(KnowledgeDataBase x, float)>();
+            foreach (var kdb in KnowledgeDataBases)
+            {
+                var s = kdb.InCheck(message, W2VEngine.ComputeCosineSimilarity(kdb.Vector!, vector));
+                testKDB.Add((kdb, s));
+            }
+            testTool = testTool.OrderBy(x => x.Item2).ToList();
+            testKDB = testKDB.OrderBy(x => x.Item2).ToList();
+#endif
             List<string[]> history = new List<string[]>();
             if (Dialogues.Count > 0)
             {
@@ -145,7 +174,7 @@ namespace ChatVPet.ChatProcess
                 }
                 if (list.Count > 0)
                 {
-                    List<(Dialogue, int, int)> dialogues = list.Select(x => (x.Item1, x.Item2, x.Item1.InCheck(message, words, keywords)))
+                    List<(Dialogue, int, float)> dialogues = list.Select(x => (x.Item1, x.Item2, x.Item1.InCheck(message, W2VEngine.ComputeCosineSimilarity(x.Item1.Vector!, vector))))
                         .OrderBy(x => x.Item3).ToList();
                     foreach (var (dialogue, index, value) in dialogues)
                     {
@@ -164,7 +193,7 @@ namespace ChatVPet.ChatProcess
                 history.AddRange(willjoin.OrderBy(x => x.Item2).Select(x => x.Item1.ToMessages(Localization)));
             }
 
-            string sysmessage = Localization.ToSystemMessage(SystemDescription, tools, knowledgeDataBases);
+            string sysmessage = Localization.ToSystemMessage(SystemDescription, tools, kdbs);
             bool isToolMessage = false;
 
             if (control.ForceToStop)
@@ -186,23 +215,23 @@ namespace ChatVPet.ChatProcess
                 });
                 return;
             }
-            else if (!respond.Contains(Localization.ToolCall))
+            else if (!respond.Contains(Localization.ToolCall) && !respond.Contains(Localization.Response))
             {
-                ReturnResponse.Invoke(new ProcessResponse()
+                if (ErrorFormatCompatible)
                 {
-                    Reply = "GPTAskFunction return error formart",
-                    IsEnd = true,
-                    IsError = true,
-                    ListPosition = position++
-                });
-                //ReturnResponse.Invoke(new ProcessResponse()
-                //{
-                //    Reply = reply,
-                //    IsEnd = true,
-                //    IsError = false,
-                //    ListPosition = position++
-                //});
-                return;
+                    respond = Localization.Response + "\n" + respond + "\n" + Localization.ToolCall + "\n[]";
+                }
+                else
+                {
+                    ReturnResponse.Invoke(new ProcessResponse()
+                    {
+                        Reply = "GPTAskFunction return error formart",
+                        IsEnd = true,
+                        IsError = true,
+                        ListPosition = position++
+                    });
+                    return;
+                }
             }
 
             var res1 = Sub.Split(respond, '\n' + Localization.ToolCall + '\n', 1).Select(x => x.Trim([' ', '\n', '\r'])).ToList();
@@ -282,7 +311,7 @@ namespace ChatVPet.ChatProcess
             {
                 //最后一个ToolMessage可以有点重要性
                 var last = Dialogues.Last();
-                last.Importance = CalImportanceFunction([last.Question, last.Answer]);
+                last.Importance = (float)CalImportanceFunction([last.Question, last.Answer]);
             }
 
             //发送结束消息
