@@ -15,10 +15,15 @@ namespace ChatVPet.ChatProcess
         /// 大于等于该值为不处理
         /// </summary>
         public static float IgnoreValue = 0.75f;
+
         /// <summary>
-        /// 重要性,会加权到排序分数上. 默认2, 越大越重要, Int.Max为最重要, 0为不处理
+        /// 重要性,会乘法加权到排序分数上. 默认2, 越大越重要性越高
         /// </summary>
-        float Importance { get; }
+        float ImportanceWeight_Muti { get; }
+        /// <summary>
+        /// 重要性,会加法加权到排序分数上. 默认0, 越大越重要性越高
+        /// </summary>
+        float ImportanceWeight_Plus { get; }
         /// <summary>
         /// 检查是否处理, 返回排序分数,范围(0-1), 0为最高优先级, 大于等于IgnoreValue为不处理
         /// </summary>
@@ -28,11 +33,7 @@ namespace ChatVPet.ChatProcess
 
         public static float InCheck(string message, float similarity, IInCheck inCheck)
         {
-            if (inCheck.Importance == int.MaxValue)
-            {
-                return 0;
-            }
-            return Math.Max(0, 1 - similarity * inCheck.Importance);
+            return Math.Max(0, 1 - similarity * inCheck.ImportanceWeight_Muti + inCheck.ImportanceWeight_Plus);
         }
     }
 }

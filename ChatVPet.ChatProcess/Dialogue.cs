@@ -25,10 +25,10 @@ namespace ChatVPet.ChatProcess
         /// 工具调用 (源文本)
         /// </summary>
         public string ToolCall { get; set; } = "";
-        /// <summary>
-        /// 重要性
-        /// </summary>
-        public float Importance { get; set; } = 2;
+
+        public float ImportanceWeight_Muti { get; set; } = 2;
+        public float ImportanceWeight_Plus { get; set; } = 0;
+
 
         /// <summary>
         /// 转换为消息
@@ -41,13 +41,14 @@ namespace ChatVPet.ChatProcess
         public float InCheck(string message, float similarity) => IInCheck.InCheck(message, similarity, this);
 
         public Dialogue() { KeyWords = ""; }
-        public Dialogue(string question, string answer, string toolCall, double importance, ILocalization localization)
+        public Dialogue(string question, string answer, string toolCall, ILocalization localization, double important_muit = 2, double important_plus = 0)
         {
             Question = question;
             Answer = answer;
             ToolCall = toolCall;
             KeyWords = string.Join(" ", localization.WordSplit(question + answer));
-
+            ImportanceWeight_Muti = (float)important_muit;
+            ImportanceWeight_Plus = (float)important_plus;
         }
         /// <summary>
         /// 关键字组

@@ -18,10 +18,11 @@ namespace ChatVPet.ChatProcess
         {
             KeyWords = "";
         }
-        public KnowledgeDataBase(string knowledgeData, ILocalization localization, double important = 2)
+        public KnowledgeDataBase(string knowledgeData, ILocalization localization, double important_muit = 2, double important_plus = 0)
         {
             KnowledgeData = knowledgeData;
-            Importance = (float)important;
+            ImportanceWeight_Muti = (float)important_muit;
+            ImportanceWeight_Plus = (float)important_plus;
             KeyWords = string.Join(" ", localization.WordSplit(knowledgeData));
         }
 
@@ -32,7 +33,8 @@ namespace ChatVPet.ChatProcess
         /// <summary>
         /// 重要性
         /// </summary>
-        public float Importance { get; set; } = 2;
+        public float ImportanceWeight_Muti { get; set; } = 2;
+        public float ImportanceWeight_Plus { get; set; } = 0;
         /// <summary>
         /// 关键字组
         /// </summary>

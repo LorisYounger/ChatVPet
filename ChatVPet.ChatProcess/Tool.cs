@@ -19,11 +19,12 @@ namespace ChatVPet.ChatProcess
             KeyWords = "";
             Args = new List<Arg>();
         }
-        public Tool(string code, string descriptive, Func<Dictionary<string, string>, string?> toolFunction, List<Arg> args, ILocalization localization, double important = 2)
+        public Tool(string code, string descriptive, Func<Dictionary<string, string>, string?> toolFunction, List<Arg> args, ILocalization localization, double important_muit = 2, double important_plus = 0)
         {
             Code = code;
             Descriptive = descriptive;
-            Importance = (float)important;
+            ImportanceWeight_Muti = (float)important_muit;
+            ImportanceWeight_Plus = (float)important_plus;
             ToolFunction = toolFunction;
             Args = args;
             KeyWords = string.Join(" ", localization.WordSplit(descriptive));
@@ -44,10 +45,8 @@ namespace ChatVPet.ChatProcess
         /// 注: 若无需AI进行二次处理,请退回null !!</returns>
         public virtual string? RunToolFunction(Dictionary<string, string> args) => ToolFunction?.Invoke(args);
 
-        /// <summary>
-        /// 重要性
-        /// </summary>
-        public float Importance { get; set; } = 2;
+        public float ImportanceWeight_Muti { get; set; } = 2;
+        public float ImportanceWeight_Plus { get; set; } = 0;
 
         /// <summary>
         /// 执行的代码

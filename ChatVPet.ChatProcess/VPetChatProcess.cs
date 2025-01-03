@@ -311,7 +311,7 @@ namespace ChatVPet.ChatProcess
             {
                 //最后一个ToolMessage可以有点重要性
                 var last = Dialogues.Last();
-                last.Importance = (float)CalImportanceFunction([last.Question, last.Answer]);
+                last.ImportanceWeight_Muti = (float)CalImportanceFunction([last.Question, last.Answer]);
             }
 
             //发送结束消息
