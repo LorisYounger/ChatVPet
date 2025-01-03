@@ -22,12 +22,8 @@ namespace VPet.Plugin.ChatVPet
         /// <summary>
         /// 让桌宠自己买东西吃
         /// </summary>
-        public string? ToolTakeItem(Dictionary<string, string> args)
+        public string? ToolTakeItem(int itemid)
         {
-            if (!args.TryGetValue("itemID", out string? itemstr) || !int.TryParse(itemstr, out int itemid))
-            {
-                return null;
-            }
             if (itemid < 0 || itemid >= MW.Foods.Count)
             {
                 return null;
@@ -54,12 +50,8 @@ namespace VPet.Plugin.ChatVPet
         /// <summary>
         /// 让桌宠自己工作
         /// </summary>
-        public string? ToolDoWork(Dictionary<string, string> args)
+        public string? ToolDoWork(int itemid)
         {
-            if (!args.TryGetValue("activeID", out string? itemstr) || !int.TryParse(itemstr, out int itemid))
-            {
-                return null;
-            }
             if (itemid < 0 || itemid >= MW.Core.Graph.GraphConfig.Works.Count)
             {
                 return null;
@@ -68,6 +60,7 @@ namespace VPet.Plugin.ChatVPet
             MW.Dispatcher.Invoke(() => MW.Main.ToolBar.StartWork(work.Double(MW.Set["workmenu"].GetInt("double_" + work.Name, 1))));
             return null;
         }
+
         public string? ToolStopWork(Dictionary<string, string> args)
         {
             MW.Main.WorkTimer.Stop(reason: FinishWorkInfo.StopReason.MenualStop);
@@ -154,7 +147,7 @@ namespace VPet.Plugin.ChatVPet
             }
             completions.messages.Add(new Message() { role = Message.RoleType.user, content = message });
             var resp = completions.GetResponse(CGPTClient.APIUrl, CGPTClient.APIKey, CGPTClient.Proxy);
-            var reply = resp.GetMessageContent();
+            var reply = resp!.GetMessageContent();
             if (resp.choices.Length == 0)
             {
                 return "请检查API token设置".Translate();
@@ -165,7 +158,7 @@ namespace VPet.Plugin.ChatVPet
             }
             temptoken = resp.usage.total_tokens;
             TokenCount = temptoken;
-            return reply;
+            return reply!;
         }
         public void RunDIY(string content)
         {
