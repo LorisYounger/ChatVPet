@@ -73,6 +73,12 @@ namespace ChatVPet.ChatProcess
                     ];
                     IDataView trainData = MLContext.Data.LoadFromEnumerable(data);
 
+                    // 特征提取
+                    // 创建自定义停用词移除器的选项
+                    var stopWordsOptions = new CustomStopWordsRemovingEstimator.Options
+                    {
+                        StopWords = CP.Localization.StopWords // 设置自定义停用词列表
+                    };
                     var options = new TextFeaturizingEstimator.Options()
                     {
                         WordFeatureExtractor = new WordBagEstimator.Options()
@@ -86,6 +92,7 @@ namespace ChatVPet.ChatProcess
                         KeepNumbers = false,
                         KeepDiacritics = false,
                         KeepPunctuations = false,
+                        StopWordsRemoverOptions = stopWordsOptions
                     };
 
                     var pipeline = MLContext.Transforms.Text.FeaturizeText("Vector", options, nameof(Iw2vSource.KeyWords));

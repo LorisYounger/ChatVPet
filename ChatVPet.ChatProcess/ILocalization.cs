@@ -50,6 +50,10 @@ namespace ChatVPet.ChatProcess
         /// </summary>
         string ToolReturn { get; }
         /// <summary>
+        /// 停用词
+        /// </summary>
+        string[] StopWords { get; }
+        /// <summary>
         /// 生成系统消息
         /// </summary>
         /// <param name="system">原系统消息</param>
@@ -79,7 +83,7 @@ namespace ChatVPet.ChatProcess
             sb.AppendLine(ToolCallContent);
             sb.AppendLine("```");
             return sb.ToString();
-        }  
+        }
 
         /// <summary>
         /// 简体中文
@@ -104,6 +108,8 @@ namespace ChatVPet.ChatProcess
 
             public JiebaNet.Segmenter.JiebaSegmenter Segmenter = new JiebaNet.Segmenter.JiebaSegmenter();
             public string[] WordSplit(string text) => Segmenter.Cut(text).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+
+            public string[] StopWords => [.. Properties.Resources.StopWord_zh_hans.Split(' '), .. Properties.Resources.StopWord_en.Split(' ')];
         }
         /// <summary>
         /// 英语
@@ -127,6 +133,8 @@ namespace ChatVPet.ChatProcess
             public string ToolReturn => "Tool `{0}` return:\n```\n{1}\n```\n";
 
             public string[] WordSplit(string text) => text.ToLower().Split(' ').Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+
+            public string[] StopWords => Properties.Resources.StopWord_en.Split(' ');
         }
         /// <summary>
         /// 繁体中文
@@ -151,6 +159,8 @@ namespace ChatVPet.ChatProcess
 
             public JiebaNet.Segmenter.JiebaSegmenter Segmenter = new JiebaNet.Segmenter.JiebaSegmenter();
             public string[] WordSplit(string text) => Segmenter.Cut(text).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+            public string[] StopWords => [.. Properties.Resources.StopWord_zh_hant.Split(' '), .. Properties.Resources.StopWord_en.Split(' ')];
+
         }
     }
 }

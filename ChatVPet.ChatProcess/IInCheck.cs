@@ -33,7 +33,7 @@ namespace ChatVPet.ChatProcess
 
         public static float InCheck(string message, float similarity, IInCheck inCheck)
         {
-            return Math.Max(0, 1 - similarity * inCheck.ImportanceWeight_Muti + inCheck.ImportanceWeight_Plus);
+            return Math.Max(0, 1 - similarity * inCheck.ImportanceWeight_Muti - inCheck.ImportanceWeight_Plus);
         }
     }
 }

@@ -140,7 +140,7 @@ namespace ChatVPet.ChatProcess
             List<Tool> tools = Tools.Select(x => (x, x.InCheck(message, W2VEngine.ComputeCosineSimilarity(x.Vector!, vector))))
                 .OrderBy(x => x.Item2).Take(MaxToolCount).Where(x => x.Item2 < IInCheck.IgnoreValue).Select(x => x.x).ToList();
 
-#if DEBUG
+
             List<(Tool x, float)> testTool = new List<(Tool x, float)>();
             foreach (var tool in Tools)
             {
@@ -155,7 +155,8 @@ namespace ChatVPet.ChatProcess
             }
             testTool = testTool.OrderBy(x => x.Item2).ToList();
             testKDB = testKDB.OrderBy(x => x.Item2).ToList();
-#endif
+
+
             List<string[]> history = new List<string[]>();
             if (Dialogues.Count > 0)
             {
@@ -252,8 +253,9 @@ namespace ChatVPet.ChatProcess
                 ListPosition = position++
             });
 
-            //添加聊天记录到历史            
-            Dialogues.Add(new Dialogue(message, reply, res1[1], (isToolMessage ? 0 : CalImportanceFunction([message, reply])), Localization));
+            //添加聊天记录到历史
+            var msgimp = (isToolMessage ? 0 : CalImportanceFunction([message, reply]));
+            Dialogues.Add(new Dialogue(message, reply, res1[1], Localization, msgimp * 4, msgimp / 4));
 
             List<ToolCall> toolcalls;
             var jsetting = ToolCall.jsonsetting;
