@@ -18,7 +18,9 @@ namespace VPet.Plugin.ChatVPet.dynKnowDB
         public DynKDBStatic(IMainWindow mw, ILocalization localization)
         {
             MW = mw;
-            KeyWords = string.Join(" ", localization.WordSplit("桌宠名称:{0},金钱(钱),数据,体力,心情,饱腹度,口渴度,好感度,当前状态".Translate(MW.GameSavesData.GameSave.Name)));
+            KeyWords = string.Join(" ", localization.WordSplit("桌宠名称:{0} 金钱(钱) 数据 体力 心情 饱腹度 口渴度 好感度 当前状态 饥饿 饿 口渴 渴".Translate(MW.GameSavesData.GameSave.Name)));
+            ImportanceWeight_Plus = 0.1f;
+            ImportanceWeight_Muti = 1.5f;
         }
         public override string KnowledgeData
         {
