@@ -23,7 +23,7 @@ namespace VPet.Plugin.ChatVPet.dynKnowDB
         {
             MW = mw;
 
-            KeyWords = string.Join(" ", localization.WordSplit("电脑信息监控 CPU 内存 占用".Translate(MW.GameSavesData.GameSave.Name)));
+            KeyWords = string.Join(" ", localization.WordSplit("电脑 信息 监控 状况 CPU 内存 占用".Translate(MW.GameSavesData.GameSave.Name)));
         }
         public override string KnowledgeData
         {
@@ -32,11 +32,11 @@ namespace VPet.Plugin.ChatVPet.dynKnowDB
                 try
                 {
                     float C = CpuCounter.NextValue();
-                    float CL = RamCLCounter.NextValue();
-                    float AVA = RamAVACounter.NextValue();
+                    float CL = RamCLCounter.NextValue() / 1048576;
+                    float AVA = RamAVACounter.NextValue() / 1048576;
                     float R = (CL - AVA) / CL * 100;
 
-                    return "CPU占用率: {0}%\n内存占用率: {1}%\n可用内存: {2}\n所有内存: {3}".Translate(C, R, AVA, CL);
+                    return "CPU占用率: {0}%\n内存占用率: {1}%\n可用内存: {2}MB\n所有内存: {3}MB".Translate(C, R, AVA, CL);
                 }
                 catch
                 {
