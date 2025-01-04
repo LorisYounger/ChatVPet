@@ -20,21 +20,12 @@ namespace VPet.Plugin.ChatVPet
 {
     public class CVPTTalkAPI : TalkBox
     {
-        public TextBox tb;
         public Button btnvoice;
         public CVPTTalkAPI(CVPPlugin mainPlugin) : base(mainPlugin)
         {
             Plugin = mainPlugin;
-            Grid mg = ((Grid)((Border)Content).Child);
-            foreach (var v in mg.Children)
-            {
-                if (v is TextBox t)
-                {
-                    tb = t;
-                    break;
-                }
-            }
-            mg.ColumnDefinitions.Add(new ColumnDefinition() { Width = new GridLength(0, GridUnitType.Auto) });
+
+            MainGrid.ColumnDefinitions.Add(new ColumnDefinition() { Width = new GridLength(0, GridUnitType.Auto) });
             btnvoice = new Button()
             {
                 Content = "\uEF50",
@@ -53,7 +44,7 @@ namespace VPet.Plugin.ChatVPet
             btnvoice.PreviewMouseUp += (s, e) => voicecontinue = false;
             ButtonHelper.SetCornerRadius(btnvoice, new CornerRadius(4));
             Grid.SetColumn(btnvoice, 3);
-            mg.Children.Add(btnvoice);
+            MainGrid.Children.Add(btnvoice);
         }
         private bool voicecontinue = false;
         private bool voiceisworking = false;
@@ -77,7 +68,7 @@ namespace VPet.Plugin.ChatVPet
                     {
                         continue;
                     }
-                    Dispatcher.Invoke(() => tb.AppendText(rr.Text));
+                    Dispatcher.Invoke(() => tbTalk.AppendText(rr.Text));
                 }
                 catch (Exception e)
                 {

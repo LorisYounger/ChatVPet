@@ -11,7 +11,7 @@
           "ChatGPT.API.Framework": "1.1.2",
           "ChatVPet.ChatProcess": "1.0.0",
           "Microsoft.CognitiveServices.Speech": "1.42.0",
-          "VPet-Simulator.Windows.Interface": "1.1.0.40"
+          "VPet-Simulator.Windows.Interface": "1.1.0.47"
         },
         "runtime": {
           "VPet.Plugin.ChatVPet.dll": {}
@@ -644,7 +644,7 @@
           }
         }
       },
-      "VPet-Simulator.Windows.Interface/1.1.0.40": {
+      "VPet-Simulator.Windows.Interface/1.1.0.47": {
         "dependencies": {
           "VPet-Simulator.Core": "1.1.0.40"
         },
@@ -803,12 +803,12 @@
       "path": "vpet-simulator.core/1.1.0.40",
       "hashPath": "vpet-simulator.core.1.1.0.40.nupkg.sha512"
     },
-    "VPet-Simulator.Windows.Interface/1.1.0.40": {
+    "VPet-Simulator.Windows.Interface/1.1.0.47": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-WB45kdT6/2Ho/6X5ZNuaMyr6Q6K+uokRs0L2B/QQ0qOBHrOV1WLcusAy46VHrKA8Ytag5sXzMe6Dah5rShRjDA==",
-      "path": "vpet-simulator.windows.interface/1.1.0.40",
-      "hashPath": "vpet-simulator.windows.interface.1.1.0.40.nupkg.sha512"
+      "sha512": "sha512-RoADeevye4j7jqEbvE0o9jPclzXsz0GmEkC95H3XB8ooklXgpawp0vXI8iU9ZrJWIjjw/2AZjMk3h3Zrg4kUew==",
+      "path": "vpet-simulator.windows.interface/1.1.0.47",
+      "hashPath": "vpet-simulator.windows.interface.1.1.0.47.nupkg.sha512"
     },
     "ChatVPet.ChatProcess/1.0.0": {
       "type": "project",

@@ -23,52 +23,34 @@ namespace VPet.Plugin.ChatVPet
         public VPetChatProcess VPetChatProcess = new VPetChatProcess();
         public CVPPlugin(IMainWindow mainwin) : base(mainwin)
         {
-            //TODO: 在MW里添加个公共变量的位置,方便插件之间的交互
-            //if (MW.Core.Graph.CommConfig.TryGetValue("CVPKnowledgeDataBase", out object? kdbo) && kdbo is List<KnowledgeDataBase> kdb)
-            //{
-            //    VPetChatProcess.KnowledgeDataBases = kdb;
-            //}
-            //else
-            //{
-            //    MW.Core.Graph.CommConfig["CVPKnowledgeDataBase"] = VPetChatProcess.KnowledgeDataBases;
-            //    needinitknowledge = true;
-            //}
-            //if (MW.Core.Graph.CommConfig.TryGetValue("CVPTools", out object? tbo) && tbo is List<Tool> tb)
-            //{
-            //    VPetChatProcess.Tools = tb;
-            //}
-            //else
-            //{
-            //    MW.Core.Graph.CommConfig["CVPTools"] = VPetChatProcess.Tools;
-            //    needinittool = true;
-            //}
+            //在MW里添加个公共变量的位置,方便插件之间的交互
+            if (MW.DynamicResources.TryGetValue("CVPKnowledgeDataBase", out object? kdbo) && kdbo is List<KnowledgeDataBase> kdb)
+            {
+                VPetChatProcess.KnowledgeDataBases = kdb;
+            }
+            else
+            {
+                MW.DynamicResources["CVPKnowledgeDataBase"] = VPetChatProcess.KnowledgeDataBases;
+                needinitknowledge = true;
+            }
+            if (MW.DynamicResources.TryGetValue("CVPTools", out object? tbo) && tbo is List<Tool> tb)
+            {
+                VPetChatProcess.Tools = tb;
+            }
+            else
+            {
+                MW.DynamicResources["CVPTools"] = VPetChatProcess.Tools;
+                needinittool = true;
+            }
         }
         public ChatGPTClient? CGPTClient;
         public SpeechRecognizer? Recognizer;
         bool needinitknowledge = false;
         bool needinittool = false;
         public CVPTTalkAPI? TalkAPI;
-        //TODO: 2轮加载Plugin
+
         public override void LoadPlugin()
-        {
-            if (MW.Core.Graph.CommConfig.TryGetValue("CVPKnowledgeDataBase", out object? kdbo) && kdbo is List<KnowledgeDataBase> kdb)
-            {
-                VPetChatProcess.KnowledgeDataBases = kdb;
-            }
-            else
-            {
-                MW.Core.Graph.CommConfig["CVPKnowledgeDataBase"] = VPetChatProcess.KnowledgeDataBases;
-                needinitknowledge = true;
-            }
-            if (MW.Core.Graph.CommConfig.TryGetValue("CVPTools", out object? tbo) && tbo is List<Tool> tb)
-            {
-                VPetChatProcess.Tools = tb;
-            }
-            else
-            {
-                MW.Core.Graph.CommConfig["CVPTools"] = VPetChatProcess.Tools;
-                needinittool = true;
-            }
+        {            
             TalkAPI = new CVPTTalkAPI(this);
             MW.TalkAPI.Add(TalkAPI);
             var menuItem = new MenuItem()
@@ -84,7 +66,7 @@ namespace VPet.Plugin.ChatVPet
             {
                 try
                 {
-                    if (MW.Core.Graph.CommConfig.TryGetValue("CVPLC", out object? lc) && lc is ILocalization il)
+                    if (MW.DynamicResources.TryGetValue("CVPLC", out object? lc) && lc is ILocalization il)
                     {
                         VPetChatProcess.Localization = il;
                     }
