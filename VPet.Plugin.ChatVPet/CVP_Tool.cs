@@ -218,5 +218,48 @@ namespace VPet.Plugin.ChatVPet
                 }
             }
         }
+
+        public string? ToolModifyState(Dictionary<string, string> args)
+        {
+            if (args.TryGetValue("exp", out string? exp))
+            {
+                if (int.TryParse(exp, out int expi))
+                {
+                    var max = MW.GameSavesData.GameSave.LevelUpNeed() * 0.1;
+                    SideMessage += "\n" + "经验值".Translate() + " " + ExtensionFunction.ValueToPlusPlus(expi, 1 / 4, 6);
+                    MW.Core.Save.Exp += Math.Max(-max, Math.Min(expi, max));
+                    return null;
+                }
+            }
+            if (args.TryGetValue("money", out string? money))
+            {
+                if (double.TryParse(money, out double moneyi))
+                {
+                    SideMessage += "\n" + "金钱".Translate() + " " + ExtensionFunction.ValueToPlusPlus(moneyi, 1 / 100, 6);
+                    MW.Core.Save.Money += Math.Max(-1000, Math.Min(moneyi, 1000));
+                    return null;
+                }
+            }
+            if (args.TryGetValue("feeling", out string? feeling))
+            {
+                if (double.TryParse(feeling, out double feelingi))
+                {
+                    SideMessage += "\n" + "心情".Translate() + " " + ExtensionFunction.ValueToPlusPlus(feelingi, 1 / 3, 6);
+                    var max = MW.Core.Save.FeelingMax * 0.5;
+                    MW.Core.Save.Feeling += Math.Max(-max, Math.Min(feelingi, max));
+                    return null;
+                }
+            }
+            if (args.TryGetValue("likability", out string? likability))
+            {
+                if (double.TryParse(likability, out double likabilityi))
+                {
+                    SideMessage += "\n" + "好感度".Translate() + " " + ExtensionFunction.ValueToPlusPlus(likabilityi, 1.5, 6);
+                    MW.Core.Save.Likability += Math.Max(-10, Math.Min(likabilityi, 10));
+                    return null;
+                }
+            }
+            return null;
+        }
     }
 }

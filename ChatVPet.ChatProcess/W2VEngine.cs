@@ -84,8 +84,8 @@ namespace ChatVPet.ChatProcess
                         WordFeatureExtractor = new WordBagEstimator.Options()
                         {
                             // 这里设置的是 1-gram, 2-gram 和 3-gram 的最大特征数量
-                            MaximumNgramsCount = [512, 256, 64],
-                            NgramLength = 3, // 提取 1-gram 和 2-gram
+                            //MaximumNgramsCount = [512, 256, 64],
+                            //NgramLength = 3, // 提取 1-gram 和 2-gram
                             SkipLength = 0, // 不跳过任何词
                             Weighting = NgramExtractingEstimator.WeightingCriteria.TfIdf
                         },

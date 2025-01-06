@@ -15,6 +15,7 @@ using Newtonsoft.Json;
 using Microsoft.CognitiveServices.Speech;
 using Microsoft.CognitiveServices.Speech.Audio;
 using VPet_Simulator.Core;
+using static ChatVPet.ChatProcess.Tool;
 
 namespace VPet.Plugin.ChatVPet
 {
@@ -48,9 +49,12 @@ namespace VPet.Plugin.ChatVPet
         bool needinitknowledge = false;
         bool needinittool = false;
         public CVPTTalkAPI? TalkAPI;
-
+        /// <summary>
+        /// 侧边消息,随着输出输出
+        /// </summary>
+        public string SideMessage = "";
         public override void LoadPlugin()
-        {            
+        {
             TalkAPI = new CVPTTalkAPI(this);
             MW.TalkAPI.Add(TalkAPI);
             var menuItem = new MenuItem()
@@ -124,6 +128,12 @@ namespace VPet.Plugin.ChatVPet
                         VPetChatProcess.Tools.Add(new Tool("touchhead", "摸桌宠的头(脑袋)".Translate(), ToolTouchHead, [], VPetChatProcess.Localization));
                         VPetChatProcess.Tools.Add(new Tool("touchbody", "摸桌宠的身体(肚子)".Translate(), ToolTouchBody, [], VPetChatProcess.Localization));
                         VPetChatProcess.Tools.Add(new Tool("move", "让桌宠自由移动(走动,走路)".Translate(), ToolMove, [], VPetChatProcess.Localization));
+                        //VPetChatProcess.Tools.Add(new Tool("modifystate", "增加减少桌宠状态(经验值,金钱,心情,好感度)".Translate(), ToolModifyState, [
+                        //    new Arg(){  Name = "exp",Description="[double?]增加经验值(负数为扣除)".Translate() },
+                        //    new Arg(){  Name = "money",Description="[double?]增加金钱(负数为扣除)".Translate() },
+                        //    new Arg(){  Name = "feeling",Description="[double?]增加心情值(负数为扣除)".Translate() },
+                        //    new Arg(){  Name = "likability",Description="[double?]增加好感度(负数为扣除)".Translate() }
+                        //    ], VPetChatProcess.Localization));
                         //吃东西和工作直接加到工具中
                         for (int i = 0; i < MW.Foods.Count; i++)
                         {

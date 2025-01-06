@@ -79,19 +79,10 @@ namespace VPet.Plugin.ChatVPet
         }
         protected CVPPlugin Plugin;
         public override string APIName => "ChatVPetProcess";
-        public static string[] like_str = new string[] { "陌生", "普通", "喜欢", "爱" };
+        public static string[] like_str = ["完全陌生", "稍微了解", "普通朋友", "好朋友", "喜欢", "信任", "亲密", "爱慕"];
         public static int like_ts(int like)
         {
-            if (like > 50)
-            {
-                if (like < 100)
-                    return 1;
-                else if (like < 200)
-                    return 2;
-                else
-                    return 3;
-            }
-            return 0;
+            return int.Max(7, (int)Math.Sqrt(like / 16) - 2);
         }
         public override void Responded(string content)
         {
