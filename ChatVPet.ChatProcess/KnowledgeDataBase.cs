@@ -33,8 +33,8 @@ namespace ChatVPet.ChatProcess
         /// <summary>
         /// 重要性
         /// </summary>
-        public float ImportanceWeight_Muti { get; set; } = 2;
-        public float ImportanceWeight_Plus { get; set; } = 0;
+        public float ImportanceWeight_Muti { get; set; } = 2.2f;//知识库包含很多字,所以为了加大权重,默认多一点
+        public float ImportanceWeight_Plus { get; set; } = 0.01f;
         /// <summary>
         /// 关键字组
         /// </summary>

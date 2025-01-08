@@ -81,7 +81,7 @@ namespace VPet.Plugin.ChatVPet
             tbMaxKnow.Text = plugin.MaxKnowledgeCount.ToString();
             tbMaxTool.Text = plugin.MaxToolCount.ToString();
             tbMaxRound.Text = plugin.MaxRecallCount.ToString();
-            
+
 
             //显示现有知识库
             tbKnow.Text = plugin.KnowledgeDataBase;
@@ -174,6 +174,20 @@ namespace VPet.Plugin.ChatVPet
                 lbKnow.ItemsSource = Knowledges.Where(x => x.Contains(search));
                 lbHistory.ItemsSource = Dialogues.Where(x => x.Contains(search));
                 lbTool.ItemsSource = Tools.Where(x => x.Contains(search));
+            }
+        }
+
+        private void lb_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ListBox? listBox = sender as ListBox;
+            if (listBox?.SelectedItem != null)
+            {
+                ToolTip toolTip = new ToolTip
+                {
+                    Content = listBox.SelectedItem
+                };
+                listBox.ToolTip = toolTip;
+                toolTip.IsOpen = true;
             }
         }
     }

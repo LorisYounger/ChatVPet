@@ -209,13 +209,13 @@
                             pu:TextBoxHelper.Watermark="{ll:Str '输入文本搜索数据库'}" PreviewKeyDown="tbSeachDB_PreviewKeyDown" />
                     <TabControl>
                         <TabItem Header="{ll:Str 知识库}">
-                            <ListBox x:Name="lbKnow" MaxHeight="500" />
+                            <ListBox x:Name="lbKnow" MaxHeight="500" SelectionChanged="lb_SelectionChanged" />
                         </TabItem>
                         <TabItem Header="{ll:Str 工具库}">
-                            <ListBox x:Name="lbTool" MaxHeight="500" />
+                            <ListBox x:Name="lbTool" MaxHeight="500" SelectionChanged="lb_SelectionChanged" />
                         </TabItem>
                         <TabItem Header="{ll:Str 聊天记录}">
-                            <ListBox x:Name="lbHistory" MaxHeight="500" />
+                            <ListBox x:Name="lbHistory" MaxHeight="500" SelectionChanged="lb_SelectionChanged" />
                         </TabItem>
                     </TabControl>
                 </StackPanel>
