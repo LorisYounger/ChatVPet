@@ -16,9 +16,9 @@ namespace ChatVPet.ChatProcess
         /// </summary>
         /// <param name="system">系统消息</param>
         /// <param name="historys">历史消息</param>
-        /// <param name="message">当前消息</param>
+        /// <param name="input">当前消息</param>
         /// <returns>返回的文本</returns>
-        public delegate string GPTAsk(string system, List<string[]> historys, string message);
+        public delegate string GPTAsk(string system, List<string[]> historys, string input);
         /// <summary>
         /// GPT 调用方法
         /// </summary>
@@ -85,7 +85,10 @@ namespace ChatVPet.ChatProcess
                 if (KnowledgeDataBases.Find(x => x.KnowledgeData == knowledge) == null)
                     KnowledgeDataBases.Add(new KnowledgeDataBase(knowledge, Localization));
             }
+            if (W2VEngine != null)
+                W2VEngine.NeedUpdate = true;
         }
+
         /// <summary>
         /// 消息最大历史记录数
         /// </summary>
@@ -129,10 +132,10 @@ namespace ChatVPet.ChatProcess
             int position = 0;
 
             var vector = W2VEngine.GetQueryVector(message);
-            ////为所有知识库和工具添加向量 已经自动更新
+            ////为所有知识库和工具添加向量 已经自动更新 除了新插入的消息可能需要手动更新
             //W2VEngine.GetQueryVector(Tools);
             //W2VEngine.GetQueryVector(KnowledgeDataBases);
-            //W2VEngine.GetQueryVector(Dialogues);
+            W2VEngine.GetQueryVector(Dialogues);
 
             List<string> kdbs = KnowledgeDataBases.Select(x => (x, x.InCheck(message, W2VEngine.ComputeCosineSimilarity(x.Vector!, vector))))
                     .OrderBy(x => x.Item2).Take(MaxKnowledgeCount).Where(x => x.Item2 < IInCheck.IgnoreValue)
@@ -253,10 +256,8 @@ namespace ChatVPet.ChatProcess
                 ListPosition = position++
             });
 
-            //添加聊天记录到历史
-            var msgimp = (isToolMessage ? 0 : CalImportanceFunction([message, reply]));
-            Dialogues.Add(new Dialogue(message, reply, res1[1], Localization, msgimp * 4, msgimp / 4));
 
+            //工具调用
             List<ToolCall> toolcalls;
             var jsetting = ToolCall.jsonsetting;
             if (!res1[1].StartsWith('[') || !res1[1].EndsWith(']'))
@@ -267,10 +268,21 @@ namespace ChatVPet.ChatProcess
                     if (tc != null)
                         toolcalls.Add(tc);
                 }
+                else if (res1[1].StartsWith('[') && res1[1].EndsWith("]}"))
+                    toolcalls = JsonConvert.DeserializeObject<List<ToolCall>>(res1[1][..^1], jsetting) ?? [];
                 else
-                    toolcalls = new List<ToolCall>();
+                    toolcalls = [];
             else
                 toolcalls = JsonConvert.DeserializeObject<List<ToolCall>>(res1[1], jsetting) ?? [];
+            if (toolcalls == null)
+            {
+                toolcalls = new List<ToolCall>();
+            }
+
+            //添加聊天记录到历史
+            var msgimp = (isToolMessage ? 0 : CalImportanceFunction([message, reply]));//标准化工具内容,兼容不是很聪明的AI
+            Dialogues.Add(new Dialogue(message, reply, JsonConvert.SerializeObject(toolcalls), Localization, msgimp * 4, msgimp / 4));
+
             string toolreturn = "";
             //处理工具
             foreach (var tc in toolcalls)
