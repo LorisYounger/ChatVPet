@@ -44,8 +44,9 @@ namespace ChatVPet.ChatProcess
         /// <returns> 如果有返回值, 则返回值为工具的输出
         /// 注: 若无需AI进行二次处理,请退回null !!</returns>
         public virtual string? RunToolFunction(Dictionary<string, string> args) => ToolFunction?.Invoke(args);
-
+        [JsonIgnore]
         public float ImportanceWeight_Muti { get; set; } = 2;
+        [JsonIgnore]
         public float ImportanceWeight_Plus { get; set; } = 0;
 
         /// <summary>

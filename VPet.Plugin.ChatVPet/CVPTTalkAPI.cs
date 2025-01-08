@@ -79,11 +79,11 @@ namespace VPet.Plugin.ChatVPet
         }
         protected CVPPlugin Plugin;
         public override string APIName => "ChatVPetProcess";
-        public static string[] like_str = ["完全陌生", "稍微了解", "普通朋友", "好朋友", "喜欢", "信任", "亲密", "爱慕"];
-        public static int like_ts(int like)
-        {
-            return int.Max(7, (int)Math.Sqrt(like / 16) - 2);
-        }
+        //public static string[] like_str = ["完全陌生", "稍微了解", "普通朋友", "好朋友", "喜欢", "信任", "亲密", "爱慕"];
+        //public static int like_ts(int like)
+        //{
+        //    return int.Max(7, (int)Math.Sqrt(like / 16) - 2);
+        //}
         public override void Responded(string content)
         {
             if (string.IsNullOrEmpty(content))
@@ -97,10 +97,6 @@ namespace VPet.Plugin.ChatVPet
                 return;
             }
             Dispatcher.Invoke(() => this.IsEnabled = false);
-            if (Plugin.AllowSubmit)
-            {
-                Plugin.upquestion = content;
-            }
             try
             {
                 var pc = new ProcessControl();
@@ -126,15 +122,19 @@ namespace VPet.Plugin.ChatVPet
                         }
                         Plugin.SideMessage = "";
                         DisplayThinkToSayRndAutoNoForce(pr.Reply, showtxt);
-                        if (Plugin.AllowSubmit)
-                            Plugin.upresponse = pr.Reply;
                     }
                     if (pr.IsEnd || pr.IsError)
                     {//结束前的处理
                         Dispatcher.Invoke(() => this.IsEnabled = true);
                         if (Plugin.AllowSubmit && !pr.IsError)
                         {
-                            Plugin.UploadMessage();
+                            string[]? msg = Plugin.VPetChatProcess.Dialogues.LastOrDefault()?.ToMessages(Plugin.VPetChatProcess.Localization);
+                            if (msg != null)
+                            {
+                                Plugin.upquestion = content;
+                                Plugin.upresponse = msg[1];
+                                Plugin.UploadMessage();
+                            }
                         }
                     }
                     else if (pr.ListPosition >= Plugin.MaxRecallCount)

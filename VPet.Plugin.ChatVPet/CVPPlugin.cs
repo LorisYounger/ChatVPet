@@ -229,7 +229,7 @@ namespace VPet.Plugin.ChatVPet
                 };
                 var content = JsonConvert.SerializeObject(pu);
 
-                string _url = "https://localhost:7166/SubMitProcess";
+                string _url = "https://aiopen.exlb.net:5810/SubMitProcess";
                 // 参数
                 var request = (HttpWebRequest)WebRequest.Create(_url);
                 request.Method = "POST";

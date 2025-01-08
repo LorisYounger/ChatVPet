@@ -179,16 +179,24 @@ namespace VPet.Plugin.ChatVPet
 
         private void lb_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            ListBox? listBox = sender as ListBox;
-            if (listBox?.SelectedItem != null)
-            {
-                ToolTip toolTip = new ToolTip
+            if (sender is ListBox listBox)
+                if (listBox?.SelectedItem != null)
                 {
-                    Content = listBox.SelectedItem
-                };
-                listBox.ToolTip = toolTip;
-                toolTip.IsOpen = true;
-            }
+                    if (listBox.ToolTip is not ToolTip toolTip)
+                    {
+                        toolTip = new ToolTip()
+                        {
+                            PlacementTarget = listBox,                            
+                            StaysOpen = false
+                        };
+                        listBox.ToolTip = toolTip;
+                        //ToolTipService.SetShowDuration(listBox, 6000);
+                    }
+                    toolTip.IsOpen = false;
+                    toolTip.Content = listBox.SelectedItem;
+                    toolTip.IsOpen = true;
+                }
+            //listBox.ToolTip = listBox.SelectedItem;
         }
     }
 }
