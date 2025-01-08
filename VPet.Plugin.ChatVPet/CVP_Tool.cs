@@ -22,13 +22,8 @@ namespace VPet.Plugin.ChatVPet
         /// <summary>
         /// 让桌宠自己买东西吃
         /// </summary>
-        public string? ToolTakeItem(int itemid)
-        {
-            if (itemid < 0 || itemid >= MW.Foods.Count)
-            {
-                return null;
-            }
-            Food item = MW.Foods[itemid];
+        public string? ToolTakeItem(Food item)
+        {            
             //看是什么模式
             if (MW.Set.EnableFunction)
             {//$10以内的食物允许赊账
@@ -50,13 +45,8 @@ namespace VPet.Plugin.ChatVPet
         /// <summary>
         /// 让桌宠自己工作
         /// </summary>
-        public string? ToolDoWork(int itemid)
+        public string? ToolDoWork(GraphHelper.Work work)
         {
-            if (itemid < 0 || itemid >= MW.Core.Graph.GraphConfig.Works.Count)
-            {
-                return null;
-            }
-            var work = MW.Core.Graph.GraphConfig.Works[itemid];
             MW.Dispatcher.Invoke(() => MW.Main.ToolBar.StartWork(work.Double(MW.Set["workmenu"].GetInt("double_" + work.Name, 1))));
             return null;
         }
@@ -158,6 +148,12 @@ namespace VPet.Plugin.ChatVPet
             }
             temptoken = resp.usage.total_tokens;
             TokenCount = temptoken;
+            if (AllowSubmit)
+            {
+                upsysmessage = system;
+                upquestion = message;
+                uphistory = historys;
+            }
             return reply!;
         }
         public void RunDIY(string content)

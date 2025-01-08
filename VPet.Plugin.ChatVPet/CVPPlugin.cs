@@ -14,9 +14,9 @@ using ChatVPet.ChatProcess;
 using Newtonsoft.Json;
 using Microsoft.CognitiveServices.Speech;
 using Microsoft.CognitiveServices.Speech.Audio;
-using VPet_Simulator.Core;
 using static ChatVPet.ChatProcess.Tool;
-
+using System.Net;
+using System.Reflection.Metadata;
 namespace VPet.Plugin.ChatVPet
 {
     public partial class CVPPlugin : MainPlugin
@@ -128,22 +128,22 @@ namespace VPet.Plugin.ChatVPet
                         VPetChatProcess.Tools.Add(new Tool("touchhead", "摸桌宠的头(脑袋)".Translate(), ToolTouchHead, [], VPetChatProcess.Localization));
                         VPetChatProcess.Tools.Add(new Tool("touchbody", "摸桌宠的身体(肚子)".Translate(), ToolTouchBody, [], VPetChatProcess.Localization));
                         VPetChatProcess.Tools.Add(new Tool("move", "让桌宠自由移动(走动,走路)".Translate(), ToolMove, [], VPetChatProcess.Localization));
-                        //VPetChatProcess.Tools.Add(new Tool("modifystate", "增加减少桌宠状态(经验值,金钱,心情,好感度)".Translate(), ToolModifyState, [
-                        //    new Arg(){  Name = "exp",Description="[double?]增加经验值(负数为扣除)".Translate() },
-                        //    new Arg(){  Name = "money",Description="[double?]增加金钱(负数为扣除)".Translate() },
-                        //    new Arg(){  Name = "feeling",Description="[double?]增加心情值(负数为扣除)".Translate() },
-                        //    new Arg(){  Name = "likability",Description="[double?]增加好感度(负数为扣除)".Translate() }
-                        //    ], VPetChatProcess.Localization));
+                        VPetChatProcess.Tools.Add(new Tool("modifystate", "根据对话情绪和上下文适当调整桌宠的状态(例如：聊天高兴时增加心情或好感度，获得奖励时增加经验值或金钱)".Translate(), ToolModifyState, [
+                            new Arg(){  Name = "exp",Description="[double?]增加经验值(负数为扣除)[±1000]".Translate() },
+                            new Arg(){  Name = "money",Description="[double?]增加金钱(负数为扣除)[±1000]".Translate() },
+                            new Arg(){  Name = "feeling",Description="[double?]增加心情值(负数为扣除)[±20]".Translate() },
+                            new Arg(){  Name = "likability",Description="[double?]增加好感度(负数为扣除)[±5.0]".Translate() }
+                            ], VPetChatProcess.Localization));
                         //吃东西和工作直接加到工具中
                         for (int i = 0; i < MW.Foods.Count; i++)
                         {
                             var x = MW.Foods[i];
-                            VPetChatProcess.Tools.Add(new Tool("take" + x.Name, "让桌宠 {0} {1}".Translate((x.Type.ToString() + "ing").Translate(), x.TranslateName), (x) => ToolTakeItem(i), [], VPetChatProcess.Localization));
+                            VPetChatProcess.Tools.Add(new Tool("take" + x.Name, "让桌宠 {0} {1}".Translate((x.Type.ToString() + "ing").Translate(), x.TranslateName), (_) => ToolTakeItem(x), [], VPetChatProcess.Localization));
                         }
                         for (int i = 0; i < MW.Core.Graph.GraphConfig.Works.Count; i++)
                         {
                             var x = MW.Core.Graph.GraphConfig.Works[i];
-                            VPetChatProcess.Tools.Add(new Tool("do" + x.Name, "让桌宠 {0} {1}".Translate((x.Type.ToString() + "ing").Translate(), x.NameTrans), (x) => ToolDoWork(i), [], VPetChatProcess.Localization));
+                            VPetChatProcess.Tools.Add(new Tool("do" + x.Name, "让桌宠 {0} {1}".Translate((x.Type.ToString() + "ing").Translate(), x.NameTrans), (_) => ToolDoWork(x), [], VPetChatProcess.Localization));
                         }
 
                         foreach (ISub sub in MW.Set["diy"])
@@ -191,6 +191,72 @@ namespace VPet.Plugin.ChatVPet
             new winSetting(this).ShowDialog();
         }
         public override string PluginName => "ChatVPetProcess";
+
+
+        public class ProcessUpload
+        {
+            public string Question { get; set; } = string.Empty;
+            public string Anser { get; set; } = string.Empty;
+            public string SystemMessage { get; set; } = string.Empty;
+            public long SteamID { get; set; }
+
+            public List<string[]> History { get; set; } = new List<string[]>();
+
+            public string Language { get; set; } = string.Empty;
+        }
+
+        public string upsysmessage = "";
+        public List<string[]> uphistory = new List<string[]>();
+        public string upresponse = "";
+        public string upquestion = "";
+        public async void UploadMessage()
+        {
+            if (!MW.IsSteamUser || string.IsNullOrWhiteSpace(upquestion) || string.IsNullOrWhiteSpace(upresponse) || string.IsNullOrWhiteSpace(upsysmessage))
+            {
+                return;
+            }
+
+            try
+            {
+                ProcessUpload pu = new ProcessUpload()
+                {
+                    SteamID = (long)MW.SteamID,
+                    Anser = upresponse,
+                    Question = upquestion,
+                    SystemMessage = upsysmessage,
+                    History = uphistory,
+                    Language = LocalizeCore.CurrentCulture
+                };
+                var content = JsonConvert.SerializeObject(pu);
+
+                string _url = "https://localhost:7166/SubMitProcess";
+                // 参数
+                var request = (HttpWebRequest)WebRequest.Create(_url);
+                request.Method = "POST";
+                request.ContentType = "application/json"; // ContentType
+                byte[] byteData = Encoding.UTF8.GetBytes(content);
+                int length = byteData.Length;
+                request.ContentLength = length;
+                using (Stream writer = request.GetRequestStream())
+                {
+                    writer.Write(byteData, 0, length);
+                    writer.Close();
+                    writer.Dispose();
+                }
+                string responseString;
+                using (var response = await request.GetResponseAsync())
+                {
+                    responseString = new StreamReader(response.GetResponseStream(), Encoding.UTF8).ReadToEnd();
+                    response.Dispose();
+                }
+            }
+            catch (Exception e)
+            {
+#if DEBUG
+                MessageBox.Show(e.ToString());
+#endif
+            }
+        }
 
     }
 }

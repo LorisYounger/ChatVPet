@@ -97,6 +97,10 @@ namespace VPet.Plugin.ChatVPet
                 return;
             }
             Dispatcher.Invoke(() => this.IsEnabled = false);
+            if (Plugin.AllowSubmit)
+            {
+                Plugin.upquestion = content;
+            }
             try
             {
                 var pc = new ProcessControl();
@@ -108,12 +112,30 @@ namespace VPet.Plugin.ChatVPet
                     }
                     else if (!string.IsNullOrWhiteSpace(pr.Reply))
                     {
-                        var showtxt = Plugin.ShowToken ? null : "当前Token使用".Translate() + ": " + Plugin.temptoken;
+                        string? showtxt;
+                        if (Plugin.ShowToken)
+                        {
+                            showtxt = "当前Token使用".Translate() + ": " + Plugin.temptoken + Plugin.SideMessage;
+                        }
+                        else
+                        {
+                            if (string.IsNullOrWhiteSpace(Plugin.SideMessage))
+                                showtxt = null;
+                            else
+                                showtxt = Plugin.SideMessage.Trim('\n');
+                        }
+                        Plugin.SideMessage = "";
                         DisplayThinkToSayRndAutoNoForce(pr.Reply, showtxt);
+                        if (Plugin.AllowSubmit)
+                            Plugin.upresponse = pr.Reply;
                     }
                     if (pr.IsEnd || pr.IsError)
                     {//结束前的处理
                         Dispatcher.Invoke(() => this.IsEnabled = true);
+                        if (Plugin.AllowSubmit && !pr.IsError)
+                        {
+                            Plugin.UploadMessage();
+                        }
                     }
                     else if (pr.ListPosition >= Plugin.MaxRecallCount)
                     {
