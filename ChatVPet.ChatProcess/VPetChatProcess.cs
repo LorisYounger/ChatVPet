@@ -32,7 +32,7 @@ namespace ChatVPet.ChatProcess
         /// <summary>
         /// 重要性计算方法 判断该段消息是否重要
         /// </summary>
-        [JsonIgnore] public CalculateImportance CalImportanceFunction = (x) => 1;
+        [JsonIgnore] public CalculateImportance CalImportanceFunction = (x) => 0.5f;
 
         /// <summary>
         /// 知识数据库
