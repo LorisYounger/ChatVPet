@@ -97,7 +97,6 @@ Lv指的是桌宠的等级通过获得经验升级#Lv refers to the level of the
 你可以创建或加入访客表，和你的好友进行联机#You can create or join guest tables to connect with your friends:|
 照片图库里有桌宠所有表情包、CG、宣传图等，会持续更新。可以通过要求解锁各种桌宠的图片，可以进行筛选，还可以导出图片。点击已解锁的图片可以查看图片详情，有图片名称、解锁日期和图片简介。可以复制到剪切板或单独保存。图片有多种解锁方法，达成即可永久解锁#The photo gallery contains all the emoticons, CGs, and promotional images of the Desktop Pet, and will be continuously updated. You can unlock various Desktop Pet pictures by request, you can filter them, and you can export them. Click on an unlocked image to view the image details, with image name, unlock date and image profile. It can be copied to the clipboard or saved separately. There are several ways to unlock the picture, and you can unlock it permanently by reaching it.:|
 如果体验完原版，可以体验桌宠丰富多彩的MOD。桌宠开源，支持各种mod、创意工坊#Desktop Pet open source, support a variety of mods, creative workshops:|
-桌宠名称:{0},金钱(钱),数据,体力,心情,饱腹度,口渴度,好感度,当前状态#Desktop Pet Name:{0},Money,Data,Stamina,Mood,Satiety,Thirst,Favorability,Current Status:|
 让桌宠跳舞(舞)#Make Desktop Pet dance.:|
 让桌宠停止(中断)当前进行的活动,例如(结束,别去)工作(干活)/玩耍(玩)/学习(学)#Make Desktop Pet stop (interrupt) current activity, e.g. (end, don't go) work/play/study.:|
 让桌宠发呆(呆)#Let the Desktop Pet daze (daze).:|
@@ -151,7 +150,7 @@ Snacking#Eat & Drink:|
 Functionaling#Eat and drink:|
 Druging#Take medicine:|
 Gifting#Get Gift:|
-桌宠名称:{0} 金钱(钱) 数据 体力 心情 饱腹度 口渴度 好感度 当前状态 饥饿 饿 口渴 渴#Pet Name:{0} Money(Money) Data Physical Strength Mood Satiety Thirst Fondness Current Status Hungry Hungry Thirsty Thirsty:|
+桌宠名称:{0} 金钱(钱) 数据 体力 心情 饱腹度 口渴度 好感度 当前状态 饥饿 饿 口渴 渴#Pet Name:{0} Money Data Physical Strength Mood Satiety Thirst Fondness Current Status Hungry Hungry Thirsty Thirsty:|
 当前 时间 今天 现在 日期#Current Time Today Now Date:|
 电脑 信息 监控 状况 CPU 内存 占用#Computer Information Monitor Status CPU Memory Usage:|
 让桌宠自由移动(走动,走路)#Allow Pet to move freely (walk, walk).:|
@@ -164,5 +163,6 @@ Gifting#Get Gift:|
 Working#Go to work:|
 Studying#Study:|
 Playing#Play:|
-桌宠名称:{0}, 金钱 ${1:f1}, Lv {2} ({3:f1}/{4:f1}), 体力 {5:f1}/{6:f1}({7:p0}), 心情 {8:f1}/{9:f1}({10:p0}), 饱腹度 {11:f1}/{6:f1}({12:p0}), 口渴度 {13:f1}/{6:f1}({14:p0}), 好感度 {15:f1}#Pet Name:{0}, Money ${1:f1}, Lv {2} ({3:f1}/{4:f1}), Physical Strength {5:f1}/{6:f1}({7:p0}), Mood {8:f1}/{9:f1}({10:p0}), Satiety {11:f1}/{6:f1}({12:p0}), Thirst {13:f1}/{6. f1}({14:p0}), Favorability {15:f1}:|
+桌宠名称:{0}, 金钱 ${1:f1}, Lv {2} ({3:f1}/{4:f1}), 体力 {5:f1}/{6:f1}({7:p0}), 心情 {8:f1}/{9:f1}({10:p0}), 饱腹度 {11:f1}/{6:f1}({12:p0}), 口渴度 {13:f1}/{6:f1}({14:p0}), 好感度 {15:f1}#Pet Name:{0}, Money ${1:f1}, Lv {2} ({3:f1}/{4:f1}), Strength {5:f1}/{6:f1}({7:p0}), moods {8:f1}/{9:f1}({10:p0}), satiety {11:f1}/{6:f1}({12:p0}), Thirst {13:f1}/{6:f1}({14:p0}), Likeability {15:f1}:|
 CPU占用率: {0}%\n内存占用率: {1}%\n可用内存: {2}MB\n所有内存: {3}MB#CPU Usage: {0}%\nMemory Usage: {1}%\nAvailable Memory: {2}MB\nAll Memory: {3}MB:|
+当前时间是#The current time is:|

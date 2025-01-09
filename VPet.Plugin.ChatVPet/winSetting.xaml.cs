@@ -137,10 +137,13 @@ namespace VPet.Plugin.ChatVPet
 #pragma warning restore CS8602 // 解引用可能出现空引用。
             plugin.AllowSubmit = swSubmitLog.IsChecked ?? false;
             plugin.Recognizer?.Dispose();
-            SpeechConfig speechConfig = SpeechConfig.FromSubscription(plugin.AzureKey, plugin.AzureRegion);
-            speechConfig.SpeechRecognitionLanguage = plugin.AzureRecognitionLanguage;
-            var audioConfig = AudioConfig.FromDefaultMicrophoneInput();
-            plugin.Recognizer = new SpeechRecognizer(speechConfig, audioConfig);
+            if (!string.IsNullOrEmpty(plugin.AzureKey) && !string.IsNullOrEmpty(plugin.AzureRegion))
+            {
+                SpeechConfig speechConfig = SpeechConfig.FromSubscription(plugin.AzureKey, plugin.AzureRegion);
+                speechConfig.SpeechRecognitionLanguage = plugin.AzureRecognitionLanguage;
+                var audioConfig = AudioConfig.FromDefaultMicrophoneInput();
+                plugin.Recognizer = new SpeechRecognizer(speechConfig, audioConfig);
+            }
 
             plugin.MaxHistoryCount = int.Parse(tbMaxHistory.Text);
             plugin.MaxKnowledgeCount = int.Parse(tbMaxKnow.Text);
@@ -186,7 +189,7 @@ namespace VPet.Plugin.ChatVPet
                     {
                         toolTip = new ToolTip()
                         {
-                            PlacementTarget = listBox,                            
+                            PlacementTarget = listBox,
                             StaysOpen = false
                         };
                         listBox.ToolTip = toolTip;

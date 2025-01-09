@@ -24,7 +24,7 @@ namespace VPet.Plugin.ChatVPet.dynKnowDB
         }
         public override string KnowledgeData
         {
-            get => DateTime.Now.ToString();
+            get => "当前时间是".Translate() + ' ' + DateTime.Now.ToShortDateString() + ' ' + DateTime.Now.ToShortTimeString();
         }
 
     }

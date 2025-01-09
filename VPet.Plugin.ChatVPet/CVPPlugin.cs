@@ -64,8 +64,7 @@ namespace VPet.Plugin.ChatVPet
             };
             menuItem.Click += (s, e) => { Setting(); };
             MW.Main.ToolBar.MenuMODConfig.Items.Add(menuItem);
-            VPetChatProcess.GPTAskFunction = GPTAsk;
-
+            VPetChatProcess.GPTAskFunction = GPTAsk;            
             Task.Run(() =>
             {
                 try

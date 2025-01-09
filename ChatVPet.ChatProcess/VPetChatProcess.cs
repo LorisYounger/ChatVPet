@@ -144,20 +144,20 @@ namespace ChatVPet.ChatProcess
                 .OrderBy(x => x.Item2).Take(MaxToolCount).Where(x => x.Item2 < IInCheck.IgnoreValue).Select(x => x.x).ToList();
 
 
-            List<(Tool x, float)> testTool = new List<(Tool x, float)>();
-            foreach (var tool in Tools)
-            {
-                var s = tool.InCheck(message, W2VEngine.ComputeCosineSimilarity(tool.Vector!, vector));
-                testTool.Add((tool, s));
-            }
-            List<(KnowledgeDataBase x, float)> testKDB = new List<(KnowledgeDataBase x, float)>();
-            foreach (var kdb in KnowledgeDataBases)
-            {
-                var s = kdb.InCheck(message, W2VEngine.ComputeCosineSimilarity(kdb.Vector!, vector));
-                testKDB.Add((kdb, s));
-            }
-            testTool = testTool.OrderBy(x => x.Item2).ToList();
-            testKDB = testKDB.OrderBy(x => x.Item2).ToList();
+            //List<(Tool x, float)> testTool = new List<(Tool x, float)>();
+            //foreach (var tool in Tools)
+            //{
+            //    var s = tool.InCheck(message, W2VEngine.ComputeCosineSimilarity(tool.Vector!, vector));
+            //    testTool.Add((tool, s));
+            //}
+            //List<(KnowledgeDataBase x, float)> testKDB = new List<(KnowledgeDataBase x, float)>();
+            //foreach (var kdb in KnowledgeDataBases)
+            //{
+            //    var s = kdb.InCheck(message, W2VEngine.ComputeCosineSimilarity(kdb.Vector!, vector));
+            //    testKDB.Add((kdb, s));
+            //}
+            //testTool = testTool.OrderBy(x => x.Item2).ToList();
+            //testKDB = testKDB.OrderBy(x => x.Item2).ToList();
 
 
             List<string[]> history = new List<string[]>();
