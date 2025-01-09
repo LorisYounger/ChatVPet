@@ -185,21 +185,19 @@ namespace VPet.Plugin.ChatVPet
             if (sender is ListBox listBox)
                 if (listBox?.SelectedItem != null)
                 {
-                    if (listBox.ToolTip is not ToolTip toolTip)
+                    if (listBox.Tag is not ToolTip toolTip)
                     {
                         toolTip = new ToolTip()
                         {
-                            PlacementTarget = listBox,
+                            PlacementTarget = listBox,                             
                             StaysOpen = false
                         };
-                        listBox.ToolTip = toolTip;
-                        //ToolTipService.SetShowDuration(listBox, 6000);
+                        listBox.Tag = toolTip;
                     }
                     toolTip.IsOpen = false;
                     toolTip.Content = listBox.SelectedItem;
                     toolTip.IsOpen = true;
                 }
-            //listBox.ToolTip = listBox.SelectedItem;
         }
     }
 }
