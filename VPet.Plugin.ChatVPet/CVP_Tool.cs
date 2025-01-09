@@ -23,7 +23,7 @@ namespace VPet.Plugin.ChatVPet
         /// 让桌宠自己买东西吃
         /// </summary>
         public string? ToolTakeItem(Food item)
-        {            
+        {
             //看是什么模式
             if (MW.Set.EnableFunction)
             {//$10以内的食物允许赊账
@@ -147,6 +147,7 @@ namespace VPet.Plugin.ChatVPet
                 reply += " ...";
             }
             temptoken = resp.usage.total_tokens;
+            TotalTokensUsage += temptoken;
             TokenCount = temptoken;
             if (AllowSubmit)
             {

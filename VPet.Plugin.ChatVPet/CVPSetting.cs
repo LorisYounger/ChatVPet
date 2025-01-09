@@ -110,5 +110,11 @@ namespace VPet.Plugin.ChatVPet
             set => MW.Set["CGPTV"][(gint)"MaxKnowledgeCount"] = value;
         }
 
+        public int TotalTokensUsage
+        {
+            get => MW.Set["CGPTV"].GetInt("TotalTokensUsage");
+            set => MW.Set["CGPTV"][(gint)"TotalTokensUsage"] = value;
+        }
+
     }
 }

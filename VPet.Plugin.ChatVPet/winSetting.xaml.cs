@@ -61,7 +61,7 @@ namespace VPet.Plugin.ChatVPet
                     var msgs = plugin.CGPTClient.Completions["vpet"].messages.ToList();
                     msgs.RemoveAt(0);
                     //tbHistory.Text = JsonConvert.SerializeObject(msgs);
-                    lbSpend.Content = plugin.CGPTClient.TotalTokensUsage.ToString() + " Token";
+                    lbSpend.Content = plugin.TotalTokensUsage.ToString() + " Token";
                     totalused = plugin.CGPTClient.TotalTokensUsage;
                 }
             }
