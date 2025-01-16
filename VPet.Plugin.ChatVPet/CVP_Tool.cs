@@ -122,7 +122,7 @@ namespace VPet.Plugin.ChatVPet
         {
             Completions completions = new Completions();
             if (CGPTClient == null)
-                return "请先前往设置中设置 GPT API".Translate();
+                throw new Exception("请先前往设置中设置 GPT API".Translate());
             completions.max_tokens = CGPTClient.Completions["vpet"].max_tokens;
             completions.temperature = CGPTClient.Completions["vpet"].temperature;
             completions.model = CGPTClient.Completions["vpet"].model;
@@ -140,7 +140,7 @@ namespace VPet.Plugin.ChatVPet
             var reply = resp!.GetMessageContent();
             if (resp.choices.Length == 0)
             {
-                return "请检查API token设置".Translate();
+                throw new Exception("请检查API token设置".Translate());
             }
             else if (resp.choices[0].finish_reason == "length")
             {
