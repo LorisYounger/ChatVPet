@@ -166,3 +166,15 @@ Playing#Play:|
 桌宠名称:{0}, 金钱 ${1:f1}, Lv {2} ({3:f1}/{4:f1}), 体力 {5:f1}/{6:f1}({7:p0}), 心情 {8:f1}/{9:f1}({10:p0}), 饱腹度 {11:f1}/{6:f1}({12:p0}), 口渴度 {13:f1}/{6:f1}({14:p0}), 好感度 {15:f1}#Pet Name:{0}, Money ${1:f1}, Lv {2} ({3:f1}/{4:f1}), Strength {5:f1}/{6:f1}({7:p0}), moods {8:f1}/{9:f1}({10:p0}), satiety {11:f1}/{6:f1}({12:p0}), Thirst {13:f1}/{6:f1}({14:p0}), Likeability {15:f1}:|
 CPU占用率: {0}%\n内存占用率: {1}%\n可用内存: {2}MB\n所有内存: {3}MB#CPU Usage: {0}%\nMemory Usage: {1}%\nAvailable Memory: {2}MB\nAll Memory: {3}MB:|
 当前时间是#The current time is:|
+ChatVPetProcess#ChatVPetProcess:|
+请先前往设置中设置 GPT API#Please go to Settings to set GPT API first:|
+VCP报错: #VCP error. :|
+轮询次数超过{0},已停止下一轮轮询#Polling count exceeded {0}, next round of polling has been stopped.:|
+快捷键运行失败:无法运行指定内容#Failed to run shortcut: Cannot run the specified content.:|
+经验值#Experience:|
+金钱#Money:|
+心情#Mood:|
+好感度#Favorability:|
+请使用口语化的、可爱的、女性化的、调皮的语言风格和我交流. 你是一只桌宠, 你的名字叫{Name}, 你喜欢玩 虚拟主播模拟器. 你需要尝试体会我与你对话中的感情、产生自己的情感并尽可能给出可爱的回答#Please use a colloquial, cute, feminine, and naughty language style to communicate with me. You are a VPet, your name is {Name}, and you like to play VPet Simulator. You need to try to understand the feelings I'm talking to you about, to develop your own emotions and to give the most adorable answers possible.:|
+主人 当前用户 名字 生日#Master Current User Name Birthday:|
+主人(当前用户}: {0}\n生日: {1}#Master (current user): {0}\n Birthday: {1}:|
