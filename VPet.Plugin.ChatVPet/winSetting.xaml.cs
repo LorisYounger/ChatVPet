@@ -20,6 +20,7 @@ using VPet_Simulator.Windows.Interface;
 using Microsoft.CognitiveServices.Speech.Audio;
 using Microsoft.CognitiveServices.Speech;
 using ChatVPet.ChatProcess;
+using System.Collections.ObjectModel;
 
 namespace VPet.Plugin.ChatVPet
 {
@@ -39,9 +40,9 @@ namespace VPet.Plugin.ChatVPet
         {
             ExtensionFunction.StartURL("https://github.com/LorisYounger/ChatVPet/blob/main/TrainingProtocol.md");
         }
-        List<string> Knowledges = new List<string>();
-        List<string> Dialogues = new List<string>();
-        List<string> Tools = new List<string>();
+        ObservableCollection<string> Knowledges = new ObservableCollection<string>();
+        ObservableCollection<string> Dialogues = new ObservableCollection<string>();
+        ObservableCollection<string> Tools = new ObservableCollection<string>();
         public winSetting(CVPPlugin plugin)
         {
             InitializeComponent();
@@ -66,7 +67,7 @@ namespace VPet.Plugin.ChatVPet
                 }
             }
             else
-                tbSystem.Text = "请使用口语化的、可爱的、女性化的、调皮的语言风格和我交流. 你是一只桌宠, 你的名字叫{Name}, 你喜欢玩 虚拟主播模拟器. 你需要尝试体会我与你对话中的感情、产生自己的情感并尽可能给出可爱的回答".Translate();
+                tbSystem.Text = "请使用口语化的、可爱的、女性化的、调皮的语言风格和我交流. 你是一只桌宠, 你的名字叫{0}, 你喜欢玩 虚拟主播模拟器. 你需要尝试体会我与你对话中的感情、产生自己的情感并尽可能给出可爱的回答".Translate(plugin.MW.Core.Save.Name);
             //niKeepHistory.Value = plugin.KeepHistory;
             swShowToken.IsChecked = plugin.ShowToken;
             swSubmitLog.IsChecked = plugin.AllowSubmit;
@@ -85,17 +86,34 @@ namespace VPet.Plugin.ChatVPet
 
             //显示现有知识库
             tbKnow.Text = plugin.KnowledgeDataBase;
-            Knowledges.AddRange(plugin.VPetChatProcess.KnowledgeDataBases.Select(x => x.KnowledgeData));
-            foreach (var item in plugin.VPetChatProcess.Dialogues)
-            {
-                Dialogues.Add("Q:" + item.Question);
-                Dialogues.Add("A:" + item.Answer);
-            }
-            Tools.AddRange(plugin.VPetChatProcess.Tools.Select(x => x.Code + ": " + x.Descriptive));
+            Knowledges = new ObservableCollection<string>(plugin.VPetChatProcess.KnowledgeDataBases.Select(x => x.KnowledgeData));
+            LoadDialogue();
+            Tools = new ObservableCollection<string>(plugin.VPetChatProcess.Tools.Select(x => x.Code + ": " + x.Descriptive).ToList());
 
             lbKnow.ItemsSource = Knowledges;
-            lbHistory.ItemsSource = Dialogues;
+            //lbHistory.ItemsSource = Dialogues;
             lbTool.ItemsSource = Tools;
+        }
+        private void LoadDialogue()
+        {
+            Dialogues.Clear();
+            for (int i = 0; i < plugin.VPetChatProcess.Dialogues.Count; i++)
+            {
+                Dialogue? item = plugin.VPetChatProcess.Dialogues[i];
+                Dialogues.Add(i + "_Q:" + item.Question);
+                Dialogues.Add(i + "_A:" + item.Answer);
+                //List<ToolCall> ts;
+                //try
+                //{
+                //    ts = JsonConvert.DeserializeObject<List<ToolCall>>(item.ToolCall) ?? new List<ToolCall>();
+                //}
+                //catch
+                //{
+                //    ts = new List<ToolCall>();
+                //}
+                Dialogues.Add(i + "_T:" + item.ToolCall);// + string.Join(", ", ts.Select(x => x.Code + ":" + x.Args)) + ']');
+            }
+            lbHistory.ItemsSource = Dialogues;
         }
         private void btnSave_Click(object sender, RoutedEventArgs e)
         {
@@ -137,12 +155,20 @@ namespace VPet.Plugin.ChatVPet
 #pragma warning restore CS8602 // 解引用可能出现空引用。
             plugin.AllowSubmit = swSubmitLog.IsChecked ?? false;
             plugin.Recognizer?.Dispose();
-            if (!string.IsNullOrEmpty(plugin.AzureKey) && !string.IsNullOrEmpty(plugin.AzureRegion))
+            if (plugin.AzureVoiceEnable && !string.IsNullOrEmpty(plugin.AzureKey) && !string.IsNullOrEmpty(plugin.AzureRegion))
             {
-                SpeechConfig speechConfig = SpeechConfig.FromSubscription(plugin.AzureKey, plugin.AzureRegion);
-                speechConfig.SpeechRecognitionLanguage = plugin.AzureRecognitionLanguage;
-                var audioConfig = AudioConfig.FromDefaultMicrophoneInput();
-                plugin.Recognizer = new SpeechRecognizer(speechConfig, audioConfig);
+                try
+                {
+                    SpeechConfig speechConfig = SpeechConfig.FromSubscription(plugin.AzureKey, plugin.AzureRegion);
+                    speechConfig.SpeechRecognitionLanguage = plugin.AzureRecognitionLanguage;
+                    var audioConfig = AudioConfig.FromDefaultMicrophoneInput();
+                    plugin.Recognizer = new SpeechRecognizer(speechConfig, audioConfig);
+                }
+                catch
+                {
+                    plugin.AzureVoiceEnable = false;
+                    MessageBox.Show("语音识别初始化失败, 请检查密钥和区域是否正确".Translate());
+                }
             }
 
             plugin.MaxHistoryCount = int.Parse(tbMaxHistory.Text);
@@ -167,16 +193,16 @@ namespace VPet.Plugin.ChatVPet
             if (e.Key == Key.Enter)
             {
                 string search = tbSeachDB.Text;
-                if (!string.IsNullOrEmpty(search))
+                if (string.IsNullOrEmpty(search))
                 {
                     lbKnow.ItemsSource = Knowledges;
                     lbHistory.ItemsSource = Dialogues;
                     lbTool.ItemsSource = Tools;
                     return;
                 }
-                lbKnow.ItemsSource = Knowledges.Where(x => x.Contains(search));
-                lbHistory.ItemsSource = Dialogues.Where(x => x.Contains(search));
-                lbTool.ItemsSource = Tools.Where(x => x.Contains(search));
+                lbKnow.ItemsSource = new ObservableCollection<string>(Knowledges.Where(x => x.Contains(search)));
+                lbHistory.ItemsSource = new ObservableCollection<string>(Dialogues.Where(x => x.Contains(search)));
+                lbTool.ItemsSource = new ObservableCollection<string>(Tools.Where(x => x.Contains(search)));
             }
         }
 
@@ -189,7 +215,7 @@ namespace VPet.Plugin.ChatVPet
                     {
                         toolTip = new ToolTip()
                         {
-                            PlacementTarget = listBox,                             
+                            PlacementTarget = listBox,
                             StaysOpen = false
                         };
                         listBox.Tag = toolTip;
@@ -198,6 +224,73 @@ namespace VPet.Plugin.ChatVPet
                     toolTip.Content = listBox.SelectedItem;
                     toolTip.IsOpen = true;
                 }
+        }
+
+        private void MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (lbHistory.SelectedItem is string msg)
+            {
+                if (int.TryParse(msg.Split('_')[0], out int id))
+                {
+                    plugin.VPetChatProcess.Dialogues.RemoveAt(id);
+                    LoadDialogue();
+                    MessageBox.Show("删除成功".Translate());
+                }
+            }
+        }
+
+        private void btn_SearchDB(object sender, RoutedEventArgs e)
+        {
+            string search = tbSeachDB.Text;
+            if (string.IsNullOrEmpty(search))
+            {
+                lbKnow.ItemsSource = Knowledges;
+                lbHistory.ItemsSource = Dialogues;
+                lbTool.ItemsSource = Tools;
+                return;
+            }
+            lbKnow.ItemsSource = new ObservableCollection<string>(Knowledges.Where(x => x.Contains(search)));
+            lbHistory.ItemsSource = new ObservableCollection<string>(Dialogues.Where(x => x.Contains(search)));
+            lbTool.ItemsSource = new ObservableCollection<string>(Tools.Where(x => x.Contains(search)));
+        }
+
+        private void btn_SearchDB_vec(object sender, RoutedEventArgs e)
+        {
+
+            string search = tbSeachDB.Text;
+            if (string.IsNullOrEmpty(search))
+            {
+                lbKnow.ItemsSource = Knowledges;
+                lbHistory.ItemsSource = Dialogues;
+                lbTool.ItemsSource = Tools;
+                return;
+            }
+            var vector = plugin.VPetChatProcess.W2VEngine!.GetQueryVector(search);
+            ////为所有知识库和工具添加向量 已经自动更新 除了新插入的消息可能需要手动更新
+            plugin.VPetChatProcess.W2VEngine.GetQueryVector(plugin.VPetChatProcess.Tools);
+            plugin.VPetChatProcess.W2VEngine.GetQueryVector(plugin.VPetChatProcess.KnowledgeDataBases);
+            plugin.VPetChatProcess.W2VEngine.GetQueryVector(plugin.VPetChatProcess.Dialogues);
+
+            ObservableCollection<string> kdbs = new ObservableCollection<string>(plugin.VPetChatProcess.KnowledgeDataBases.Select(x => (x, x.InCheck(search, W2VEngine.ComputeCosineSimilarity(x.Vector!, vector))))
+                    .OrderBy(x => x.Item2).Where(x => x.Item2 < IInCheck.IgnoreValue)
+                    .Select(x => x.x.KnowledgeData).ToList());
+            List<Tool> tools = plugin.VPetChatProcess.Tools.Select(x => (x, x.InCheck(search, W2VEngine.ComputeCosineSimilarity(x.Vector!, vector))))
+                .OrderBy(x => x.Item2).Where(x => x.Item2 < IInCheck.IgnoreValue).Select(x => x.x).ToList();
+            List<Dialogue> dialogues = plugin.VPetChatProcess.Dialogues.Select(x => (x, x.InCheck(search, W2VEngine.ComputeCosineSimilarity(x.Vector!, vector)))).OrderBy(x => x.Item2)
+                .Where(x => x.Item2 < IInCheck.IgnoreValue).Select(x => x.x).ToList();
+            lbKnow.ItemsSource = kdbs;
+
+            ObservableCollection<string> di = new ObservableCollection<string>();
+            for (int i = 0; i < dialogues.Count; i++)
+            {
+                Dialogue? item = dialogues[i];
+                di.Add(i + "_Q:" + item.Question);
+                di.Add(i + "_A:" + item.Answer);
+                di.Add(i + "_T:" + item.ToolCall);
+            }
+            lbHistory.ItemsSource = di;
+
+            lbTool.ItemsSource = new ObservableCollection<string>(tools.Select(x => x.Code + ": " + x.Descriptive));
         }
     }
 }

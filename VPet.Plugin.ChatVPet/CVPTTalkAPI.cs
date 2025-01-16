@@ -128,6 +128,11 @@ namespace VPet.Plugin.ChatVPet
                         Dispatcher.Invoke(() => this.IsEnabled = true);
                         if (Plugin.AllowSubmit && !pr.IsError)
                         {
+                            string model = Plugin.CGPTClient.Completions["vpet"].model.ToLower();
+                            if (!model.Contains("gpt-4") || !model.Contains("o1") || !model.Contains("pro") ||
+                            !model.Contains("plus") || !model.Contains("max"))//确保提交质量
+                                return;
+
                             string[]? msg = Plugin.VPetChatProcess.Dialogues.LastOrDefault()?.ToMessages(Plugin.VPetChatProcess.Localization);
                             if (msg != null)
                             {

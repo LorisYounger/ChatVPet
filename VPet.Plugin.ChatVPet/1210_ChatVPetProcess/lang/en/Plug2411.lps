@@ -175,6 +175,11 @@ VCP报错: #VCP error. :|
 金钱#Money:|
 心情#Mood:|
 好感度#Favorability:|
-请使用口语化的、可爱的、女性化的、调皮的语言风格和我交流. 你是一只桌宠, 你的名字叫{Name}, 你喜欢玩 虚拟主播模拟器. 你需要尝试体会我与你对话中的感情、产生自己的情感并尽可能给出可爱的回答#Please use a colloquial, cute, feminine, and naughty language style to communicate with me. You are a VPet, your name is {Name}, and you like to play VPet Simulator. You need to try to understand the feelings I'm talking to you about, to develop your own emotions and to give the most adorable answers possible.:|
+请使用口语化的、可爱的、女性化的、调皮的语言风格和我交流. 你是一只桌宠, 你的名字叫{0}, 你喜欢玩 虚拟主播模拟器. 你需要尝试体会我与你对话中的感情、产生自己的情感并尽可能给出可爱的回答#Please use a colloquial, cute, feminine, and naughty language style to communicate with me. You are a VPet, your name is {0}, and you like to play VPet Simulator. You need to try to understand the feelings I'm talking to you about, to develop your own emotions and to give the most adorable answers possible.:|
 主人 当前用户 名字 生日#Master Current User Name Birthday:|
 主人(当前用户}: {0}\n生日: {1}#Master (current user): {0}\n Birthday: {1}:|
+删除成功#Successfully deleted:|
+语音识别初始化失败, 请检查密钥和区域是否正确#语音识别初始化失败, 请检查密钥和区域是否正确:|
+删除#Delete:|
+向量搜索#Vector Search:|
+搜索#Search:|

@@ -205,8 +205,22 @@
             </TabItem>
             <TabItem Header="{ll:Str 数据库预览}">
                 <StackPanel>
-                    <TextBox x:Name="tbSeachDB" Style="{DynamicResource StandardTextBoxStyle}"
-                            pu:TextBoxHelper.Watermark="{ll:Str '输入文本搜索数据库'}" PreviewKeyDown="tbSeachDB_PreviewKeyDown" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBox x:Name="tbSeachDB" Style="{DynamicResource StandardTextBoxStyle}"
+                                pu:TextBoxHelper.Watermark="{ll:Str '输入文本搜索数据库'}"
+                                PreviewKeyDown="tbSeachDB_PreviewKeyDown" />
+                        <Button pu:ButtonHelper.CornerRadius="4" Content="{ll:Str 搜索}" Margin="2"
+                                Background="{DynamicResource SecondaryLight}" Click="btn_SearchDB" Grid.Column="1" />
+                        <Button pu:ButtonHelper.CornerRadius="4" Content="{ll:Str 向量搜索}" Margin="2"
+                                Background="{DynamicResource SecondaryLight}" Click="btn_SearchDB_vec" Grid.Column="2" />
+                    </Grid>
+
                     <TabControl>
                         <TabItem Header="{ll:Str 知识库}">
                             <ListBox x:Name="lbKnow" MaxHeight="500" SelectionChanged="lb_SelectionChanged" />
@@ -215,7 +229,13 @@
                             <ListBox x:Name="lbTool" MaxHeight="500" SelectionChanged="lb_SelectionChanged" />
                         </TabItem>
                         <TabItem Header="{ll:Str 聊天记录}">
-                            <ListBox x:Name="lbHistory" MaxHeight="500" SelectionChanged="lb_SelectionChanged" />
+                            <ListBox x:Name="lbHistory" MaxHeight="500" SelectionChanged="lb_SelectionChanged">
+                                <ListBox.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="{ll:Str 删除}" Click="MenuItem_Click" />
+                                    </ContextMenu>
+                                </ListBox.ContextMenu>
+                            </ListBox>
                         </TabItem>
                     </TabControl>
                 </StackPanel>

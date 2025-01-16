@@ -9,7 +9,7 @@ namespace ChatVPet.ChatProcess
     /// <summary>
     /// 检查是否加入知识库/消息/工具的接口
     /// </summary>
-    internal interface IInCheck
+    public interface IInCheck
     {
         /// <summary>
         /// 大于等于该值为不处理
