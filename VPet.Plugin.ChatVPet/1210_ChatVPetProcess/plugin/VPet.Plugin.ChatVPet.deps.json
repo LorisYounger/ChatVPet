@@ -8,16 +8,16 @@
     ".NETCoreApp,Version=v8.0": {
       "VPet.Plugin.ChatVPet/1.0.0": {
         "dependencies": {
-          "ChatGPT.API.Framework": "1.1.2",
+          "ChatGPT.API.Framework": "1.1.3",
           "ChatVPet.ChatProcess": "1.0.0",
           "Microsoft.CognitiveServices.Speech": "1.42.0",
-          "VPet-Simulator.Windows.Interface": "1.1.0.47"
+          "VPet-Simulator.Windows.Interface": "1.1.0.48"
         },
         "runtime": {
           "VPet.Plugin.ChatVPet.dll": {}
         }
       },
-      "ChatGPT.API.Framework/1.1.2": {
+      "ChatGPT.API.Framework/1.1.3": {
         "dependencies": {
           "Newtonsoft.Json": "13.0.3"
         },
@@ -39,7 +39,7 @@
           }
         }
       },
-      "LinePutScript/1.11.8": {
+      "LinePutScript/1.11.9": {
         "runtime": {
           "lib/net8.0/LinePutScript.dll": {
             "assemblyVersion": "1.0.0.0",
@@ -49,7 +49,7 @@
       },
       "LinePutScript.Localization.WPF/1.0.7": {
         "dependencies": {
-          "LinePutScript": "1.11.8"
+          "LinePutScript": "1.11.9"
         },
         "runtime": {
           "lib/net6.0/LinePutScript.Localization.WPF.dll": {
@@ -463,10 +463,10 @@
           }
         }
       },
-      "Microsoft.ML/4.0.0": {
+      "Microsoft.ML/4.0.2": {
         "dependencies": {
-          "Microsoft.ML.CpuMath": "4.0.0",
-          "Microsoft.ML.DataView": "4.0.0",
+          "Microsoft.ML.CpuMath": "4.0.2",
+          "Microsoft.ML.DataView": "4.0.2",
           "Newtonsoft.Json": "13.0.3",
           "System.CodeDom": "8.0.0",
           "System.Collections.Immutable": "8.0.0",
@@ -477,27 +477,27 @@
         "runtime": {
           "lib/netstandard2.0/Microsoft.ML.Core.dll": {
             "assemblyVersion": "1.0.0.0",
-            "fileVersion": "4.0.24.56302"
+            "fileVersion": "4.0.225.12505"
           },
           "lib/netstandard2.0/Microsoft.ML.Data.dll": {
             "assemblyVersion": "1.0.0.0",
-            "fileVersion": "4.0.24.56302"
+            "fileVersion": "4.0.225.12505"
           },
           "lib/netstandard2.0/Microsoft.ML.KMeansClustering.dll": {
             "assemblyVersion": "1.0.0.0",
-            "fileVersion": "4.0.24.56302"
+            "fileVersion": "4.0.225.12505"
           },
           "lib/netstandard2.0/Microsoft.ML.PCA.dll": {
             "assemblyVersion": "1.0.0.0",
-            "fileVersion": "4.0.24.56302"
+            "fileVersion": "4.0.225.12505"
           },
           "lib/netstandard2.0/Microsoft.ML.StandardTrainers.dll": {
             "assemblyVersion": "1.0.0.0",
-            "fileVersion": "4.0.24.56302"
+            "fileVersion": "4.0.225.12505"
           },
           "lib/netstandard2.0/Microsoft.ML.Transforms.dll": {
             "assemblyVersion": "1.0.0.0",
-            "fileVersion": "4.0.24.56302"
+            "fileVersion": "4.0.225.12505"
           }
         },
         "runtimeTargets": {
@@ -554,32 +554,32 @@
           "runtimes/win-arm64/native/LdaNative.dll": {
             "rid": "win-arm64",
             "assetType": "native",
-            "fileVersion": "0.2200.24.56302"
+            "fileVersion": "0.2200.225.12505"
           },
           "runtimes/win-x64/native/LdaNative.dll": {
             "rid": "win-x64",
             "assetType": "native",
-            "fileVersion": "0.2200.24.56302"
+            "fileVersion": "0.2200.225.12505"
           },
           "runtimes/win-x86/native/LdaNative.dll": {
             "rid": "win-x86",
             "assetType": "native",
-            "fileVersion": "0.2200.24.56302"
+            "fileVersion": "0.2200.225.12505"
           }
         }
       },
-      "Microsoft.ML.CpuMath/4.0.0": {
+      "Microsoft.ML.CpuMath/4.0.2": {
         "dependencies": {
           "System.Numerics.Tensors": "8.0.0"
         },
         "runtime": {
           "lib/net6.0/Microsoft.ML.CpuMath.dll": {
             "assemblyVersion": "1.0.0.0",
-            "fileVersion": "4.0.24.56302"
+            "fileVersion": "4.0.225.12505"
           }
         }
       },
-      "Microsoft.ML.DataView/4.0.0": {
+      "Microsoft.ML.DataView/4.0.2": {
         "dependencies": {
           "System.Collections.Immutable": "8.0.0",
           "System.Memory": "4.6.0"
@@ -587,7 +587,7 @@
         "runtime": {
           "lib/netstandard2.0/Microsoft.ML.DataView.dll": {
             "assemblyVersion": "1.0.0.0",
-            "fileVersion": "4.0.24.56302"
+            "fileVersion": "4.0.225.12505"
           }
         }
       },
@@ -633,7 +633,7 @@
       "System.Threading.Channels/8.0.0": {},
       "VPet-Simulator.Core/1.1.0.40": {
         "dependencies": {
-          "LinePutScript": "1.11.8",
+          "LinePutScript": "1.11.9",
           "LinePutScript.Localization.WPF": "1.0.7",
           "Panuon.WPF.UI": "1.2.4.2"
         },
@@ -644,7 +644,7 @@
           }
         }
       },
-      "VPet-Simulator.Windows.Interface/1.1.0.47": {
+      "VPet-Simulator.Windows.Interface/1.1.0.48": {
         "dependencies": {
           "VPet-Simulator.Core": "1.1.0.40"
         },
@@ -658,13 +658,13 @@
       "ChatVPet.ChatProcess/1.0.0": {
         "dependencies": {
           "Faithlife.JiebaNet.Segmenter": "0.1.1",
-          "LinePutScript": "1.11.8",
-          "Microsoft.ML": "4.0.0",
+          "LinePutScript": "1.11.9",
+          "Microsoft.ML": "4.0.2",
           "Newtonsoft.Json": "13.0.3"
         },
         "runtime": {
           "ChatVPet.ChatProcess.dll": {
-            "assemblyVersion": "1.0.0",
+            "assemblyVersion": "1.0.0.0",
             "fileVersion": "1.0.0.0"
           }
         }
@@ -677,12 +677,12 @@
       "serviceable": false,
       "sha512": ""
     },
-    "ChatGPT.API.Framework/1.1.2": {
+    "ChatGPT.API.Framework/1.1.3": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-KbgHj04IGrpnWkKNl8En2LwDyh1PCzenxPi1+Mf8YFjuV0LoMPJtAqacWY6B5qMiDOXmuHtnzNKZ6cZyJFCy7Q==",
-      "path": "chatgpt.api.framework/1.1.2",
-      "hashPath": "chatgpt.api.framework.1.1.2.nupkg.sha512"
+      "sha512": "sha512-wkAII89BbYRl+p7x2oiBKrziIQwXc9McbT9uK3ebj2LxMpvLrygJuO3Z+uZuC5HKLHu5KZWxuAngNDTlLOe2+w==",
+      "path": "chatgpt.api.framework/1.1.3",
+      "hashPath": "chatgpt.api.framework.1.1.3.nupkg.sha512"
     },
     "Faithlife.JiebaNet.Segmenter/0.1.1": {
       "type": "package",
@@ -691,12 +691,12 @@
       "path": "faithlife.jiebanet.segmenter/0.1.1",
       "hashPath": "faithlife.jiebanet.segmenter.0.1.1.nupkg.sha512"
     },
-    "LinePutScript/1.11.8": {
+    "LinePutScript/1.11.9": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-aFJyf3eIJPcZKl2mgDP1B2iQXIYIhizu80cqgVN30ZnLBz9DiegTEjdsvFDgg7qkoq+5gQr8BEoTIagb+A7NDw==",
-      "path": "lineputscript/1.11.8",
-      "hashPath": "lineputscript.1.11.8.nupkg.sha512"
+      "sha512": "sha512-in2WEh3jV5+aNHMP8zpvSqDvmgf4sOCS1JhQZSjqG9MOYpfvfLsjbuFidJF3+sp7JjwVGLmhn/AYmZgPENbBWw==",
+      "path": "lineputscript/1.11.9",
+      "hashPath": "lineputscript.1.11.9.nupkg.sha512"
     },
     "LinePutScript.Localization.WPF/1.0.7": {
       "type": "package",
@@ -712,26 +712,26 @@
       "path": "microsoft.cognitiveservices.speech/1.42.0",
       "hashPath": "microsoft.cognitiveservices.speech.1.42.0.nupkg.sha512"
     },
-    "Microsoft.ML/4.0.0": {
+    "Microsoft.ML/4.0.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-MFzWjiYVHts3XKzyyVBINhvaLkUBy7KOLRowdyXmu1UUYGYQYYUdgAPNV8cHsLeikbzXLt05ehRiweGzF/3alQ==",
-      "path": "microsoft.ml/4.0.0",
-      "hashPath": "microsoft.ml.4.0.0.nupkg.sha512"
+      "sha512": "sha512-qY2VXqDTPB2QdVf344dT1XBisIQOIKmaRxIvgu1YUA9XRxv5mvnwuOxxlCJEBO106wIf9oFk8xsllMnlzbpRlQ==",
+      "path": "microsoft.ml/4.0.2",
+      "hashPath": "microsoft.ml.4.0.2.nupkg.sha512"
     },
-    "Microsoft.ML.CpuMath/4.0.0": {
+    "Microsoft.ML.CpuMath/4.0.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-hIIguq5lO309euKyF0ZiMmpBX5pGvz/0Tpj6aAIiqfRMz/yOVn3JoiPdpjPkRI+1Zkih0fWwu0eTjEkjuDI+6A==",
-      "path": "microsoft.ml.cpumath/4.0.0",
-      "hashPath": "microsoft.ml.cpumath.4.0.0.nupkg.sha512"
+      "sha512": "sha512-NMbatQ0tNRnMTB4u/hpNWlx9n9lDRRa220Vx78pXloy7Keiwv130SC7AnQyXwveeg6DUOIgk/qUuH3I6MLaD1w==",
+      "path": "microsoft.ml.cpumath/4.0.2",
+      "hashPath": "microsoft.ml.cpumath.4.0.2.nupkg.sha512"
     },
-    "Microsoft.ML.DataView/4.0.0": {
+    "Microsoft.ML.DataView/4.0.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-qFLqB+uv+DQvm3xsKeQ83sjw/0Hh9LxZkCDnHOC2lc869yLBXHEtggf+7GccRXYNoB/PnaveRVuWQk3s3uuZKw==",
-      "path": "microsoft.ml.dataview/4.0.0",
-      "hashPath": "microsoft.ml.dataview.4.0.0.nupkg.sha512"
+      "sha512": "sha512-k8q9UwoCG5WpwnvPS3s46yNU+wkMgAC5F/8OELpPbozcyJw0DZL8WnpnL/mw7E218Ec4SpYz+nxL9P87eAdzmg==",
+      "path": "microsoft.ml.dataview/4.0.2",
+      "hashPath": "microsoft.ml.dataview.4.0.2.nupkg.sha512"
     },
     "Newtonsoft.Json/13.0.3": {
       "type": "package",
@@ -803,12 +803,12 @@
       "path": "vpet-simulator.core/1.1.0.40",
       "hashPath": "vpet-simulator.core.1.1.0.40.nupkg.sha512"
     },
-    "VPet-Simulator.Windows.Interface/1.1.0.47": {
+    "VPet-Simulator.Windows.Interface/1.1.0.48": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-RoADeevye4j7jqEbvE0o9jPclzXsz0GmEkC95H3XB8ooklXgpawp0vXI8iU9ZrJWIjjw/2AZjMk3h3Zrg4kUew==",
-      "path": "vpet-simulator.windows.interface/1.1.0.47",
-      "hashPath": "vpet-simulator.windows.interface.1.1.0.47.nupkg.sha512"
+      "sha512": "sha512-4oXvsDTRm/ORji24dZgpLTRxIwi0PvSBl3mcO+fLaGUtC2EtdH01rJt4dE82+ZGizEa9QklikXuX8NkjrcqVtA==",
+      "path": "vpet-simulator.windows.interface/1.1.0.48",
+      "hashPath": "vpet-simulator.windows.interface.1.1.0.48.nupkg.sha512"
     },
     "ChatVPet.ChatProcess/1.0.0": {
       "type": "project",

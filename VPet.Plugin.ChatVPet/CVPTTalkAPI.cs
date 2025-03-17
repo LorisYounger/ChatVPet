@@ -128,8 +128,8 @@ namespace VPet.Plugin.ChatVPet
                         Dispatcher.Invoke(() => this.IsEnabled = true);
                         if (Plugin.AllowSubmit && !pr.IsError)
                         {
-                            string model = Plugin.CGPTClient.Completions["vpet"].model.ToLower();
-                            if (!model.Contains("gpt-4") || !model.Contains("o1") || !model.Contains("pro") ||
+                            string? model = Plugin.CGPTClient.Completions["vpet"].model?.ToLower();
+                            if (string.IsNullOrWhiteSpace(model) || !model.Contains("gpt-4") || !model.Contains("o1") || !model.Contains("pro") ||
                             !model.Contains("plus") || !model.Contains("max"))//确保提交质量
                                 return;
 

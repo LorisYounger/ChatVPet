@@ -8,8 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="Faithlife.JiebaNet.Segmenter" Version="0.1.1" />
-    <PackageReference Include="LinePutScript" Version="1.11.8" />
-    <PackageReference Include="Microsoft.ML" Version="4.0.0" />
+    <PackageReference Include="LinePutScript" Version="1.11.9" />
+    <PackageReference Include="Microsoft.ML" Version="4.0.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
