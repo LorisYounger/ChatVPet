@@ -152,6 +152,7 @@ namespace VPet.Plugin.ChatVPet
             }
             catch (Exception exp)
             {
+                Dispatcher.Invoke(() => this.IsEnabled = true);
                 var e = exp.ToString();
                 string str = "请检查设置和网络连接".Translate();
                 if (e.Contains("401"))

@@ -126,8 +126,16 @@ namespace VPet.Plugin.ChatVPet
             completions.max_tokens = CGPTClient.Completions["vpet"].max_tokens;
             completions.temperature = CGPTClient.Completions["vpet"].temperature;
             completions.model = CGPTClient.Completions["vpet"].model;
-            completions.frequency_penalty = CGPTClient.Completions["vpet"].frequency_penalty;
-            completions.presence_penalty = CGPTClient.Completions["vpet"].presence_penalty;
+            if (CGPTClient.APIUrl.Contains("googleapis"))
+            {
+                completions.frequency_penalty = null;
+                completions.presence_penalty = null;
+            }
+            else
+            {
+                completions.frequency_penalty = CGPTClient.Completions["vpet"].frequency_penalty;
+                completions.presence_penalty = CGPTClient.Completions["vpet"].presence_penalty;
+            }
 
             completions.messages.Add(new Message() { role = Message.RoleType.system, content = system });
             foreach (var h in historys)
