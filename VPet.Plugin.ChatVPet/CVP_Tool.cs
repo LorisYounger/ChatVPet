@@ -53,7 +53,7 @@ namespace VPet.Plugin.ChatVPet
 
         public string? ToolStopWork(Dictionary<string, string> args)
         {
-            MW.Main.WorkTimer.Stop(reason: FinishWorkInfo.StopReason.MenualStop);
+            MW.Dispatcher.Invoke(() => MW.Main.WorkTimer.Stop(reason: FinishWorkInfo.StopReason.MenualStop));
             return null;
         }
         public string? ToolDance(Dictionary<string, string> args)
@@ -87,14 +87,21 @@ namespace VPet.Plugin.ChatVPet
         }
         public string? ToolSleep(Dictionary<string, string> args)
         {
-            MW.Main.WorkTimer.Stop(reason: FinishWorkInfo.StopReason.MenualStop);
             var m = MW.Main;
-            if (m.State == Main.WorkingState.Nomal)
-                m.DisplaySleep(true);
-            else if (m.State != Main.WorkingState.Sleep)
+            MW.Dispatcher.Invoke(() => 
             {
-                m.WorkTimer.Stop(() => m.DisplaySleep(true), WorkTimer.FinishWorkInfo.StopReason.MenualStop);
-            }
+                if (m.State == Main.WorkingState.Nomal)
+                {
+                    // 正常状态直接睡觉
+                    m.DisplaySleep(true);
+                }
+                else if (m.State != Main.WorkingState.Sleep)
+                {
+                    // 如果正在工作，先停止工作再睡觉
+                    m.WorkTimer.Stop(() => m.DisplaySleep(true), WorkTimer.FinishWorkInfo.StopReason.MenualStop);
+                }
+                // 如果已经是睡眠状态，什么都不做
+            });
             return null;
         }
         public string? ToolWakeup(Dictionary<string, string> args)

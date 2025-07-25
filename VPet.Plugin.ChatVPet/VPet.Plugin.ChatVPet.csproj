@@ -5,6 +5,8 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
 	 <UseWindowsForms>true</UseWindowsForms>
+   <EnableWindowsTargeting>true</EnableWindowsTargeting>
+   <selfContained>true</selfContained>
   </PropertyGroup>
 
   <ItemGroup>
