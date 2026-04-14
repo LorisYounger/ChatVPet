@@ -8,18 +8,32 @@ using System.Threading.Tasks;
 namespace ChatVPet.ChatProcess
 {
     /// <summary>
-    /// 可用工具
+    /// 可用工具 (AIAPI ToolUse)
     /// </summary>
     /// virtual 意味着你可以继承重写个动态工具库
     /// 不想重写也可以使用 ToolFunction 来实现
-    public class Tool : IInCheck, Iw2vSource
+    public class ToolUse : IInCheck, Iw2vSource
     {
-        public Tool()
+        /// <summary>
+        /// 初始化 ToolUse 类的新实例
+        /// </summary>
+        public ToolUse()
         {
-            KeyWords = "";
+            KeyWords = [];
             Args = new List<Arg>();
         }
-        public Tool(string code, string descriptive, Func<Dictionary<string, string>, string?> toolFunction, List<Arg> args, ILocalization localization, double important_muit = 2, double important_plus = 0)
+        /// <summary>
+        /// 初始化 ToolUse 类的新实例
+        /// </summary>
+        /// <param name="code">工具代码</param>
+        /// <param name="descriptive">工具描述</param>
+        /// <param name="keyword">关键字数组</param>
+        /// <param name="toolFunction">工具功能委托</param>
+        /// <param name="args">参数列表</param>
+        /// <param name="localization">本地化接口</param>
+        /// <param name="important_muit">重要性乘法权重</param>
+        /// <param name="important_plus">重要性加法权重</param>
+        public ToolUse(string code, string descriptive, string[] keyword, Func<Dictionary<string, string>, string?> toolFunction, List<Arg> args, ILocalization localization, double important_muit = 2, double important_plus = 0)
         {
             Code = code;
             Descriptive = descriptive;
@@ -27,7 +41,7 @@ namespace ChatVPet.ChatProcess
             ImportanceWeight_Plus = (float)important_plus;
             ToolFunction = toolFunction;
             Args = args;
-            KeyWords = string.Join(" ", localization.WordSplit(descriptive));
+            KeyWords = [.. keyword.Select(x => string.Join(" ", localization.WordSplit(x))), string.Join(" ", localization.WordSplit(descriptive))];
         }
 
 
@@ -75,16 +89,19 @@ namespace ChatVPet.ChatProcess
         /// 工具描述
         /// </summary>
         public virtual string Descriptive { get; set; } = "";
+        [JsonIgnore]
         /// <summary>
         /// 关键字组
         /// </summary>
-        [JsonIgnore]
-        public string KeyWords { get; set; }
+        public IEnumerable<string> KeyWords { get; set; }
+
+
         /// <summary>
         /// 向量
         /// </summary>
         [JsonIgnore]
         public float[]? Vector { get; set; }
+
         public float InCheck(string message, float similarity) => IInCheck.InCheck(message, similarity, this);
 
     }

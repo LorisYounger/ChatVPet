@@ -57,7 +57,6 @@ namespace ChatVPet.ChatProcess
             {
                 NamingStrategy = new CamelCaseNamingStrategy() { ProcessDictionaryKeys = true, OverrideSpecifiedNames = false }
             },
-            // 允许忽略大小写
             MissingMemberHandling = MissingMemberHandling.Ignore,
             // 忽略报错
             Error = (sender, args) =>

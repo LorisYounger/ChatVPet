@@ -1,11 +1,8 @@
-﻿using ChatGPT.API.Framework;
-using LinePutScript.Localization.WPF;
+﻿using LinePutScript.Localization.WPF;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -49,22 +46,17 @@ namespace VPet.Plugin.ChatVPet
             Resources = Application.Current.Resources;
 
             this.plugin = plugin;
-            if (plugin.CGPTClient != null)
+            if (plugin.OpenAIConfig != null)
             {
-                tbAPIKey.Text = plugin.CGPTClient.APIKey;
-                tbAPIURL.Text = plugin.CGPTClient.APIUrl;
-                if (plugin.CGPTClient.Completions["vpet"] != null)
-                {
-                    tbMaxToken.Text = plugin.CGPTClient.Completions["vpet"].max_tokens.ToString();
-                    tbSystem.Text = plugin.CGPTClient.Completions["vpet"].messages[0].content;
-                    tbTemp.Text = plugin.CGPTClient.Completions["vpet"].temperature.ToString();
-                    cbModel.Text = plugin.CGPTClient.Completions["vpet"].model;
-                    var msgs = plugin.CGPTClient.Completions["vpet"].messages.ToList();
-                    msgs.RemoveAt(0);
-                    //tbHistory.Text = JsonConvert.SerializeObject(msgs);
-                    lbSpend.Content = plugin.TotalTokensUsage.ToString() + " Token";
-                    totalused = plugin.CGPTClient.TotalTokensUsage;
-                }
+                tbAPIKey.Text = plugin.OpenAIConfig.ApiKey;
+                tbAPIURL.Text = plugin.OpenAIConfig.ApiUrl;
+                tbWebProxy.Text = plugin.OpenAIConfig.WebProxy;
+                tbMaxToken.Text = plugin.OpenAIConfig.MaxTokens.ToString();
+                tbSystem.Text = plugin.OpenAIConfig.SystemPrompt;
+                tbTemp.Text = plugin.OpenAIConfig.Temperature.ToString();
+                cbModel.Text = plugin.OpenAIConfig.Model;
+                lbSpend.Content = plugin.TotalTokensUsage.ToString() + " Token";
+                totalused = plugin.TotalTokensUsage;
             }
             else
                 tbSystem.Text = "请使用口语化的、可爱的、女性化的、调皮的语言风格和我交流. 你是一只桌宠, 你的名字叫{0}, 你喜欢玩 虚拟主播模拟器. 你需要尝试体会我与你对话中的感情、产生自己的情感并尽可能给出可爱的回答".Translate(plugin.MW.Core.Save.Name);
@@ -117,32 +109,26 @@ namespace VPet.Plugin.ChatVPet
         }
         private void btnSave_Click(object sender, RoutedEventArgs e)
         {
-            if (tbAPIURL.Text.Split('/').Length <= 2 && !tbAPIURL.Text.Contains("completions"))
+            if (!tbAPIURL.Text.Contains("completions", StringComparison.OrdinalIgnoreCase))
+                tbAPIURL.Text = tbAPIURL.Text + "/chat/completions";
+            plugin._embeddingClient = null;
+            plugin._chatClient = null;
+            plugin.OpenAIConfig = new OpenAIChatConfig
             {
-                tbAPIURL.Text += "/v1/chat/completions";
-            }
-            plugin.CGPTClient = new ChatGPTClient(tbAPIKey.Text, tbAPIURL.Text)
-            {
-                TotalTokensUsage = totalused
+                ApiKey = tbAPIKey.Text,
+                ApiUrl = tbAPIURL.Text,
+                WebProxy = tbWebProxy.Text,
+                Model = cbModel.Text,
+                FrequencyPenalty = 0.2,
+                PresencePenalty = 1,
+                MaxTokens = Math.Min(Math.Max(int.Parse(tbMaxToken.Text), 10), 4000),
+                Temperature = Math.Min(Math.Max(double.Parse(tbTemp.Text), 0.1), 2),
+                SystemPrompt = tbSystem.Text.Replace("{Name}", plugin.MW.Core.Save.Name)
             };
-            plugin.CGPTClient.CreateCompletions("vpet", tbSystem.Text.Replace("{Name}", plugin.MW.Core.Save.Name));
-            if (!string.IsNullOrWhiteSpace(tbWebProxy.Text))
-            {
-                plugin.CGPTClient.WebProxy = tbWebProxy.Text;
-                plugin.CGPTClient.Proxy = new HttpClientHandler()
-                {
-                    Proxy = new WebProxy(plugin.CGPTClient.WebProxy),
-                    UseProxy = true
-                };
-            }
-            plugin.CGPTClient.Completions["vpet"].model = cbModel.Text;
-            plugin.CGPTClient.Completions["vpet"].frequency_penalty = 0.2;
-            plugin.CGPTClient.Completions["vpet"].presence_penalty = 1;
-            plugin.CGPTClient.Completions["vpet"].max_tokens = Math.Min(Math.Max(int.Parse(tbMaxToken.Text), 10), 4000);
-            plugin.CGPTClient.Completions["vpet"].temperature = Math.Min(Math.Max(double.Parse(tbTemp.Text), 0.1), 2);
+            plugin.VPetChatProcess.SystemDescription = plugin.OpenAIConfig.SystemPrompt;
             //var l = JsonConvert.DeserializeObject<List<Message>>(tbHistory.Text);
             //if (l != null)
-            //    plugin.CGPTClient.Completions["vpet"].messages.AddRange(l);
+            //    plugin.OpenAIConfig.HistoryMessages.AddRange(l);
             //plugin.KeepHistory = (int)niKeepHistory.Value.Value;
             plugin.ShowToken = swShowToken.IsChecked ?? false;
 
@@ -274,7 +260,7 @@ namespace VPet.Plugin.ChatVPet
             ObservableCollection<string> kdbs = new ObservableCollection<string>(plugin.VPetChatProcess.KnowledgeDataBases.Select(x => (x, x.InCheck(search, W2VEngine.ComputeCosineSimilarity(x.Vector!, vector))))
                     .OrderBy(x => x.Item2).Where(x => x.Item2 < IInCheck.IgnoreValue)
                     .Select(x => x.x.KnowledgeData).ToList());
-            List<Tool> tools = plugin.VPetChatProcess.Tools.Select(x => (x, x.InCheck(search, W2VEngine.ComputeCosineSimilarity(x.Vector!, vector))))
+            List<ToolUse> tools = plugin.VPetChatProcess.Tools.Select(x => (x, x.InCheck(search, W2VEngine.ComputeCosineSimilarity(x.Vector!, vector))))
                 .OrderBy(x => x.Item2).Where(x => x.Item2 < IInCheck.IgnoreValue).Select(x => x.x).ToList();
             List<Dialogue> dialogues = plugin.VPetChatProcess.Dialogues.Select(x => (x, x.InCheck(search, W2VEngine.ComputeCosineSimilarity(x.Vector!, vector)))).OrderBy(x => x.Item2)
                 .Where(x => x.Item2 < IInCheck.IgnoreValue).Select(x => x.x).ToList();
@@ -294,4 +280,3 @@ namespace VPet.Plugin.ChatVPet
         }
     }
 }
-

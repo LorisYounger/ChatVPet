@@ -16,14 +16,22 @@ namespace ChatVPet.ChatProcess
     {
         public KnowledgeDataBase()
         {
-            KeyWords = "";
+            KeyWords = [];
         }
-        public KnowledgeDataBase(string knowledgeData, ILocalization localization, double important_muit = 2, double important_plus = 0)
+        /// <summary>
+        /// 知识数据库构造函数
+        /// </summary>
+        /// <param name="knowledgeData">知识库数据</param>
+        /// <param name="keyword">关键字数组</param>
+        /// <param name="localization">本地化接口</param>
+        /// <param name="important_muit">重要性乘法权重</param>
+        /// <param name="important_plus">重要性加法权重</param>
+        public KnowledgeDataBase(string knowledgeData, string[] keyword, ILocalization localization, double important_muit = 2, double important_plus = 0)
         {
             KnowledgeData = knowledgeData;
             ImportanceWeight_Muti = (float)important_muit;
             ImportanceWeight_Plus = (float)important_plus;
-            KeyWords = string.Join(" ", localization.WordSplit(knowledgeData));
+            KeyWords = [.. keyword.Select(x => string.Join(" ", localization.WordSplit(x))), string.Join(" ", localization.WordSplit(knowledgeData))];
         }
 
         /// <summary>
@@ -38,7 +46,7 @@ namespace ChatVPet.ChatProcess
         /// <summary>
         /// 关键字组
         /// </summary>
-        public string KeyWords { get; set; }
+        public IEnumerable<string> KeyWords { get; set; }
         /// <summary>
         /// 向量
         /// </summary>

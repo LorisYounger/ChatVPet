@@ -18,7 +18,7 @@ namespace VPet.Plugin.ChatVPet.dynKnowDB
         public DynKDBTime(IMainWindow mw, ILocalization localization)
         {
             MW = mw;
-            KeyWords = string.Join(" ", localization.WordSplit("当前 时间 今天 现在 日期".Translate(MW.GameSavesData.GameSave.Name)));
+            KeyWords = localization.WordSplit("当前 时间 今天 现在 日期".Translate(MW.GameSavesData.GameSave.Name));
             ImportanceWeight_Plus = 0.15f;
             ImportanceWeight_Muti = 1.5f;
         }

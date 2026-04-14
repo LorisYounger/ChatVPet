@@ -1,7 +1,4 @@
-﻿using LinePutScript;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using System.Collections.Generic;
+﻿using Newtonsoft.Json;
 
 namespace ChatVPet.ChatProcess
 {
@@ -10,25 +7,43 @@ namespace ChatVPet.ChatProcess
     /// </summary>
     public class VPetChatProcess
     {
+        /// <summary>
+        /// AIAPI 调用结果
+        /// </summary>
+        public class AIAPIAskResult
+        {
+            public string Reply { get; set; } = "";
+            public List<ToolCall> ToolCalls { get; set; } = [];
+        }
 
         /// <summary>
-        /// GPT 调用方法
+        /// AIAPI 调用方法
         /// </summary>
         /// <param name="system">系统消息</param>
         /// <param name="historys">历史消息</param>
         /// <param name="input">当前消息</param>
-        /// <returns>返回的文本</returns>
-        public delegate string GPTAsk(string system, List<string[]> historys, string input);
+        /// <param name="tools">当前可用工具</param>
+        /// <returns>返回结果</returns>
+        public delegate AIAPIAskResult AIAPIAsk(string system, List<string[]> historys, string input, List<ToolUse> tools);
+
         /// <summary>
-        /// GPT 调用方法
+        /// AIAPI AI生成 调用方法
         /// </summary>
-        [JsonIgnore] public GPTAsk? GPTAskFunction;
+        [JsonIgnore] public AIAPIAsk? AIAPIAskFunction;
+       
+        public delegate float[] AIAPIEmbedding(string input);
+        /// <summary>
+        /// 生成 input 的词向量的方法
+        /// </summary>
+        [JsonIgnore] public AIAPIEmbedding? AIAPIEmbeddingFunction;
+
         /// <summary>
         /// 重要性计算方法 判断该段消息是否重要 (eg:可以通过机器学习为每个消息打分)
         /// </summary>
         /// <param name="message">消息[0]Ask [1]Reply</param>
         /// <returns>分数, 范围:0-1</returns>
         public delegate float CalculateImportance(string[] message);
+
         /// <summary>
         /// 重要性计算方法 判断该段消息是否重要
         /// </summary>
@@ -38,15 +53,18 @@ namespace ChatVPet.ChatProcess
         /// 知识数据库
         /// </summary>
         public List<KnowledgeDataBase> KnowledgeDataBases = new List<KnowledgeDataBase>();
+
         /// <summary>
         /// 聊天历史
         /// </summary>
         public List<Dialogue> Dialogues = new List<Dialogue>();
+
         /// <summary>
         /// 工具库
         /// </summary>
         [JsonIgnore]
-        public List<Tool> Tools = new List<Tool>();
+        public List<ToolUse> Tools = new List<ToolUse>();
+
         /// <summary>
         /// 本地化方法
         /// </summary>
@@ -58,15 +76,30 @@ namespace ChatVPet.ChatProcess
         public string SystemDescription { get; set; } = "";
 
         /// <summary>
-        /// ChatVPet 聊天处理流程
+        /// 消息最大历史记录数
         /// </summary>
-        /// <param name="localization">本地化</param>
-        /// <param name="gptAskFunction">GPT调用方法</param>
-        public VPetChatProcess(ILocalization localization, GPTAsk gptAskFunction)
-        {
-            Localization = localization;
-            GPTAskFunction = gptAskFunction;
-        }
+        public int MaxHistoryCount { get; set; } = 10;
+
+        /// <summary>
+        /// 消息最大知识库数
+        /// </summary>
+        public int MaxKnowledgeCount { get; set; } = 10;
+
+        /// <summary>
+        /// 消息最大工具数
+        /// </summary>
+        public int MaxToolCount { get; set; } = 10;
+
+        /// <summary>
+        /// 工具调用最大轮次
+        /// </summary>
+        public int MaxToolRecallCount { get; set; } = 8;
+
+        /// <summary>
+        /// 词向量引擎
+        /// </summary>
+        public W2VEngine? W2VEngine { get; set; }
+
         /// <summary>
         /// ChatVPet 聊天处理流程
         /// </summary>
@@ -74,6 +107,7 @@ namespace ChatVPet.ChatProcess
         {
             Localization = new ILocalization.LChineseSimple();
         }
+
         /// <summary>
         /// 添加知识库内容 (纯文本)
         /// </summary>
@@ -83,229 +117,83 @@ namespace ChatVPet.ChatProcess
             foreach (var knowledge in knowledgedb)
             {
                 if (KnowledgeDataBases.Find(x => x.KnowledgeData == knowledge) == null)
-                    KnowledgeDataBases.Add(new KnowledgeDataBase(knowledge, Localization));
+                    KnowledgeDataBases.Add(new KnowledgeDataBase(knowledge, [], Localization));
             }
-            if (W2VEngine != null)
-                W2VEngine.NeedUpdate = true;
         }
 
-        /// <summary>
-        /// 消息最大历史记录数
-        /// </summary>
-        public int MaxHistoryCount { get; set; } = 10;
-        /// <summary>
-        /// 消息最大知识库数
-        /// </summary>
-        public int MaxKnowledgeCount { get; set; } = 10;
-        /// <summary>
-        /// 消息最大工具数
-        /// </summary>
-        public int MaxToolCount { get; set; } = 10;
-
-        /// <summary>
-        /// 词向量引擎
-        /// </summary>
-        public W2VEngine? W2VEngine { get; set; }
-
-        /// <summary>
-        /// 错误格式兼容
-        /// </summary>
-        public bool ErrorFormatCompatible = false;
         /// <summary>
         /// 消息输入聊天内容并获得回复 [注:默认卡线程等待回复,如在UI线程,记得TaskNew]
         /// </summary>
         /// <param name="message">用户输入的聊天内容</param>
-        /// <param name="control">运行控制程序</param>
         /// <param name="ReturnResponse">返回的回复</param>
+        /// <param name="control">运行控制程序</param>
         public void Ask(string message, Action<ProcessResponse> ReturnResponse, ProcessControl control)
         {
-            if (GPTAskFunction == null)
-            {
-                throw new Exception("GPTAskFunction is null");
-            }
+            if (AIAPIAskFunction == null)
+                throw new Exception("AIAPIAskFunction is null");
             if (W2VEngine == null)
-            {
                 throw new Exception("W2VEngine is null");
-            }
-
+            if (control.ForceToStop)
+                return;
 
             int position = 0;
 
-            var vector = W2VEngine.GetQueryVector(message);
-            ////为所有知识库和工具添加向量 已经自动更新 除了新插入的消息可能需要手动更新
-            //W2VEngine.GetQueryVector(Tools);
-            //W2VEngine.GetQueryVector(KnowledgeDataBases);
+            var queryVector = W2VEngine.GetQueryVector(message);
+            W2VEngine.GetQueryVector(KnowledgeDataBases);
+            W2VEngine.GetQueryVector(Tools);
             W2VEngine.GetQueryVector(Dialogues);
 
-            List<string> kdbs = KnowledgeDataBases.Select(x => (x, x.InCheck(message, W2VEngine.ComputeCosineSimilarity(x.Vector!, vector))))
-                    .OrderBy(x => x.Item2).Take(MaxKnowledgeCount).Where(x => x.Item2 < IInCheck.IgnoreValue)
-                    .Select(x => x.x.KnowledgeData).ToList();
-            List<Tool> tools = Tools.Select(x => (x, x.InCheck(message, W2VEngine.ComputeCosineSimilarity(x.Vector!, vector))))
-                .OrderBy(x => x.Item2).Take(MaxToolCount).Where(x => x.Item2 < IInCheck.IgnoreValue).Select(x => x.x).ToList();
+            var selectedKnowledge = SelectKnowledge(message, queryVector);
+            var selectedTools = SelectTools(message, queryVector);
+           var  currentSelectedTools = selectedTools;
+            var selectedHistory = SelectHistory(message, queryVector);
+            var sysmessage = Localization.ToSystemMessage(SystemDescription, selectedTools, selectedKnowledge);
 
+            var history = new List<string[]>(selectedHistory);
+            var currentMessage = message;
+            var isToolMessage = false;
 
-            //List<(Tool x, float)> testTool = new List<(Tool x, float)>();
-            //foreach (var tool in Tools)
-            //{
-            //    var s = tool.InCheck(message, W2VEngine.ComputeCosineSimilarity(tool.Vector!, vector));
-            //    testTool.Add((tool, s));
-            //}
-            //List<(KnowledgeDataBase x, float)> testKDB = new List<(KnowledgeDataBase x, float)>();
-            //foreach (var kdb in KnowledgeDataBases)
-            //{
-            //    var s = kdb.InCheck(message, W2VEngine.ComputeCosineSimilarity(kdb.Vector!, vector));
-            //    testKDB.Add((kdb, s));
-            //}
-            //testTool = testTool.OrderBy(x => x.Item2).ToList();
-            //testKDB = testKDB.OrderBy(x => x.Item2).ToList();
-
-
-            List<string[]> history = new List<string[]>();
-            if (Dialogues.Count > 0)
+            var toolRecallRound = 0;
+            while (true)
             {
-                List<(Dialogue, int)> list = new List<(Dialogue, int)>();
-                List<(Dialogue, int)> willjoin = new List<(Dialogue, int)>();
-                for (int i = 0; i < Dialogues.Count; i++)
-                {
-                    list.Add((Dialogues[i], i));
-                }
-                int nearmsg = MaxHistoryCount / 3;
-                while (--nearmsg >= 0 && list.Count > 0)
-                {
-                    var last = list.Last();
-                    list.Remove(last);
-                    willjoin.Add(last);
-                }
-                if (list.Count > 0)
-                {
-                    List<(Dialogue, int, float)> dialogues = list.Select(x => (x.Item1, x.Item2, x.Item1.InCheck(message, W2VEngine.ComputeCosineSimilarity(x.Item1.Vector!, vector))))
-                        .OrderBy(x => x.Item3).ToList();
-                    foreach (var (dialogue, index, value) in dialogues)
-                    {
-                        if (willjoin.Count >= MaxHistoryCount)
-                        {
-                            break;
-                        }
-                        if (value < IInCheck.IgnoreValue)
-                        {
-                            willjoin.Add((dialogue, index));
-                        }
-                        else
-                            break;
-                    }
-                }
-                history.AddRange(willjoin.OrderBy(x => x.Item2).Select(x => x.Item1.ToMessages(Localization)));
-            }
+                if (control.ForceToStop)
+                    return;
 
-            string sysmessage = Localization.ToSystemMessage(SystemDescription, tools, kdbs);
-            bool isToolMessage = false;
-
-            if (control.ForceToStop)
-            {
-                return;
-            }
-
-        retrytool:
-            string respond = GPTAskFunction(sysmessage, history, message).Replace("\r", "");
-
-            if (string.IsNullOrWhiteSpace(respond))
-            {
-                ReturnResponse.Invoke(new ProcessResponse()
-                {
-                    Reply = "GPTAskFunction return null",
-                    IsEnd = true,
-                    IsError = true,
-                    ListPosition = position++
-                });
-                return;
-            }
-            else if (!respond.Contains(Localization.ToolCall) && !respond.Contains(Localization.Response))
-            {
-                if (ErrorFormatCompatible)
-                {
-                    respond = Localization.Response + "\n" + respond + "\n" + Localization.ToolCall + "\n[]";
-                }
-                else
+                var modelResult = AIAPIAskFunction(sysmessage, history, currentMessage, selectedTools);
+                if (modelResult == null)
                 {
                     ReturnResponse.Invoke(new ProcessResponse()
                     {
-                        Reply = "GPTAskFunction return error formart",
+                        Reply = "AIAPIAskFunction return null",
                         IsEnd = true,
                         IsError = true,
                         ListPosition = position++
                     });
                     return;
                 }
-            }
+                var reply = modelResult.Reply ?? "";
+                var toolCalls = modelResult.ToolCalls ?? [];
 
-            var res1 = Sub.Split(respond, '\n' + Localization.ToolCall + '\n', 1).Select(x => x.Trim([' ', '\n', '\r'])).ToList();
-            if (res1.Count < 2)
-            {
-                res1.Add("[]");
-            }
-            string reply = res1[0];
-            if (reply.Contains(Localization.Response))
-                reply = reply.Substring(Localization.Response.Length);
-            reply = reply.Trim([' ', '\n', '\r']);
-            //发送返回消息
-            ReturnResponse.Invoke(new ProcessResponse()
-            {
-                Reply = reply,
-                IsEnd = false,
-                IsError = false,
-                ListPosition = position++
-            });
-
-
-            //工具调用
-            List<ToolCall> toolcalls;
-            var jsetting = ToolCall.jsonsetting;
-            if (!res1[1].StartsWith('[') || !res1[1].EndsWith(']'))
-                if (res1[1].StartsWith('{') && res1[1].EndsWith('}'))
+                ReturnResponse.Invoke(new ProcessResponse()
                 {
-                    toolcalls = new List<ToolCall>();
-                    var tc = JsonConvert.DeserializeObject<ToolCall>(res1[1], jsetting);
-                    if (tc != null)
-                        toolcalls.Add(tc);
-                }
-                else if (res1[1].StartsWith('[') && res1[1].EndsWith("]}"))
-                    toolcalls = JsonConvert.DeserializeObject<List<ToolCall>>(res1[1][..^1], jsetting) ?? [];
-                else
-                    toolcalls = [];
-            else
-                toolcalls = JsonConvert.DeserializeObject<List<ToolCall>>(res1[1], jsetting) ?? [];
-            if (toolcalls == null)
-            {
-                toolcalls = new List<ToolCall>();
-            }
+                    Reply = reply,
+                    IsEnd = false,
+                    IsError = false,
+                    ListPosition = position++
+                });
 
-            //添加聊天记录到历史
-            var msgimp = (isToolMessage ? 0 : CalImportanceFunction([message, reply]));//标准化工具内容,兼容不是很聪明的AI
-            Dialogues.Add(new Dialogue(message, reply, JsonConvert.SerializeObject(toolcalls), Localization, msgimp * 4, msgimp / 4));
+                var msgimp = isToolMessage ? 0 : CalImportanceFunction([currentMessage, reply]);
+                Dialogues.Add(new Dialogue(currentMessage, reply, JsonConvert.SerializeObject(toolCalls), Localization, msgimp * 4, msgimp / 4));
 
-            string toolreturn = "";
-            //处理工具
-            foreach (var tc in toolcalls)
-            {
-                Tool? tool = Tools.Find(x => x.Code == tc.Code);
-                if (tool != null)
+                var toolReturn = ExecuteTools(toolCalls);
+                if (string.IsNullOrWhiteSpace(toolReturn))
                 {
-                    var ret = tool.RunToolFunction(tc.Args);
-                    if (!string.IsNullOrWhiteSpace(ret))
+                    if (isToolMessage)
                     {
-                        toolreturn += string.Format(Localization.ToolReturn, JsonConvert.SerializeObject(tc), ret);
+                        var last = Dialogues.Last();
+                        last.ImportanceWeight_Muti = CalImportanceFunction([last.Question, last.Answer]);
                     }
-                }
-            }
 
-
-
-            //工具消息多次调用
-            if (toolreturn != "")
-            {
-                if (control.ForceToStop || control.StopBeforeNext)
-                {
-                    //发送结束消息
                     ReturnResponse.Invoke(new ProcessResponse()
                     {
                         Reply = "",
@@ -316,27 +204,129 @@ namespace ChatVPet.ChatProcess
                     return;
                 }
 
-                history.Add([message, respond]);
-                message = toolreturn;
-                isToolMessage = true;
-                goto retrytool;
-            }
-            if (isToolMessage)
-            {
-                //最后一个ToolMessage可以有点重要性
-                var last = Dialogues.Last();
-                last.ImportanceWeight_Muti = (float)CalImportanceFunction([last.Question, last.Answer]);
-            }
+                if (control.ForceToStop || control.StopBeforeNext)
+                {
+                    ReturnResponse.Invoke(new ProcessResponse()
+                    {
+                        Reply = "",
+                        IsEnd = true,
+                        IsError = false,
+                        ListPosition = position++
+                    });
+                    return;
+                }
 
-            //发送结束消息
-            ReturnResponse.Invoke(new ProcessResponse()
-            {
-                Reply = "",
-                IsEnd = true,
-                IsError = false,
-                ListPosition = position++
-            });
+                if (toolRecallRound >= MaxToolRecallCount)
+                {
+                    ReturnResponse.Invoke(new ProcessResponse()
+                    {
+                        Reply = "Tool recall round exceeded",
+                        IsEnd = true,
+                        IsError = true,
+                        ListPosition = position++
+                    });
+                    return;
+                }
+
+                history.Add([currentMessage, BuildStructuredReply(reply, toolCalls)]);
+                currentMessage = toolReturn;
+                isToolMessage = true;
+                toolRecallRound++;
+            }
         }
 
+        private List<string> SelectKnowledge(string message, float[] queryVector)
+        {
+            if (MaxKnowledgeCount <= 0)
+                return [];
+
+            return KnowledgeDataBases
+                .Where(x => x.Vector != null)
+                .Select(x => (x, score: x.InCheck(message, W2VEngine.ComputeCosineSimilarity(x.Vector!, queryVector))))
+                .OrderBy(x => x.score)
+                .Take(MaxKnowledgeCount)
+                .Where(x => x.score < IInCheck.IgnoreValue)
+                .Select(x => x.x.KnowledgeData)
+                .ToList();
+        }
+
+        private List<ToolUse> SelectTools(string message, float[] queryVector)
+        {
+            if (MaxToolCount <= 0)
+                return [];
+
+            return Tools
+                .Where(x => x.Vector != null)
+                .Select(x => (x, score: x.InCheck(message, W2VEngine.ComputeCosineSimilarity(x.Vector!, queryVector))))
+                .OrderBy(x => x.score)
+                .Take(MaxToolCount)
+                .Where(x => x.score < IInCheck.IgnoreValue)
+                .Select(x => x.x)
+                .ToList();
+        }
+
+        private List<string[]> SelectHistory(string message, float[] queryVector)
+        {
+            if (MaxHistoryCount <= 0 || Dialogues.Count == 0)
+                return [];
+
+            var candidates = Dialogues.Select((dialogue, index) => (dialogue, index)).ToList();
+            var selected = new List<(Dialogue dialogue, int index)>();
+
+            var nearCount = Math.Max(1, MaxHistoryCount / 3);
+            while (nearCount-- > 0 && candidates.Count > 0)
+            {
+                selected.Add(candidates[^1]);
+                candidates.RemoveAt(candidates.Count - 1);
+            }
+
+            if (candidates.Count > 0 && selected.Count < MaxHistoryCount)
+            {
+                var bySimilarity = candidates
+                    .Where(x => x.dialogue.Vector != null)
+                    .Select(x => (x.dialogue, x.index, score: x.dialogue.InCheck(message, W2VEngine.ComputeCosineSimilarity(x.dialogue.Vector!, queryVector))))
+                    .OrderBy(x => x.score)
+                    .ToList();
+
+                foreach (var item in bySimilarity)
+                {
+                    if (selected.Count >= MaxHistoryCount || item.score >= IInCheck.IgnoreValue)
+                        break;
+                    selected.Add((item.dialogue, item.index));
+                }
+            }
+
+            return selected
+                .OrderBy(x => x.index)
+                .Select(x => x.dialogue.ToMessages(Localization))
+                .ToList();
+        }
+
+        /// <summary>
+        /// 工具调用执行方法, 执行工具调用列表中的工具, 并返回工具的输出结果 (如果有)
+        /// </summary>
+        /// <param name="toolCalls"></param>
+        /// <returns></returns>
+        private string ExecuteTools(List<ToolCall> toolCalls)
+        {
+            var results = new List<string>();
+            foreach (var tc in toolCalls)
+            {
+                var tool = Tools.Find(x => x.Code == tc.Code);
+                if (tool == null)
+                    continue;
+
+                var ret = tool.RunToolFunction(tc.Args);
+                if (!string.IsNullOrWhiteSpace(ret))
+                    results.Add(string.Format(Localization.ToolReturn, JsonConvert.SerializeObject(tc), ret));
+            }
+
+            return string.Join("", results);
+        }
+
+        private string BuildStructuredReply(string reply, List<ToolCall> toolCalls)
+        {
+            return $"{Localization.Response}\n{reply}\n{Localization.ToolCall}\n{JsonConvert.SerializeObject(toolCalls)}";
+        }
     }
 }

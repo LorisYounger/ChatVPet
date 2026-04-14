@@ -91,7 +91,7 @@ namespace VPet.Plugin.ChatVPet
                 return;
             }
             DisplayThink();
-            if (Plugin.CGPTClient == null)
+            if (Plugin.OpenAIConfig == null)
             {
                 DisplayThinkToSayRnd("请先前往设置中设置 GPT API".Translate());
                 return;
@@ -128,9 +128,9 @@ namespace VPet.Plugin.ChatVPet
                         Dispatcher.Invoke(() => this.IsEnabled = true);
                         if (Plugin.AllowSubmit && !pr.IsError)
                         {
-                            string? model = Plugin.CGPTClient.Completions["vpet"].model?.ToLower();
-                            if (string.IsNullOrWhiteSpace(model) || !model.Contains("gpt-4") || !model.Contains("o1") || !model.Contains("pro") ||
-                            !model.Contains("plus") || !model.Contains("max"))//确保提交质量
+                            string? model = Plugin.OpenAIConfig.Model?.ToLower();
+                            if (string.IsNullOrWhiteSpace(model) || (!model.Contains("gpt-4") && !model.Contains("o1") && !model.Contains("pro") &&
+                            !model.Contains("plus") && !model.Contains("max")))//确保提交质量
                                 return;
 
                             string[]? msg = Plugin.VPetChatProcess.Dialogues.LastOrDefault()?.ToMessages(Plugin.VPetChatProcess.Localization);

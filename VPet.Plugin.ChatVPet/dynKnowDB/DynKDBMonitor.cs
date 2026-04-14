@@ -23,7 +23,7 @@ namespace VPet.Plugin.ChatVPet.dynKnowDB
         {
             MW = mw;
 
-            KeyWords = string.Join(" ", localization.WordSplit("电脑 信息 监控 状况 CPU 内存 占用".Translate(MW.GameSavesData.GameSave.Name)));
+            KeyWords = localization.WordSplit("电脑 信息 监控 状况 CPU 内存 占用".Translate(MW.GameSavesData.GameSave.Name));
         }
         public override string KnowledgeData
         {

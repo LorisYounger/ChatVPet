@@ -14,7 +14,7 @@ namespace VPet.Plugin.ChatVPet.dynKnowDB
         public DynKDBHostInfo(IMainWindow mw, ILocalization localization)
         {
             MW = mw;
-            KeyWords = string.Join(" ", localization.WordSplit("主人 当前用户 名字 生日".Translate(MW.GameSavesData.GameSave.Name)));
+            KeyWords = localization.WordSplit("主人 当前用户 名字 生日".Translate(MW.GameSavesData.GameSave.Name));
         }
         public override string KnowledgeData
         {

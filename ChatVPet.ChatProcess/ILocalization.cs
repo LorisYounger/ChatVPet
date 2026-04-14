@@ -60,7 +60,7 @@ namespace ChatVPet.ChatProcess
         /// <param name="tools">工具列表</param>
         /// <param name="database">数据库</param>
         /// <returns>系统消息</returns>
-        public string ToSystemMessage(string system, List<Tool> tools, List<string> database)
+        public string ToSystemMessage(string system, List<ToolUse> tools, List<string> database)
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine(system);

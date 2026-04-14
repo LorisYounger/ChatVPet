@@ -1,10 +1,22 @@
-﻿using ChatGPT.API.Framework;
+using ChatVPet.ChatProcess;
 using LinePutScript.Localization.WPF;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using OpenAI;
+using OpenAI.Chat;
+using OpenAI.Embeddings;
 using Panuon.WPF.UI;
 using System;
+using System.ClientModel;
+using System.ClientModel.Primitives;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -19,6 +31,7 @@ namespace VPet.Plugin.ChatVPet
 {
     public partial class CVPPlugin
     {
+
         /// <summary>
         /// 让桌宠自己买东西吃
         /// </summary>
@@ -116,37 +129,42 @@ namespace VPet.Plugin.ChatVPet
         }
         public int temptoken = 0;
         /// <summary>
-        /// 调用GPT的方法
+        /// 调用 OpenAI 的方法
         /// </summary>
-        public string GPTAsk(string system, List<string[]> historys, string message)
+        public VPetChatProcess.AIAPIAskResult OpenAIAsk(string system, List<string[]> historys, string message, List<ToolUse> tools)
         {
-            Completions completions = new Completions();
-            if (CGPTClient == null)
+            if (OpenAIConfig == null)
                 throw new Exception("请先前往设置中设置 GPT API".Translate());
-            completions.max_tokens = CGPTClient.Completions["vpet"].max_tokens;
-            completions.temperature = CGPTClient.Completions["vpet"].temperature;
-            completions.model = CGPTClient.Completions["vpet"].model;
-            completions.frequency_penalty = CGPTClient.Completions["vpet"].frequency_penalty;
-            completions.presence_penalty = CGPTClient.Completions["vpet"].presence_penalty;
+            var config = OpenAIConfig;
 
-            completions.messages.Add(new Message() { role = Message.RoleType.system, content = system });
+            List<ChatMessage> messages = [new SystemChatMessage(system)];
             foreach (var h in historys)
             {
-                completions.messages.Add(new Message() { role = Message.RoleType.user, content = h[0] });
-                completions.messages.Add(new Message() { role = Message.RoleType.system, content = h[1] });
+                messages.Add(new UserChatMessage(h[0]));
+                messages.Add(new AssistantChatMessage(h[1]));
             }
-            completions.messages.Add(new Message() { role = Message.RoleType.user, content = message });
-            var resp = completions.GetResponse(CGPTClient.APIUrl, CGPTClient.APIKey, CGPTClient.Proxy);
-            var reply = resp!.GetMessageContent();
-            if (resp.choices.Length == 0)
+            messages.Add(new UserChatMessage(message));
+
+            var options = new ChatCompletionOptions();
+            options.Temperature = (float)config.Temperature;
+            options.MaxOutputTokenCount = config.MaxTokens;
+            options.PresencePenalty = (float)config.PresencePenalty;
+            options.FrequencyPenalty = (float)config.FrequencyPenalty;
+
+            foreach (var tool in tools)
             {
-                throw new Exception("请检查API token设置".Translate());
+                options.Tools.Add(ChatTool.CreateFunctionTool(
+                functionName: tool.Code,
+                functionDescription: tool.Descriptive,
+                functionParameters: BinaryData.FromString(BuildToolParametersSchema(tool))));
             }
-            else if (resp.choices[0].finish_reason == "length")
-            {
-                reply += " ...";
-            }
-            temptoken = resp.usage.total_tokens;
+
+            var client = CreateOpenAIChatClient();
+
+            var completion = client.CompleteChat(messages, options).Value;
+            var reply = string.Concat(completion.Content.Select(x => x.Text));
+
+            temptoken = completion.Usage?.TotalTokenCount ?? 0;
             TotalTokensUsage += temptoken;
             TokenCount = temptoken;
             if (AllowSubmit)
@@ -155,7 +173,158 @@ namespace VPet.Plugin.ChatVPet
                 upquestion = message;
                 uphistory = historys;
             }
-            return reply!;
+
+            return new VPetChatProcess.AIAPIAskResult
+            {
+                Reply = reply,
+                ToolCalls = ParseToolCalls(completion.ToolCalls)
+            };
+        }
+
+        public float[] OpenAIEmbedding(string text)
+        {
+            if (OpenAIConfig == null)
+                throw new Exception("请先前往设置中设置 GPT API".Translate());
+           
+            var client = GetClient();
+            return client.GenerateEmbedding(text).Value.ToFloats().ToArray();
+        }
+        public EmbeddingClient? _embeddingClient;
+        private readonly object _clientLock = new object();
+        private EmbeddingClient GetClient()
+        {
+            if (OpenAIConfig == null)
+                throw new Exception("请先前往设置中设置 GPT API".Translate());
+            lock (_clientLock)
+            {
+                if (_embeddingClient == null)
+                {
+                    var options = new OpenAIClientOptions { Endpoint = new Uri(OpenAIConfig.EmbeddingApiUrl) };
+                    _embeddingClient = new EmbeddingClient(OpenAIConfig.EmbeddingModel, new ApiKeyCredential(OpenAIConfig.EmbeddingApiKey), options);
+                }
+                return _embeddingClient;
+            }
+        }
+        public ChatClient? _chatClient;
+        private ChatClient CreateOpenAIChatClient()
+        {
+            if (OpenAIConfig == null)
+                throw new Exception("请先前往设置中设置 GPT API".Translate());
+            var endpoint = BuildOpenAIEndpoint(OpenAIConfig.ApiUrl);
+            var cacheKey = $"{endpoint}|{OpenAIConfig.Model}|{GetCacheSafeKey(OpenAIConfig.ApiKey)}|{OpenAIConfig.WebProxy}";
+            lock (_clientLock)
+            {
+                if (_chatClient == null)
+                {
+                    var options = new OpenAIClientOptions
+                    {
+                        Endpoint = new Uri(endpoint)
+                    };
+                    if (!string.IsNullOrWhiteSpace(OpenAIConfig.WebProxy))
+                    {
+                        var handler = new HttpClientHandler
+                        {
+                            Proxy = new WebProxy(OpenAIConfig.WebProxy),
+                            UseProxy = true
+                        };
+                        options.Transport = new HttpClientPipelineTransport(new HttpClient(handler));
+                    }
+                    _chatClient = new ChatClient(OpenAIConfig.Model, new ApiKeyCredential(OpenAIConfig.ApiKey), options);
+                }
+                return _chatClient;
+            }
+        }
+
+        private static string BuildOpenAIEndpoint(string apiUrl)
+        {
+            if (string.IsNullOrWhiteSpace(apiUrl))
+                return "https://api.openai.com/v1";
+
+            if (!Uri.TryCreate(apiUrl, UriKind.Absolute, out var uri))
+                return apiUrl.TrimEnd('/');
+
+            var segments = uri.AbsolutePath.TrimEnd('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+            // 兼容传入 /v1/chat/completions 的配置，抽取到基础 endpoint(/v1) 给 OpenAI SDK 使用。
+            var chatIndex = Array.FindIndex(segments, x => x.Equals("chat", StringComparison.OrdinalIgnoreCase));
+            if (chatIndex >= 0)
+            {
+                var prefix = string.Join("/", segments.Take(chatIndex));
+                var endpoint = $"{uri.Scheme}://{uri.Authority}/{prefix}".TrimEnd('/');
+                if (endpoint.Equals($"{uri.Scheme}://{uri.Authority}", StringComparison.OrdinalIgnoreCase))
+                    return endpoint + "/v1";
+                return endpoint;
+            }
+
+            var baseEndpoint = $"{uri.Scheme}://{uri.Authority}{uri.AbsolutePath}".TrimEnd('/');
+            if (uri.AbsolutePath == "/" || string.IsNullOrWhiteSpace(uri.AbsolutePath))
+                return $"{uri.Scheme}://{uri.Authority}/v1";
+            return baseEndpoint;
+        }
+
+        private static string GetCacheSafeKey(string apiKey)
+        {
+            if (string.IsNullOrWhiteSpace(apiKey))
+                return string.Empty;
+            var hash = SHA256.HashData(Encoding.UTF8.GetBytes(apiKey));
+            return Convert.ToHexString(hash);
+        }
+
+        private static string BuildToolParametersSchema(ToolUse tool)
+        {
+            JObject properties = new JObject();
+            foreach (var arg in tool.Args)
+            {
+                properties[arg.Name] = new JObject
+                {
+                    ["type"] = "string",
+                    ["description"] = arg.Description
+                };
+            }
+            return new JObject
+            {
+                ["type"] = "object",
+                ["properties"] = properties
+            }.ToString(Formatting.None);
+        }
+        /// <summary>
+        /// 转换返回的工具调用为 ToolCall 列表
+        /// </summary>
+        private static List<ToolCall> ParseToolCalls(IReadOnlyList<ChatToolCall> openAIToolCalls)
+        {
+            List<ToolCall> result = [];
+            if (openAIToolCalls == null)
+                return result;
+            foreach (var call in openAIToolCalls)
+            {
+                var code = call.FunctionName;
+                if (string.IsNullOrWhiteSpace(code))
+                    continue;
+                Dictionary<string, string> args = new Dictionary<string, string>();
+                var rawArgs = call.FunctionArguments.ToString();
+                if (!string.IsNullOrWhiteSpace(rawArgs))
+                {
+                    try
+                    {
+                        var argsObj = JObject.Parse(rawArgs);
+                        foreach (var p in argsObj.Properties())
+                        {
+                            args[p.Name] = p.Value.Type == JTokenType.String
+                                ? p.Value.ToString()
+                                : p.Value.ToString(Formatting.None);
+                        }
+                    }
+                    catch (JsonReaderException)
+                    {
+                        args["raw"] = rawArgs;
+                    }
+                }
+                result.Add(new ToolCall
+                {
+                    Code = code,
+                    Args = args
+                });
+            }
+            return result;
         }
         public void RunDIY(string content)
         {

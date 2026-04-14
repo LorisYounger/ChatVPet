@@ -40,20 +40,26 @@ namespace ChatVPet.ChatProcess
 
         public float InCheck(string message, float similarity) => IInCheck.InCheck(message, similarity, this);
 
-        public Dialogue() { KeyWords = ""; }
+        public Dialogue() { KeyWords = []; }
         public Dialogue(string question, string answer, string toolCall, ILocalization localization, double important_muit = 2, double important_plus = 0)
         {
             Question = question;
             Answer = answer;
             ToolCall = toolCall;
-            KeyWords = string.Join(" ", localization.WordSplit(question + answer));
+            KeyWords =
+            [
+                 string.Join(" ", localization.WordSplit(question)),
+                    string.Join(" ", localization.WordSplit(answer))
+            ];
+
+
             ImportanceWeight_Muti = (float)important_muit;
             ImportanceWeight_Plus = (float)important_plus;
         }
         /// <summary>
         /// 关键字组
         /// </summary>
-        public string KeyWords { get; set; }
+        public IEnumerable<string> KeyWords { get; set; }
 
         /// <summary>
         /// 向量

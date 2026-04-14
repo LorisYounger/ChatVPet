@@ -1,4 +1,3 @@
-﻿using ChatGPT.API.Framework;
 using LinePutScript;
 using System;
 using System.Collections.Generic;
@@ -14,9 +13,9 @@ using ChatVPet.ChatProcess;
 using Newtonsoft.Json;
 using Microsoft.CognitiveServices.Speech;
 using Microsoft.CognitiveServices.Speech.Audio;
-using static ChatVPet.ChatProcess.Tool;
+using static ChatVPet.ChatProcess.ToolUse;
+using System.Collections;
 using System.Net;
-using System.Reflection.Metadata;
 namespace VPet.Plugin.ChatVPet
 {
     public partial class CVPPlugin : MainPlugin
@@ -34,9 +33,28 @@ namespace VPet.Plugin.ChatVPet
                 MW.DynamicResources["CVPKnowledgeDataBase"] = VPetChatProcess.KnowledgeDataBases;
                 needinitknowledge = true;
             }
-            if (MW.DynamicResources.TryGetValue("CVPTools", out object? tbo) && tbo is List<Tool> tb)
+            if (MW.DynamicResources.TryGetValue("CVPTools", out object? tbo) && tbo is List<ToolUse> tb)
             {
                 VPetChatProcess.Tools = tb;
+            }
+            else if (MW.DynamicResources.TryGetValue("CVPTools", out tbo) && tbo is IEnumerable tools)
+            {
+                List<ToolUse> list = [];
+                foreach (var item in tools)
+                {
+                    if (item is ToolUse toolUse)
+                        list.Add(toolUse);
+                }
+                if (list.Count > 0)
+                {
+                    VPetChatProcess.Tools = list;
+                    MW.DynamicResources["CVPTools"] = VPetChatProcess.Tools;
+                }
+                else
+                {
+                    MW.DynamicResources["CVPTools"] = VPetChatProcess.Tools;
+                    needinittool = true;
+                }
             }
             else
             {
@@ -44,7 +62,7 @@ namespace VPet.Plugin.ChatVPet
                 needinittool = true;
             }
         }
-        public ChatGPTClient? CGPTClient;
+        public OpenAIChatConfig? OpenAIConfig;
         public SpeechRecognizer? Recognizer;
         bool needinitknowledge = false;
         bool needinittool = false;
@@ -64,7 +82,8 @@ namespace VPet.Plugin.ChatVPet
             };
             menuItem.Click += (s, e) => { Setting(); };
             MW.Main.ToolBar.MenuMODConfig.Items.Add(menuItem);
-            VPetChatProcess.GPTAskFunction = GPTAsk;            
+            VPetChatProcess.AIAPIAskFunction = OpenAIAsk;
+            VPetChatProcess.AIAPIEmbeddingFunction = OpenAIEmbedding;
             Task.Run(() =>
             {
                 try
@@ -126,15 +145,15 @@ namespace VPet.Plugin.ChatVPet
 
                     if (needinittool)
                     {
-                        VPetChatProcess.Tools.Add(new Tool("dance", "让桌宠跳舞(舞)".Translate(), ToolDance, [], VPetChatProcess.Localization));
-                        VPetChatProcess.Tools.Add(new Tool("stopactive", "让桌宠停止(中断)当前进行的活动,例如(结束,别去)工作(干活)/玩耍(玩)/学习(学)".Translate(), ToolStopWork, [], VPetChatProcess.Localization, 2, 0.05));
-                        VPetChatProcess.Tools.Add(new Tool("idle", "让桌宠发呆(呆)".Translate(), ToolIdel, [], VPetChatProcess.Localization));
-                        VPetChatProcess.Tools.Add(new Tool("sleep", "让桌宠睡觉(睡眠,就寝)".Translate(), ToolSleep, [], VPetChatProcess.Localization));
-                        VPetChatProcess.Tools.Add(new Tool("wakeup", "让桌宠起床(别睡了)".Translate(), ToolWakeup, [], VPetChatProcess.Localization));
-                        VPetChatProcess.Tools.Add(new Tool("touchhead", "摸桌宠的头(脑袋)".Translate(), ToolTouchHead, [], VPetChatProcess.Localization));
-                        VPetChatProcess.Tools.Add(new Tool("touchbody", "摸桌宠的身体(肚子)".Translate(), ToolTouchBody, [], VPetChatProcess.Localization));
-                        VPetChatProcess.Tools.Add(new Tool("move", "让桌宠自由移动(走动,走路)".Translate(), ToolMove, [], VPetChatProcess.Localization));
-                        VPetChatProcess.Tools.Add(new Tool("modifystate", "根据对话情绪和上下文适当调整桌宠的状态(例如：聊天高兴时增加心情或好感度，获得奖励时增加经验值或金钱)".Translate(), ToolModifyState, [
+                        VPetChatProcess.Tools.Add(new ToolUse("dance", "让桌宠跳舞(舞)".Translate(), [], ToolDance, [], VPetChatProcess.Localization));
+                        VPetChatProcess.Tools.Add(new ToolUse("stopactive", "让桌宠停止(中断)当前进行的活动,例如(结束,别去)工作(干活)/玩耍(玩)/学习(学)".Translate(), [], ToolStopWork, [], VPetChatProcess.Localization, 2, 0.05));
+                        VPetChatProcess.Tools.Add(new ToolUse("idle", "让桌宠发呆(呆)".Translate(), [], ToolIdel, [], VPetChatProcess.Localization));
+                        VPetChatProcess.Tools.Add(new ToolUse("sleep", "让桌宠睡觉(睡眠,就寝)".Translate(), [], ToolSleep, [], VPetChatProcess.Localization));
+                        VPetChatProcess.Tools.Add(new ToolUse("wakeup", "让桌宠起床(别睡了)".Translate(), [], ToolWakeup, [], VPetChatProcess.Localization));
+                        VPetChatProcess.Tools.Add(new ToolUse("touchhead", "摸桌宠的头(脑袋)".Translate(), [], ToolTouchHead, [], VPetChatProcess.Localization));
+                        VPetChatProcess.Tools.Add(new ToolUse("touchbody", "摸桌宠的身体(肚子)".Translate(), [], ToolTouchBody, [], VPetChatProcess.Localization));
+                        VPetChatProcess.Tools.Add(new ToolUse("move", "让桌宠自由移动(走动,走路)".Translate(), [], ToolMove, [], VPetChatProcess.Localization));
+                        VPetChatProcess.Tools.Add(new ToolUse("modifystate", "根据对话情绪和上下文适当调整桌宠的状态(例如：聊天高兴时增加心情或好感度，获得奖励时增加经验值或金钱)".Translate(), [], ToolModifyState, [
                             new Arg(){  Name = "exp",Description="[double?]增加经验值(负数为扣除)[±1000]".Translate() },
                             new Arg(){  Name = "money",Description="[double?]增加金钱(负数为扣除)[±1000]".Translate() },
                             new Arg(){  Name = "feeling",Description="[double?]增加心情值(负数为扣除)[±20]".Translate() },
@@ -144,16 +163,16 @@ namespace VPet.Plugin.ChatVPet
                         for (int i = 0; i < MW.Foods.Count; i++)
                         {
                             var x = MW.Foods[i];
-                            VPetChatProcess.Tools.Add(new Tool("take" + x.Name, "让桌宠 {0} {1}".Translate((x.Type.ToString() + "ing").Translate(), x.TranslateName), (_) => ToolTakeItem(x), [], VPetChatProcess.Localization));
+                            VPetChatProcess.Tools.Add(new ToolUse("take" + x.Name, "让桌宠 {0} {1}".Translate((x.Type.ToString() + "ing").Translate(), x.TranslateName), [], (_) => ToolTakeItem(x), [], VPetChatProcess.Localization));
                         }
                         for (int i = 0; i < MW.Core.Graph.GraphConfig.Works.Count; i++)
                         {
                             var x = MW.Core.Graph.GraphConfig.Works[i];
-                            VPetChatProcess.Tools.Add(new Tool("do" + x.Name, "让桌宠 {0} {1}".Translate((x.Type.ToString() + "ing").Translate(), x.NameTrans), (_) => ToolDoWork(x), [], VPetChatProcess.Localization));
+                            VPetChatProcess.Tools.Add(new ToolUse("do" + x.Name, "让桌宠 {0} {1}".Translate((x.Type.ToString() + "ing").Translate(), x.NameTrans), [], (_) => ToolDoWork(x), [], VPetChatProcess.Localization));
                         }
 
                         foreach (ISub sub in MW.Set["diy"])
-                            VPetChatProcess.Tools.Add(new Tool(sub.Name, sub.Name, (x) => { RunDIY(sub.Info); return null; }, [], VPetChatProcess.Localization));
+                            VPetChatProcess.Tools.Add(new ToolUse(sub.Name, sub.Name, [], (x) => { RunDIY(sub.Info); return null; }, [], VPetChatProcess.Localization));
 
                     }
                     //然后历史消息从设置中加载
@@ -163,21 +182,27 @@ namespace VPet.Plugin.ChatVPet
                         if (d != null)
                             VPetChatProcess.Dialogues = d;
                     }
-                    if (File.Exists(ExtensionValue.BaseDirectory + @"\ChatGPTSetting.json"))
+                    if (File.Exists(ExtensionValue.BaseDirectory + @"\OpenAISetting.json"))
                     {
-                        CGPTClient = ChatGPTClient.Load(File.ReadAllText(ExtensionValue.BaseDirectory + @"\ChatGPTSetting.json"));
-                        if (CGPTClient != null && CGPTClient.Completions.TryGetValue("vpet", out var vpet))
-                            VPetChatProcess.SystemDescription = vpet.messages[0].content;
+                        OpenAIConfig = JsonConvert.DeserializeObject<OpenAIChatConfig>(File.ReadAllText(ExtensionValue.BaseDirectory + @"\OpenAISetting.json"));
+                        if (OpenAIConfig != null)
+                            VPetChatProcess.SystemDescription = OpenAIConfig.SystemPrompt;
                     }
 
                     if (AzureVoiceEnable)
                     {
-                        SpeechConfig speechConfig = SpeechConfig.FromSubscription(AzureKey, AzureRegion);
-                        speechConfig.SpeechRecognitionLanguage = AzureRecognitionLanguage;
-                        var audioConfig = AudioConfig.FromDefaultMicrophoneInput();
-                        Recognizer = new SpeechRecognizer(speechConfig, audioConfig);
+                        try
+                        {
+                            SpeechConfig speechConfig = SpeechConfig.FromSubscription(AzureKey, AzureRegion);
+                            speechConfig.SpeechRecognitionLanguage = AzureRecognitionLanguage;
+                            var audioConfig = AudioConfig.FromDefaultMicrophoneInput();
+                            Recognizer = new SpeechRecognizer(speechConfig, audioConfig);
+                        }
+                        catch (Exception e)
+                        {
+                            MessageBox.Show(e.ToString());
+                        }
                     }
-
                     VPetChatProcess.W2VEngine = new W2VEngine(VPetChatProcess);
                 }
                 catch (Exception e)
@@ -188,8 +213,8 @@ namespace VPet.Plugin.ChatVPet
         }
         public override void Save()
         {
-            if (CGPTClient != null)
-                File.WriteAllText(ExtensionValue.BaseDirectory + @"\ChatGPTSetting.json", CGPTClient.Save(), encoding: Encoding.UTF8);
+            if (OpenAIConfig != null)
+                File.WriteAllText(ExtensionValue.BaseDirectory + @"\OpenAISetting.json", JsonConvert.SerializeObject(OpenAIConfig), encoding: Encoding.UTF8);
             File.WriteAllText(ExtensionValue.BaseDirectory + @"\ChatVPetProcessHistory.json", JsonConvert.SerializeObject(VPetChatProcess.Dialogues), Encoding.UTF8);
         }
         public override void Setting()

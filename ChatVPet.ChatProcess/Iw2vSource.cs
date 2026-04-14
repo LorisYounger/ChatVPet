@@ -9,12 +9,12 @@ namespace ChatVPet.ChatProcess
     public interface Iw2vSource
     {
         /// <summary>
-        /// 关键字组
+        /// 关键字组 (集合)
         /// </summary>
-        string KeyWords { get; set; }
+        IEnumerable<string> KeyWords { get; }
 
         /// <summary>
-        /// 向量
+        /// 向量 (集合)
         /// </summary>
         float[]? Vector { get; set; }
     }
