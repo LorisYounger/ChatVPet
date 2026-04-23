@@ -44,14 +44,24 @@ namespace ChatVPet.ChatProcess
         public float ImportanceWeight_Muti { get; set; } = 2.2f;//知识库包含很多字,所以为了加大权重,默认多一点
         public float ImportanceWeight_Plus { get; set; } = 0.01f;
         /// <summary>
-        /// 关键字组
+        /// 关键字组（经分词处理，用于 BM25 关键词匹配）
         /// </summary>
         public IEnumerable<string> KeyWords { get; set; }
+        /// <summary>
+        /// 嵌入向量的原始文本列表，每项独立生成一个向量
+        /// </summary>
+        [JsonIgnore]
+        public virtual IEnumerable<string> EmbeddingTexts => [KnowledgeData];
         /// <summary>
         /// 向量
         /// </summary>
         [JsonIgnore]
         public float[]? Vector { get; set; }
+        /// <summary>
+        /// 每个 EmbeddingTexts 对应的嵌入向量缓存
+        /// </summary>
+        [JsonIgnore]
+        public float[][]? EmbeddingVectors { get; set; }
 
         public float InCheck(string message, float similarity) => IInCheck.InCheck(message, similarity, this);
 

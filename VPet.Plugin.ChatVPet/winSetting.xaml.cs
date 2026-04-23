@@ -55,6 +55,10 @@ namespace VPet.Plugin.ChatVPet
                 tbSystem.Text = plugin.OpenAIConfig.SystemPrompt;
                 tbTemp.Text = plugin.OpenAIConfig.Temperature.ToString();
                 cbModel.Text = plugin.OpenAIConfig.Model;
+                tbEmbeddingAPIURL.Text = plugin.OpenAIConfig.EmbeddingApiUrl == plugin.OpenAIConfig.ApiUrl
+                    .Replace("/chat/completions", "", StringComparison.OrdinalIgnoreCase).TrimEnd('/') ? "" : plugin.OpenAIConfig.EmbeddingApiUrl;
+                tbEmbeddingAPIKey.Text = plugin.OpenAIConfig.EmbeddingApiKey == plugin.OpenAIConfig.ApiKey ? "" : plugin.OpenAIConfig.EmbeddingApiKey;
+                tbEmbeddingModel.Text = plugin.OpenAIConfig.EmbeddingModel;
                 lbSpend.Content = plugin.TotalTokensUsage.ToString() + " Token";
                 totalused = plugin.TotalTokensUsage;
             }
@@ -75,6 +79,11 @@ namespace VPet.Plugin.ChatVPet
             tbMaxTool.Text = plugin.MaxToolCount.ToString();
             tbMaxRound.Text = plugin.MaxRecallCount.ToString();
 
+            tbMaxHistoryBeforeCompress.Text = plugin.MaxHistoryBeforeCompress.ToString();
+            tbDiaryKeepRecentCount.Text = plugin.DiaryKeepRecentCount.ToString();
+            tbDiaryDecayRate.Text = plugin.DiaryDecayRate.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            tbMaxDiaryInContext.Text = plugin.MaxDiaryInContext.ToString();
+
 
             //显示现有知识库
             tbKnow.Text = plugin.KnowledgeDataBase;
@@ -94,36 +103,40 @@ namespace VPet.Plugin.ChatVPet
                 Dialogue? item = plugin.VPetChatProcess.Dialogues[i];
                 Dialogues.Add(i + "_Q:" + item.Question);
                 Dialogues.Add(i + "_A:" + item.Answer);
-                //List<ToolCall> ts;
+                //List<ToolCallResult> ts;
                 //try
                 //{
-                //    ts = JsonConvert.DeserializeObject<List<ToolCall>>(item.ToolCall) ?? new List<ToolCall>();
+                //    ts = JsonConvert.DeserializeObject<List<ToolCallResult>>(item.ToolCallResult) ?? new List<ToolCallResult>();
                 //}
                 //catch
                 //{
-                //    ts = new List<ToolCall>();
+                //    ts = new List<ToolCallResult>();
                 //}
                 Dialogues.Add(i + "_T:" + item.ToolCall);// + string.Join(", ", ts.Select(x => x.Code + ":" + x.Args)) + ']');
             }
             lbHistory.ItemsSource = Dialogues;
         }
         private void btnSave_Click(object sender, RoutedEventArgs e)
-        {
-            if (!tbAPIURL.Text.Contains("completions", StringComparison.OrdinalIgnoreCase))
-                tbAPIURL.Text = tbAPIURL.Text + "/chat/completions";
+        {           
+            string embeddingBaseUrl = tbAPIURL.Text
+                .Replace("/chat/completions", "", StringComparison.OrdinalIgnoreCase)
+                .TrimEnd('/');
             plugin._embeddingClient = null;
             plugin._chatClient = null;
             plugin.OpenAIConfig = new OpenAIChatConfig
             {
                 ApiKey = tbAPIKey.Text,
-                ApiUrl = tbAPIURL.Text,
+                ApiUrl = embeddingBaseUrl,
                 WebProxy = tbWebProxy.Text,
                 Model = cbModel.Text,
                 FrequencyPenalty = 0.2,
                 PresencePenalty = 1,
-                MaxTokens = Math.Min(Math.Max(int.Parse(tbMaxToken.Text), 10), 4000),
+                MaxTokens = Math.Min(Math.Max(int.Parse(tbMaxToken.Text), 10), 10000),
                 Temperature = Math.Min(Math.Max(double.Parse(tbTemp.Text), 0.1), 2),
-                SystemPrompt = tbSystem.Text.Replace("{Name}", plugin.MW.Core.Save.Name)
+                SystemPrompt = IText.ConverText(tbSystem.Text.Replace("{Name}", plugin.MW.Core.Save.Name), plugin.MW.Main),
+                EmbeddingApiUrl = string.IsNullOrWhiteSpace(tbEmbeddingAPIURL.Text) ? embeddingBaseUrl : tbEmbeddingAPIURL.Text,
+                EmbeddingApiKey = string.IsNullOrWhiteSpace(tbEmbeddingAPIKey.Text) ? tbAPIKey.Text : tbEmbeddingAPIKey.Text,
+                EmbeddingModel = string.IsNullOrWhiteSpace(tbEmbeddingModel.Text) ? "text-embedding-3-small" : tbEmbeddingModel.Text,
             };
             plugin.VPetChatProcess.SystemDescription = plugin.OpenAIConfig.SystemPrompt;
             //var l = JsonConvert.DeserializeObject<List<Message>>(tbHistory.Text);
@@ -161,6 +174,20 @@ namespace VPet.Plugin.ChatVPet
             plugin.MaxKnowledgeCount = int.Parse(tbMaxKnow.Text);
             plugin.MaxToolCount = int.Parse(tbMaxTool.Text);
             plugin.MaxRecallCount = int.Parse(tbMaxRound.Text);
+
+            plugin.MaxHistoryBeforeCompress = int.Parse(tbMaxHistoryBeforeCompress.Text);
+            plugin.DiaryKeepRecentCount = int.Parse(tbDiaryKeepRecentCount.Text);
+            plugin.DiaryDecayRate = float.Parse(tbDiaryDecayRate.Text, System.Globalization.CultureInfo.InvariantCulture);
+            plugin.MaxDiaryInContext = int.Parse(tbMaxDiaryInContext.Text);
+
+            plugin.VPetChatProcess.MaxHistoryCount = plugin.MaxHistoryCount;
+            plugin.VPetChatProcess.MaxKnowledgeCount = plugin.MaxKnowledgeCount;
+            plugin.VPetChatProcess.MaxToolCount = plugin.MaxToolCount;
+            plugin.VPetChatProcess.MaxToolRecallCount = plugin.MaxRecallCount;
+            plugin.VPetChatProcess.MaxHistoryBeforeCompress = plugin.MaxHistoryBeforeCompress;
+            plugin.VPetChatProcess.DiaryKeepRecentCount = plugin.DiaryKeepRecentCount;
+            plugin.VPetChatProcess.DiaryDecayRate = plugin.DiaryDecayRate;
+            plugin.VPetChatProcess.MaxDiaryInContext = plugin.MaxDiaryInContext;
 
 
 
@@ -225,6 +252,15 @@ namespace VPet.Plugin.ChatVPet
             }
         }
 
+        private void btn_ClearVectorCache(object sender, RoutedEventArgs e)
+        {
+            W2VEngine.ClearVectors(plugin.VPetChatProcess.KnowledgeDataBases);
+            W2VEngine.ClearVectors(plugin.VPetChatProcess.Tools);
+            W2VEngine.ClearVectors(plugin.VPetChatProcess.Dialogues);
+            W2VEngine.ClearVectors(plugin.VPetChatProcess.DiaryEntries);
+            MessageBox.Show("向量缓存已清除".Translate());
+        }
+
         private void btn_SearchDB(object sender, RoutedEventArgs e)
         {
             string search = tbSeachDB.Text;
@@ -257,12 +293,12 @@ namespace VPet.Plugin.ChatVPet
             plugin.VPetChatProcess.W2VEngine.GetQueryVector(plugin.VPetChatProcess.KnowledgeDataBases);
             plugin.VPetChatProcess.W2VEngine.GetQueryVector(plugin.VPetChatProcess.Dialogues);
 
-            ObservableCollection<string> kdbs = new ObservableCollection<string>(plugin.VPetChatProcess.KnowledgeDataBases.Select(x => (x, x.InCheck(search, W2VEngine.ComputeCosineSimilarity(x.Vector!, vector))))
+            ObservableCollection<string> kdbs = new ObservableCollection<string>(plugin.VPetChatProcess.KnowledgeDataBases.Select(x => (x, x.InCheck(search, plugin.VPetChatProcess.W2VEngine!.ComputeSimilarity(search, x, vector))))
                     .OrderBy(x => x.Item2).Where(x => x.Item2 < IInCheck.IgnoreValue)
                     .Select(x => x.x.KnowledgeData).ToList());
-            List<ToolUse> tools = plugin.VPetChatProcess.Tools.Select(x => (x, x.InCheck(search, W2VEngine.ComputeCosineSimilarity(x.Vector!, vector))))
+            List<ToolUse> tools = plugin.VPetChatProcess.Tools.Select(x => (x, x.InCheck(search, plugin.VPetChatProcess.W2VEngine!.ComputeSimilarity(search, x, vector))))
                 .OrderBy(x => x.Item2).Where(x => x.Item2 < IInCheck.IgnoreValue).Select(x => x.x).ToList();
-            List<Dialogue> dialogues = plugin.VPetChatProcess.Dialogues.Select(x => (x, x.InCheck(search, W2VEngine.ComputeCosineSimilarity(x.Vector!, vector)))).OrderBy(x => x.Item2)
+            List<Dialogue> dialogues = plugin.VPetChatProcess.Dialogues.Select(x => (x, x.InCheck(search, plugin.VPetChatProcess.W2VEngine!.ComputeSimilarity(search, x, vector)))).OrderBy(x => x.Item2)
                 .Where(x => x.Item2 < IInCheck.IgnoreValue).Select(x => x.x).ToList();
             lbKnow.ItemsSource = kdbs;
 
@@ -277,6 +313,14 @@ namespace VPet.Plugin.ChatVPet
             lbHistory.ItemsSource = di;
 
             lbTool.ItemsSource = new ObservableCollection<string>(tools.Select(x => x.Code + ": " + x.Descriptive));
+        }
+
+        private void TextBlock_MouseDown_1(object sender, MouseButtonEventArgs e)
+        {
+            if (LocalizeCore.CurrentCulture.StartsWith("zh"))
+                ExtensionFunction.StartURL("https://space.bilibili.com/690425399");
+            else
+                ExtensionFunction.StartURL("https://github.com/LorisYounger/VPet");
         }
     }
 }

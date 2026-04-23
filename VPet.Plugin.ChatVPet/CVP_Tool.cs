@@ -156,7 +156,7 @@ namespace VPet.Plugin.ChatVPet
                 options.Tools.Add(ChatTool.CreateFunctionTool(
                 functionName: tool.Code,
                 functionDescription: tool.Descriptive,
-                functionParameters: BinaryData.FromString(BuildToolParametersSchema(tool))));
+                functionParameters: BinaryData.FromObjectAsJson(tool.Parameters)));
             }
 
             var client = CreateOpenAIChatClient();
@@ -181,13 +181,13 @@ namespace VPet.Plugin.ChatVPet
             };
         }
 
-        public float[] OpenAIEmbedding(string text)
+        public float[][] OpenAIEmbedding(IEnumerable<string> text)
         {
             if (OpenAIConfig == null)
-                throw new Exception("请先前往设置中设置 GPT API".Translate());
-           
+                throw new Exception("请先前往设置中设置 Embedding API".Translate());
+
             var client = GetClient();
-            return client.GenerateEmbedding(text).Value.ToFloats().ToArray();
+            return client.GenerateEmbeddings(text).Value.Select(x => x.ToFloats().ToArray()).ToArray();
         }
         public EmbeddingClient? _embeddingClient;
         private readonly object _clientLock = new object();
@@ -209,7 +209,7 @@ namespace VPet.Plugin.ChatVPet
         private ChatClient CreateOpenAIChatClient()
         {
             if (OpenAIConfig == null)
-                throw new Exception("请先前往设置中设置 GPT API".Translate());
+                throw new Exception("请先前往设置中设置 AI API".Translate());
             var endpoint = BuildOpenAIEndpoint(OpenAIConfig.ApiUrl);
             var cacheKey = $"{endpoint}|{OpenAIConfig.Model}|{GetCacheSafeKey(OpenAIConfig.ApiKey)}|{OpenAIConfig.WebProxy}";
             lock (_clientLock)
@@ -269,29 +269,12 @@ namespace VPet.Plugin.ChatVPet
             return Convert.ToHexString(hash);
         }
 
-        private static string BuildToolParametersSchema(ToolUse tool)
-        {
-            JObject properties = new JObject();
-            foreach (var arg in tool.Args)
-            {
-                properties[arg.Name] = new JObject
-                {
-                    ["type"] = "string",
-                    ["description"] = arg.Description
-                };
-            }
-            return new JObject
-            {
-                ["type"] = "object",
-                ["properties"] = properties
-            }.ToString(Formatting.None);
-        }
         /// <summary>
-        /// 转换返回的工具调用为 ToolCall 列表
+        /// 转换返回的工具调用为 ToolCallResult 列表
         /// </summary>
-        private static List<ToolCall> ParseToolCalls(IReadOnlyList<ChatToolCall> openAIToolCalls)
+        private static List<ToolCallResult> ParseToolCalls(IReadOnlyList<ChatToolCall> openAIToolCalls)
         {
-            List<ToolCall> result = [];
+            List<ToolCallResult> result = [];
             if (openAIToolCalls == null)
                 return result;
             foreach (var call in openAIToolCalls)
@@ -318,7 +301,7 @@ namespace VPet.Plugin.ChatVPet
                         args["raw"] = rawArgs;
                     }
                 }
-                result.Add(new ToolCall
+                result.Add(new ToolCallResult
                 {
                     Code = code,
                     Args = args

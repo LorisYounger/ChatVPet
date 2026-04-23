@@ -45,26 +45,11 @@ namespace ChatVPet.ChatProcess
         /// </summary>
         public bool StopBeforeNext { get; set; } = false;
     }
-
-    public class ToolCall
+    /// <summary>
+    /// Tool调用结果
+    /// </summary>
+    public class ToolCallResult
     {
-        /// <summary>
-        /// 推荐使用的json设置
-        /// </summary>
-        public static JsonSerializerSettings jsonsetting = new JsonSerializerSettings
-        {
-            ContractResolver = new DefaultContractResolver
-            {
-                NamingStrategy = new CamelCaseNamingStrategy() { ProcessDictionaryKeys = true, OverrideSpecifiedNames = false }
-            },
-            MissingMemberHandling = MissingMemberHandling.Ignore,
-            // 忽略报错
-            Error = (sender, args) =>
-            {
-                Console.WriteLine($"Error: {args.ErrorContext.Error.Message}");
-                args.ErrorContext.Handled = true; // 处理错误，避免抛出异常
-            }
-        };
         /// <summary>
         /// 调用工具方法
         /// </summary>

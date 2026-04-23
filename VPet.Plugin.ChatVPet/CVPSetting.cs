@@ -116,5 +116,41 @@ namespace VPet.Plugin.ChatVPet
             set => MW.Set["CGPTV"][(gint)"TotalTokensUsage"] = value;
         }
 
+        /// <summary>
+        /// 当 Dialogues 条数超过此值时触发历史压缩（<=0 表示禁用）
+        /// </summary>
+        public int MaxHistoryBeforeCompress
+        {
+            get => MW.Set["CGPTV"].GetInt("MaxHistoryBeforeCompress", 24);
+            set => MW.Set["CGPTV"][(gint)"MaxHistoryBeforeCompress"] = value;
+        }
+
+        /// <summary>
+        /// 压缩时保留最近的对话条数
+        /// </summary>
+        public int DiaryKeepRecentCount
+        {
+            get => MW.Set["CGPTV"].GetInt("DiaryKeepRecentCount", 10);
+            set => MW.Set["CGPTV"][(gint)"DiaryKeepRecentCount"] = value;
+        }
+
+        /// <summary>
+        /// 每次对话后对未被命中的日记条目施加的权重衰减率
+        /// </summary>
+        public float DiaryDecayRate
+        {
+            get => (float)MW.Set["CGPTV"].GetDouble("DiaryDecayRate", 0.03);
+            set => MW.Set["CGPTV"][(gdbe)"DiaryDecayRate"] = value;
+        }
+
+        /// <summary>
+        /// 每次对话最多向系统提示注入的日记条目数
+        /// </summary>
+        public int MaxDiaryInContext
+        {
+            get => MW.Set["CGPTV"].GetInt("MaxDiaryInContext", 10);
+            set => MW.Set["CGPTV"][(gint)"MaxDiaryInContext"] = value;
+        }
+
     }
 }

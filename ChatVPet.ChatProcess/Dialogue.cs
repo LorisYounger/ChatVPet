@@ -57,14 +57,24 @@ namespace ChatVPet.ChatProcess
             ImportanceWeight_Plus = (float)important_plus;
         }
         /// <summary>
-        /// 关键字组
+        /// 关键字组（经分词处理，用于 BM25 关键词匹配）
         /// </summary>
         public IEnumerable<string> KeyWords { get; set; }
+        /// <summary>
+        /// 嵌入向量的原始文本列表（问题与回答），每项独立生成一个向量
+        /// </summary>
+        [JsonIgnore]
+        public virtual IEnumerable<string> EmbeddingTexts => [Question, Answer];
 
         /// <summary>
         /// 向量
         /// </summary>
         [JsonIgnore]
         public float[]? Vector { get; set; }
+        /// <summary>
+        /// 每个 EmbeddingTexts 对应的嵌入向量缓存
+        /// </summary>
+        [JsonIgnore]
+        public float[][]? EmbeddingVectors { get; set; }
     }
 }

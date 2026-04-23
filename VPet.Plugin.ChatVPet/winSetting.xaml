@@ -25,6 +25,7 @@
                         <ColumnDefinition />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="40" />
                         <RowDefinition Height="40" />
                         <RowDefinition Height="40" />
@@ -33,68 +34,90 @@
                         <RowDefinition Height="40" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="40" />
-                        <RowDefinition />
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="40" />
                         <RowDefinition />
                         <RowDefinition Height="40" />
                     </Grid.RowDefinitions>
-                    <TextBlock Text="API URL" VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="2" Text="{ll:Str Web代理}" VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="1" Text="API Key" VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="3" Text="Model" VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="4" Text="{ll:Str 初始化文本}" VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="5" Text="{ll:Str 温度}" VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="7" Text="{ll:Str 累计花费}" VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="9" Text="{ll:Str 提交内容}" VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="10" Text="{ll:Str Token显示}" VerticalAlignment="Center" />
-                    <TextBox x:Name="tbAPIURL" Grid.Row="0" Grid.Column="2"
+                    <TextBlock Text="{ll:Str '如果不知道如何填写这些参数,请点击此处查看教程'}" Grid.ColumnSpan="3"
+                            TextDecorations="Underline" Foreground="{DynamicResource DARKPrimary}" MouseDown="TextBlock_MouseDown_1" />
+                    <TextBlock Text="API URL" VerticalAlignment="Center" Grid.Row="1" />
+                    <TextBlock Grid.Row="3" Text="{ll:Str Web代理}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="2" Text="API Key" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="4" Text="Model" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="5" Text="{ll:Str 初始化文本}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="6" Text="{ll:Str 温度}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="8" Text="{ll:Str 累计花费}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="9" Text="Embedding URL" VerticalAlignment="Center"
+                            ToolTip="{ll:Str 'Embedding模型将文本转换为低维稠密向量，使ChatVPet能够通过向量空间中的距离或相似度度量来定位工具和消息。'}" />
+                    <TextBlock Grid.Row="10" Text="Embedding Key" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="11" Text="Embedding Model" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="12" Text="{ll:Str 提交内容}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="13" Text="{ll:Str Token显示}" VerticalAlignment="Center" />
+                    <TextBox x:Name="tbAPIURL" Grid.Row="1" Grid.Column="2"
                             Style="{DynamicResource StandardTextBoxStyle}" FontSize="16"
-                            pu:TextBoxHelper.Watermark="{ll:Str 'API 链接 一般为 api.openai.com/v1/chat/completions'}"
-                            Text="https://api.openai.com/v1/chat/completions"
-                            ToolTip="{ll:Str 'API 链接 一般为 api.openai.com/v1/chat/completions'}" Margin="0,5,0,5" />
-                    <TextBox x:Name="tbAPIKey" Grid.Row="1" Grid.Column="2"
+                            pu:TextBoxHelper.Watermark="{ll:Str 'API 链接 一般为 api.openai.com/v1'}"
+                            Text="https://api.openai.com/v1"
+                            ToolTip="{ll:Str 'API 链接 一般为 api.openai.com/v1'}" Margin="0,2,0,5" />
+                    <TextBox x:Name="tbAPIKey" Grid.Row="2" Grid.Column="1"
                             Style="{DynamicResource StandardTextBoxStyle}" FontSize="16"
                             pu:TextBoxHelper.Watermark="{ll:Str '从 OpenAI 获得的 APIKEY 一般`sk-`开头'}"
-                            ToolTip="{ll:Str '从 OpenAI 获得的 APIKEY 一般`sk-`开头'}" VerticalAlignment="Top" Margin="0,2,0,0" />
-                    <TextBox x:Name="tbWebProxy" Grid.Row="2" Grid.Column="2"
+                            ToolTip="{ll:Str '从 OpenAI 获得的 APIKEY 一般`sk-`开头'}" VerticalAlignment="Top" Margin="15,2,0,0"
+                            Grid.ColumnSpan="2" />
+                    <TextBox x:Name="tbWebProxy" Grid.Row="3" Grid.Column="1"
                             Style="{DynamicResource StandardTextBoxStyle}" FontSize="16"
                             pu:TextBoxHelper.Watermark="{ll:Str '没有可不填. HTTP 代理服务器 或 SOCKS 代理服务器等 WEB代理链接'}"
                             ToolTip="{ll:Str '没有可不填. HTTP 代理服务器 或 SOCKS 代理服务器等 WEB代理链接'}" VerticalAlignment="Top"
-                            Margin="0,2,0,0" />
-                    <ComboBox x:Name="cbModel" Style="{DynamicResource StandardComboBoxStyle}" Grid.Row="3"
-                            Grid.Column="2" SelectedIndex="0" IsEditable="True" Margin="0,5,0,5">
+                            Margin="15,2,0,0" Grid.ColumnSpan="2" />
+                    <ComboBox x:Name="cbModel" Style="{DynamicResource StandardComboBoxStyle}" Grid.Row="4"
+                            Grid.Column="1" SelectedIndex="0" IsEditable="True" Margin="15,5,0,5" Grid.ColumnSpan="2">
                         <ComboBoxItem Content="gpt-4o-mini" />
                         <ComboBoxItem Content="gpt-4o" />
                         <ComboBoxItem Content="gpt-3.5-turbo" />
                         <ComboBoxItem Content="gpt-4-turbo" />
                         <ComboBoxItem Content="gpt-4" />
                     </ComboBox>
-                    <TextBox x:Name="tbSystem" Grid.Row="4" Grid.Column="2"
+                    <TextBox x:Name="tbSystem" Grid.Row="5" Grid.Column="1"
                             Style="{DynamicResource StandardTextBoxStyle}" FontSize="16"
                             pu:TextBoxHelper.Watermark="{ll:Str '不会被忘记的初始化关键字, 字越多越贵'}"
                             ToolTip="{ll:Str '不会被忘记的初始化关键字, 字越多越贵'}" AcceptsReturn="True"
                             TextWrapping="WrapWithOverflow" Height="Auto" MaxHeight="100"
                             VerticalScrollBarVisibility="Visible"
                             Text="请使用口语化的、可爱的、女性化的、调皮的语言风格和我交流. &#13;你是一只桌宠, 你的名字叫{Name}, 你喜欢玩 虚拟主播模拟器. &#13;你需要尝试体会我与你对话中的感情、产生自己的情感并尽可能给出可爱的回答"
-                            Margin="0,5,0,5" />
-                    <TextBox x:Name="tbTemp" Grid.Row="5" Grid.Column="2" Style="{DynamicResource StandardTextBoxStyle}"
+                            Margin="15,5,0,5" Grid.ColumnSpan="2" />
+                    <TextBox x:Name="tbTemp" Grid.Row="6" Grid.Column="1" Style="{DynamicResource StandardTextBoxStyle}"
                             FontSize="16" Text="0.6" pu:TextBoxHelper.InputLimit="Digit,Point"
                             pu:TextBoxHelper.Watermark="{ll:Str '0-2之间 0.2更稳定 0.8更随机'}"
-                            ToolTip="{ll:Str '0-2之间 0.2更稳定 0.8更随机'}" Margin="0,5,0,5" />
-                    <Label x:Name="lbSpend" Grid.Row="7" Grid.Column="2" Content="0 Token" Background="{x:Null}"
+                            ToolTip="{ll:Str '0-2之间 0.2更稳定 0.8更随机'}" Margin="15,5,0,5" Grid.ColumnSpan="2" />
+                    <Label x:Name="lbSpend" Grid.Row="8" Grid.Column="2" Content="0 Token" Background="{x:Null}"
                             VerticalAlignment="Center" HorizontalAlignment="Left" Margin="5,0,0,0"
                             ToolTip="{ll:Str '累计在此花费的Token个数'}" />
-                    <pu:Switch x:Name="swShowToken" Grid.Row="10" Grid.Column="2" VerticalAlignment="Center"
+                    <TextBox x:Name="tbEmbeddingAPIURL" Grid.Row="9" Grid.Column="1"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16"
+                            pu:TextBoxHelper.Watermark="{ll:Str '留空则使用主API URL'}"
+                            ToolTip="{ll:Str 'Embedding API 链接, 留空则使用主API URL'}" Margin="15,5,0,5" Grid.ColumnSpan="2" />
+                    <TextBox x:Name="tbEmbeddingAPIKey" Grid.Row="10" Grid.Column="1"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16"
+                            pu:TextBoxHelper.Watermark="{ll:Str '留空则使用主API Key'}"
+                            ToolTip="{ll:Str 'Embedding API Key, 留空则使用主API Key'}" Margin="15,5,0,5" Grid.ColumnSpan="2" />
+                    <TextBox x:Name="tbEmbeddingModel" Grid.Row="11" Grid.Column="1"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16"
+                            pu:TextBoxHelper.Watermark="text-embedding-3-small"
+                            ToolTip="{ll:Str 'Embedding 模型, 默认 text-embedding-3-small'}" Margin="15,5,0,5"
+                            Grid.ColumnSpan="2" />
+                    <pu:Switch x:Name="swShowToken" Grid.Row="13" Grid.Column="1" VerticalAlignment="Center"
                             Content="{ll:Str '在聊天记录中显示消耗的Token数量'}" Background="Transparent"
                             ToggleBrush="{DynamicResource PrimaryDark}" ToggleShadowColor="{x:Null}" ToggleSize="14"
                             BorderBrush="{DynamicResource PrimaryDark}" BoxHeight="18" BoxWidth="35"
                             CheckedBackground="{DynamicResource Primary}" CheckedBorderBrush="{DynamicResource Primary}"
-                            CheckedToggleBrush="{DynamicResource DARKPrimaryText}" />
-                    <pu:Switch x:Name="swSubmitLog" Grid.Row="9" Grid.Column="2" VerticalAlignment="Center" Margin="0,5"
-                            Background="Transparent" ToggleBrush="{DynamicResource PrimaryDark}"
+                            CheckedToggleBrush="{DynamicResource DARKPrimaryText}" Grid.ColumnSpan="2" Margin="15,0,0,0" />
+                    <pu:Switch x:Name="swSubmitLog" Grid.Row="12" Grid.Column="1" VerticalAlignment="Center"
+                            Margin="15,0,0,0" Background="Transparent" ToggleBrush="{DynamicResource PrimaryDark}"
                             ToggleShadowColor="{x:Null}" ToggleSize="14" BorderBrush="{DynamicResource PrimaryDark}"
                             BoxHeight="18" BoxWidth="35" CheckedBackground="{DynamicResource Primary}"
                             CheckedBorderBrush="{DynamicResource Primary}"
-                            CheckedToggleBrush="{DynamicResource DARKPrimaryText}">
+                            CheckedToggleBrush="{DynamicResource DARKPrimaryText}" Grid.ColumnSpan="2">
                         <TextBlock TextWrapping="WrapWithOverflow">
                         <Run Text="{ll:Str '提交聊天记录给 LBGAME 以改进ChatVPet Process'}" />                      
                    <Hyperlink Click="Hyperlink_Click"><Run Text="{ll:Str '项目地址'}" /></Hyperlink>   
@@ -118,6 +141,10 @@
                         <RowDefinition Height="40" />
                         <RowDefinition Height="40" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="40" />
+                        <RowDefinition Height="40" />
                         <RowDefinition Height="40" />
                         <RowDefinition Height="40" />
                         <RowDefinition Height="40" />
@@ -155,13 +182,13 @@
                     <TextBlock Grid.Row="4" Text="{ll:Str 最大聊天记录}" VerticalAlignment="Center" />
                     <TextBlock Grid.Row="5" Text="{ll:Str 最大工具库}" VerticalAlignment="Center" />
                     <TextBlock Grid.Row="6" Text="{ll:Str 最大知识库}" VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="7" Text="{ll:Str 单次最大花费}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="7" Text="{ll:Str 输出最大花费}" VerticalAlignment="Center" />
                     <TextBox x:Name="tbMaxToken" Grid.Row="7" Grid.Column="2"
-                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="4096"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="4000"
                             pu:TextBoxHelper.InputLimit="Digit" pu:TextBoxHelper.Watermark="200+"
-                            ToolTip="{ll:Str '允许最大花费Token数量'}" Margin="0,5,15,5" Grid.ColumnSpan="2" />
+                            ToolTip="{ll:Str '允许最大输出花费Token数量'}" Margin="0,5,15,5" Grid.ColumnSpan="2" />
                     <TextBlock Grid.Row="8" Text="{ll:Str 最大回合}" VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="7" Text="{ll:Str '可能的最大花费为 单次最大花费 x 最大花费'}" VerticalAlignment="Top"
+                    <TextBlock Grid.Row="7" Text="{ll:Str '可能的最大花费为 (最大知识库*100+最大工具库*200+最大聊天记录*200+输出最大花费) x 最大回合'}" VerticalAlignment="Top"
                             Grid.Column="4" Grid.ColumnSpan="1" TextWrapping="WrapWithOverflow" Grid.RowSpan="2"
                             Margin="0,20,0,0" />
                     <TextBlock Grid.Row="6" Text="{ll:Str '知识库越多越消耗Token'}" VerticalAlignment="Center" Grid.Column="4"
@@ -184,8 +211,38 @@
                             Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="20"
                             pu:TextBoxHelper.InputLimit="Digit" ToolTip="{ll:Str '允许单次记忆最大聊天记录'}"
                             VerticalAlignment="Center" pu:TextBoxHelper.Watermark="5-50" />
-                    <TextBlock Grid.Row="4" Text="{ll:Str 'ChatVPet会保留所有的聊天记录(记忆)\&#13;将会会智能化整理为指定数量记忆作为输入'}"
+                    <TextBlock Grid.Row="4" Text="{ll:Str 'ChatVPet会智能化整理为指定数量的高关联性和高重要性的记忆作为输入'}"
                             VerticalAlignment="Top" Grid.Column="4" TextWrapping="WrapWithOverflow" />
+                    <TextBlock Grid.Row="9" Text="{ll:Str 日记触发条数}" VerticalAlignment="Center"
+                            ToolTip="{ll:Str '当聊天记录超过此数量时触发历史压缩生成日记，设为0禁用'}" />
+                    <TextBox x:Name="tbMaxHistoryBeforeCompress" Grid.Row="9" Grid.Column="2"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="48"
+                            pu:TextBoxHelper.InputLimit="Digit" Margin="0,5,15,5"
+                            ToolTip="{ll:Str '当聊天记录超过此数量时触发历史压缩生成日记，设为0禁用'}" Grid.ColumnSpan="2" />
+                    <TextBlock Grid.Row="9"
+                            Text="{ll:Str 'ChatVPet日记功能\&#13;将较早的对话历史记录压缩成生成的摘要,并通过衰减/命中逻辑更新日记权重\&#13;以节省 Token 并实现长期记忆。'}"
+                            VerticalAlignment="Center" Grid.Column="4" TextWrapping="WrapWithOverflow" Grid.RowSpan="4" />
+                    <TextBlock Grid.Row="10" Text="{ll:Str 压缩保留最近数}" VerticalAlignment="Center"
+                            ToolTip="{ll:Str '压缩时保留最近的对话条数，这些消息不参与摘要'}" />
+                    <TextBox x:Name="tbDiaryKeepRecentCount" Grid.Row="10" Grid.Column="2"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="10"
+                            pu:TextBoxHelper.InputLimit="Digit" Margin="0,5,15,5"
+                            ToolTip="{ll:Str '压缩时保留最近的对话条数，这些消息不参与摘要'}" pu:TextBoxHelper.Watermark="5-20"
+                            Grid.ColumnSpan="2" />
+                    <TextBlock Grid.Row="11" Text="{ll:Str 日记衰减率}" VerticalAlignment="Center"
+                            ToolTip="{ll:Str '每次对话后对未被命中的日记条目施加的权重衰减率（0.03=衰减3%）'}" />
+                    <TextBox x:Name="tbDiaryDecayRate" Grid.Row="11" Grid.Column="2"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="0.03"
+                            pu:TextBoxHelper.InputLimit="Digit,Point" Margin="0,5,15,5"
+                            ToolTip="{ll:Str '每次对话后对未被命中的日记条目施加的权重衰减率（0.03=衰减3%）'}" pu:TextBoxHelper.Watermark="0-1"
+                            Grid.ColumnSpan="2" />
+                    <TextBlock Grid.Row="12" Text="{ll:Str 最大日记注入数}" VerticalAlignment="Center"
+                            ToolTip="{ll:Str '每次对话最多向系统提示注入的日记条目数'}" />
+                    <TextBox x:Name="tbMaxDiaryInContext" Grid.Row="12" Grid.Column="2"
+                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="10"
+                            pu:TextBoxHelper.InputLimit="Digit" Margin="0,5,15,5"
+                            ToolTip="{ll:Str '每次对话最多向系统提示注入的日记条目数'}" pu:TextBoxHelper.Watermark="5-20"
+                            Grid.ColumnSpan="2" />
                 </Grid>
             </TabItem>
             <TabItem Header="{ll:Str 知识库设置}">
@@ -210,6 +267,7 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
                         <TextBox x:Name="tbSeachDB" Style="{DynamicResource StandardTextBoxStyle}"
@@ -219,6 +277,9 @@
                                 Background="{DynamicResource SecondaryLight}" Click="btn_SearchDB" Grid.Column="1" />
                         <Button pu:ButtonHelper.CornerRadius="4" Content="{ll:Str 向量搜索}" Margin="2"
                                 Background="{DynamicResource SecondaryLight}" Click="btn_SearchDB_vec" Grid.Column="2" />
+                        <Button pu:ButtonHelper.CornerRadius="4" Content="{ll:Str 清除向量缓存}" Margin="2"
+                                Background="{DynamicResource SecondaryLight}" Click="btn_ClearVectorCache"
+                                Grid.Column="3" ToolTip="{ll:Str '清除所有条目的向量缓存，更换 Embedding API 后使用'}" />
                     </Grid>
 
                     <TabControl>

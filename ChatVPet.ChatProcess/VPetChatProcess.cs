@@ -13,7 +13,7 @@ namespace ChatVPet.ChatProcess
         public class AIAPIAskResult
         {
             public string Reply { get; set; } = "";
-            public List<ToolCall> ToolCalls { get; set; } = [];
+            public List<ToolCallResult> ToolCalls { get; set; } = [];
         }
 
         /// <summary>
@@ -30,12 +30,14 @@ namespace ChatVPet.ChatProcess
         /// AIAPI AI生成 调用方法
         /// </summary>
         [JsonIgnore] public AIAPIAsk? AIAPIAskFunction;
-       
-        public delegate float[] AIAPIEmbedding(string input);
+
+        public delegate float[][] AIAPIEmbeddings(IEnumerable<string> inputs);
+
         /// <summary>
         /// 生成 input 的词向量的方法
         /// </summary>
-        [JsonIgnore] public AIAPIEmbedding? AIAPIEmbeddingFunction;
+        [JsonIgnore] public AIAPIEmbeddings? AIAPIEmbeddingFunction;
+
 
         /// <summary>
         /// 重要性计算方法 判断该段消息是否重要 (eg:可以通过机器学习为每个消息打分)
@@ -93,12 +95,39 @@ namespace ChatVPet.ChatProcess
         /// <summary>
         /// 工具调用最大轮次
         /// </summary>
-        public int MaxToolRecallCount { get; set; } = 8;
+        public int MaxToolRecallCount { get; set; } = 6;
 
         /// <summary>
         /// 词向量引擎
         /// </summary>
         public W2VEngine? W2VEngine { get; set; }
+
+        // ── 日记功能 ────────────────────────────────────────────────────
+
+        /// <summary>
+        /// 已压缩的历史日记条目列表
+        /// </summary>
+        public List<DiaryEntry> DiaryEntries = new List<DiaryEntry>();
+
+        /// <summary>
+        /// 当 Dialogues 条数超过此值时触发历史压缩（<=0 表示禁用）
+        /// </summary>
+        public int MaxHistoryBeforeCompress { get; set; } = 24;
+
+        /// <summary>
+        /// 压缩时保留最近的对话条数（这些消息不参与摘要）
+        /// </summary>
+        public int DiaryKeepRecentCount { get; set; } = 10;
+
+        /// <summary>
+        /// 每次对话后对未被命中的日记条目施加的权重衰减率（0.05 = 衰减 5%）
+        /// </summary>
+        public float DiaryDecayRate { get; set; } = 0.03f;
+
+        /// <summary>
+        /// 每次对话最多向系统提示注入的日记条目数
+        /// </summary>
+        public int MaxDiaryInContext { get; set; } = 10;
 
         /// <summary>
         /// ChatVPet 聊天处理流程
@@ -106,6 +135,54 @@ namespace ChatVPet.ChatProcess
         public VPetChatProcess()
         {
             Localization = new ILocalization.LChineseSimple();
+        }
+
+        /// <summary>
+        /// 反序列化完成后同步 <see cref="DiaryEntry"/> 的静态 ID 计数器，
+        /// 确保新建条目的 ID 不会与已加载的条目重复。
+        /// </summary>
+        [System.Runtime.Serialization.OnDeserialized]
+        internal void OnDeserialized(System.Runtime.Serialization.StreamingContext _)
+        {
+            if (DiaryEntries.Count > 0)
+                DiaryEntry.EnsureCounterAbove(DiaryEntries.Max(e => e.Id));
+        }
+
+        /// <summary>
+        /// 获取内置日记工具列表（允许 LLM 通过 toolcall 调节日记权重）。
+        /// 可将返回结果添加到 <see cref="Tools"/> 以启用该能力。
+        /// </summary>
+        public List<ToolUse> GetBuiltinDiaryTools()
+        {
+            return
+            [
+                new ToolUse(
+                    code: "diary_adjust_weight",
+                    descriptive: Localization.DiaryAdjustWeightToolDesc,
+                    keyword: ["diary", "weight", "adjust", "日记", "权重"],
+                    toolFunction: args =>
+                    {
+                        if (!args.TryGetValue("diary_id", out var diaryIdStr) || string.IsNullOrWhiteSpace(diaryIdStr))
+                            return "error: missing or empty diary_id";
+                        if (!int.TryParse(diaryIdStr.Trim().TrimStart('#'), System.Globalization.NumberStyles.HexNumber, null, out var diaryId))
+                            return "error: invalid diary_id (expected a hex integer, e.g. 1a or 2b)";
+                        if (!args.TryGetValue("delta", out var deltaStr) || !float.TryParse(deltaStr, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var delta))
+                            return "error: missing or invalid delta (expected a float)";
+
+                        var entry = DiaryEntries.Find(e => e.Id == diaryId);
+                        if (entry == null)
+                            return $"error: diary entry '{diaryIdStr.Trim()}' not found";
+
+                        entry.AdjustBaseWeight(delta);
+                        return null;
+                    },
+                    args:
+                    [
+                        new ToolUse.Arg { Name = "diary_id", Type = "string", Description = Localization.DiaryArgIdDesc, IsRequired = true },
+                        new ToolUse.Arg { Name = "delta", Type = "number", Description = Localization.DiaryArgDeltaDesc, IsRequired = true }
+                    ],
+                    localization: Localization)
+            ];
         }
 
         /// <summary>
@@ -136,18 +213,25 @@ namespace ChatVPet.ChatProcess
             if (control.ForceToStop)
                 return;
 
+            // 历史消息压缩（日记功能）
+            TryCompressHistory();
+
             int position = 0;
 
             var queryVector = W2VEngine.GetQueryVector(message);
             W2VEngine.GetQueryVector(KnowledgeDataBases);
             W2VEngine.GetQueryVector(Tools);
             W2VEngine.GetQueryVector(Dialogues);
+            W2VEngine.GetQueryVector(DiaryEntries);
 
             var selectedKnowledge = SelectKnowledge(message, queryVector);
             var selectedTools = SelectTools(message, queryVector);
-           var  currentSelectedTools = selectedTools;
             var selectedHistory = SelectHistory(message, queryVector);
-            var sysmessage = Localization.ToSystemMessage(SystemDescription, selectedTools, selectedKnowledge);
+            var selectedDiaries = SelectDiaryEntries(message, queryVector);
+            var sysmessage = BuildSystemMessage(SystemDescription, selectedKnowledge, selectedDiaries);
+
+            // 衰减未被命中的日记条目，命中的增加权重
+            DecayAndUpdateDiaries(selectedDiaries);
 
             var history = new List<string[]>(selectedHistory);
             var currentMessage = message;
@@ -241,8 +325,8 @@ namespace ChatVPet.ChatProcess
                 return [];
 
             return KnowledgeDataBases
-                .Where(x => x.Vector != null)
-                .Select(x => (x, score: x.InCheck(message, W2VEngine.ComputeCosineSimilarity(x.Vector!, queryVector))))
+                .Where(x => (x.EmbeddingVectors != null && x.EmbeddingVectors.Length > 0) || (x.Vector != null && x.Vector.Length > 0))
+                .Select(x => (x, score: x.InCheck(message, W2VEngine!.ComputeSimilarity(message, x, queryVector))))
                 .OrderBy(x => x.score)
                 .Take(MaxKnowledgeCount)
                 .Where(x => x.score < IInCheck.IgnoreValue)
@@ -256,13 +340,30 @@ namespace ChatVPet.ChatProcess
                 return [];
 
             return Tools
-                .Where(x => x.Vector != null)
-                .Select(x => (x, score: x.InCheck(message, W2VEngine.ComputeCosineSimilarity(x.Vector!, queryVector))))
+                .Where(x => (x.EmbeddingVectors != null && x.EmbeddingVectors.Length > 0) || (x.Vector != null && x.Vector.Length > 0))
+                .Select(x => (x, score: x.InCheck(message, W2VEngine!.ComputeSimilarity(message, x, queryVector))))
                 .OrderBy(x => x.score)
                 .Take(MaxToolCount)
                 .Where(x => x.score < IInCheck.IgnoreValue)
                 .Select(x => x.x)
                 .ToList();
+        }
+
+        private string BuildSystemMessage(string system, List<string> knowledge, List<DiaryEntry> diaries)
+        {
+            var sb = new System.Text.StringBuilder(system);
+
+            if (knowledge.Count > 0)
+                sb.Append($"\n\n{Localization.DataBaseFollows}\n```json\n{JsonConvert.SerializeObject(knowledge)}\n```");
+
+            if (diaries.Count > 0)
+            {
+                sb.Append($"\n\n{Localization.DiaryHeader}");
+                foreach (var d in diaries)
+                    sb.Append($"\n{d.ToContextLine()}");
+            }
+
+            return sb.ToString();
         }
 
         private List<string[]> SelectHistory(string message, float[] queryVector)
@@ -283,8 +384,8 @@ namespace ChatVPet.ChatProcess
             if (candidates.Count > 0 && selected.Count < MaxHistoryCount)
             {
                 var bySimilarity = candidates
-                    .Where(x => x.dialogue.Vector != null)
-                    .Select(x => (x.dialogue, x.index, score: x.dialogue.InCheck(message, W2VEngine.ComputeCosineSimilarity(x.dialogue.Vector!, queryVector))))
+                    .Where(x => (x.dialogue.EmbeddingVectors != null && x.dialogue.EmbeddingVectors.Length > 0) || (x.dialogue.Vector != null && x.dialogue.Vector.Length > 0))
+                    .Select(x => (x.dialogue, x.index, score: x.dialogue.InCheck(message, W2VEngine!.ComputeSimilarity(message, x.dialogue, queryVector))))
                     .OrderBy(x => x.score)
                     .ToList();
 
@@ -303,11 +404,95 @@ namespace ChatVPet.ChatProcess
         }
 
         /// <summary>
+        /// 检查是否需要压缩历史消息，若需要则调用 LLM 生成日记摘要
+        /// </summary>
+        private void TryCompressHistory()
+        {
+            if (MaxHistoryBeforeCompress <= 0 || AIAPIAskFunction == null)
+                return;
+            if (Dialogues.Count <= MaxHistoryBeforeCompress)
+                return;
+
+            var keepCount = Math.Max(0, Math.Min(DiaryKeepRecentCount, Dialogues.Count));
+            var compressCount = Dialogues.Count - keepCount;
+            if (compressCount <= 0)
+                return;
+
+            var toCompress = Dialogues.GetRange(0, compressCount);
+
+            // 构建结构化对话文本以供 LLM 摘要，避免混用固定语言的角色标签
+            var conversationText = JsonConvert.SerializeObject(
+                toCompress.Select(d => new { question = d.Question, answer = d.Answer }),
+                Formatting.Indented);
+
+            var userPrompt = string.Format(Localization.DiaryCompressionUserPrompt, conversationText);
+            var summaryResult = AIAPIAskFunction(
+                Localization.DiaryCompressionSystemPrompt,
+                [],
+                userPrompt,
+                []);
+
+            // 仅当 LLM 返回有效摘要时才压缩；否则保留原始对话历史
+            var summary = summaryResult?.Reply;
+            if (string.IsNullOrWhiteSpace(summary))
+                return;
+
+            // 用 CalImportanceFunction 对摘要文本打分，作为日记的基础重要性权重
+            // 摘要只有答案部分，问题留空
+            var importance = CalImportanceFunction(["", summary]);
+            // 将 0-1 的分数映射到合理的权重范围（1-4）
+            var baseWeight = 1f + importance * 3f;
+
+            var entry = new DiaryEntry(summary, Localization, baseWeight, DateTime.Now);
+            W2VEngine?.GetQueryVector([entry]);
+            DiaryEntries.Add(entry);
+
+            // 移除已压缩的消息
+            Dialogues.RemoveRange(0, compressCount);
+        }
+
+        /// <summary>
+        /// 根据当前消息和查询向量，从 DiaryEntries 中检索最相关的日记条目
+        /// </summary>
+        private List<DiaryEntry> SelectDiaryEntries(string message, float[] queryVector)
+        {
+            if (MaxDiaryInContext <= 0 || DiaryEntries.Count == 0)
+                return [];
+
+            return DiaryEntries
+                .Where(x => (x.EmbeddingVectors != null && x.EmbeddingVectors.Length > 0) || (x.Vector != null && x.Vector.Length > 0))
+                .Select(x => (entry: x, score: x.InCheck(message, W2VEngine!.ComputeSimilarity(message, x, queryVector))))
+                .OrderBy(x => x.score)
+                .Take(MaxDiaryInContext)
+                .Where(x => x.score < IInCheck.IgnoreValue)
+                .Select(x => x.entry)
+                .ToList();
+        }
+
+        /// <summary>
+        /// 对所有日记条目应用衰减；被选中使用的条目执行命中回调
+        /// </summary>
+        private void DecayAndUpdateDiaries(IEnumerable<DiaryEntry> usedEntries)
+        {
+            if (DiaryDecayRate <= 0 || DiaryEntries.Count == 0)
+                return;
+
+            var usedSet = new HashSet<DiaryEntry>(usedEntries);
+            foreach (var entry in DiaryEntries)
+            {
+                if (usedSet.Contains(entry))
+                    entry.OnHit();
+                else
+                    entry.ApplyDecay(DiaryDecayRate);
+            }
+        }
+
+        /// <summary>
         /// 工具调用执行方法, 执行工具调用列表中的工具, 并返回工具的输出结果 (如果有)
         /// </summary>
         /// <param name="toolCalls"></param>
         /// <returns></returns>
-        private string ExecuteTools(List<ToolCall> toolCalls)
+        private string ExecuteTools(List<ToolCallResult> toolCalls)
         {
             var results = new List<string>();
             foreach (var tc in toolCalls)
@@ -324,7 +509,7 @@ namespace ChatVPet.ChatProcess
             return string.Join("", results);
         }
 
-        private string BuildStructuredReply(string reply, List<ToolCall> toolCalls)
+        private string BuildStructuredReply(string reply, List<ToolCallResult> toolCalls)
         {
             return $"{Localization.Response}\n{reply}\n{Localization.ToolCall}\n{JsonConvert.SerializeObject(toolCalls)}";
         }
