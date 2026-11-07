@@ -1,10 +1,7 @@
 ﻿using ChatVPet.ChatProcess;
 using LinePutScript.Localization.WPF;
-using System;
+using Newtonsoft.Json;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VPet_Simulator.Windows.Interface;
 
 namespace VPet.Plugin.ChatVPet.dynKnowDB
@@ -18,10 +15,30 @@ namespace VPet.Plugin.ChatVPet.dynKnowDB
         public DynKDBStatic(IMainWindow mw, ILocalization localization)
         {
             MW = mw;
-            KeyWords = localization.WordSplit("桌宠名称:{0} 金钱(钱) 数据 体力 心情 饱腹度 口渴度 好感度 当前状态 饥饿 饿 口渴 渴".Translate(MW.GameSavesData.GameSave.Name));
+            KeyWords = localization.WordSplit("桌宠名称 {0} 金钱 钱 数据 体力 心情 饱腹度 口渴度 好感度 当前状态 饥饿 饿 口渴 渴".Translate(MW.GameSavesData.GameSave.Name));
             ImportanceWeight_Plus = 0.1f;
             ImportanceWeight_Muti = 1.5f;
         }
+
+        /// <summary>
+        /// 用于 Embedding 向量生成的语义描述文本，使用自然语言关键词而非格式化状态数据，
+        /// 以便与"你还剩多少钱"、"现在体力多少"等自然语言查询更好地语义对齐。
+        /// </summary>
+        [JsonIgnore]
+        public override IEnumerable<string> EmbeddingTexts =>
+            [
+            "你现在渴不渴啊".Translate(),
+            "你还剩多少钱".Translate(),
+            "你心情怎么样".Translate(),
+            "今天玩得开心吗".Translate(),
+            "饿不饿,想不想吃东西".Translate(),
+            "你现在体力还剩多少".Translate(),
+            "你的好感度是多少".Translate(),
+            "你现在几级了".Translate(),
+            "你现在饱腹度怎么样".Translate(),
+            "桌宠现在的状态如何".Translate(),
+            ];
+
         public override string KnowledgeData
         {
             get

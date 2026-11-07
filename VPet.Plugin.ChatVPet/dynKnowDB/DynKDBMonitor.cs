@@ -1,11 +1,8 @@
 ﻿using ChatVPet.ChatProcess;
 using LinePutScript.Localization.WPF;
-using System;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VPet_Simulator.Windows.Interface;
 
 namespace VPet.Plugin.ChatVPet.dynKnowDB
@@ -22,9 +19,23 @@ namespace VPet.Plugin.ChatVPet.dynKnowDB
         public DynKDBMonitor(IMainWindow mw, ILocalization localization)
         {
             MW = mw;
-
             KeyWords = localization.WordSplit("电脑 信息 监控 状况 CPU 内存 占用".Translate(MW.GameSavesData.GameSave.Name));
         }
+
+        /// <summary>
+        /// 用于 Embedding 向量生成的语义描述文本
+        /// </summary>
+        [JsonIgnore]
+        public override IEnumerable<string> EmbeddingTexts =>
+            [
+            "电脑状况如何".Translate(),
+            "电脑占用高吗?".Translate(),
+            "我还剩多少内存".Translate(),
+            "帮我查看电脑信息".Translate(),
+            "我内存占用有多少".Translate(),
+            "CPU占用如何".Translate(),
+            ];
+
         public override string KnowledgeData
         {
             get

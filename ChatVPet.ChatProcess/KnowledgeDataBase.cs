@@ -23,15 +23,17 @@ namespace ChatVPet.ChatProcess
         /// </summary>
         /// <param name="knowledgeData">知识库数据</param>
         /// <param name="keyword">关键字数组</param>
+        /// <param name="embeddingTexts">用于检索的例句</param>
         /// <param name="localization">本地化接口</param>
         /// <param name="important_muit">重要性乘法权重</param>
         /// <param name="important_plus">重要性加法权重</param>
-        public KnowledgeDataBase(string knowledgeData, string[] keyword, ILocalization localization, double important_muit = 2, double important_plus = 0)
+        public KnowledgeDataBase(string knowledgeData, string[] keyword, string[] embeddingTexts, ILocalization localization, double important_muit = 2, double important_plus = 0)
         {
             KnowledgeData = knowledgeData;
             ImportanceWeight_Muti = (float)important_muit;
             ImportanceWeight_Plus = (float)important_plus;
-            KeyWords = [.. keyword.Select(x => string.Join(" ", localization.WordSplit(x))), string.Join(" ", localization.WordSplit(knowledgeData))];
+            KeyWords = [.. keyword, knowledgeData];
+            _embeddingExamples = embeddingTexts;
         }
 
         /// <summary>
@@ -41,17 +43,19 @@ namespace ChatVPet.ChatProcess
         /// <summary>
         /// 重要性
         /// </summary>
-        public float ImportanceWeight_Muti { get; set; } = 2.2f;//知识库包含很多字,所以为了加大权重,默认多一点
-        public float ImportanceWeight_Plus { get; set; } = 0.01f;
+        public virtual float ImportanceWeight_Muti { get; set; } = 2.2f;//知识库包含很多字,所以为了加大权重,默认多一点
+        public virtual float ImportanceWeight_Plus { get; set; } = 0.01f;
         /// <summary>
-        /// 关键字组（经分词处理，用于 BM25 关键词匹配）
+        /// 关键字及知识文本，由检索引擎统一分词匹配
         /// </summary>
-        public IEnumerable<string> KeyWords { get; set; }
+        public virtual IEnumerable<string> KeyWords { get; set; }
         /// <summary>
         /// 嵌入向量的原始文本列表，每项独立生成一个向量
         /// </summary>
         [JsonIgnore]
-        public virtual IEnumerable<string> EmbeddingTexts => [KnowledgeData];
+        public virtual IEnumerable<string> EmbeddingTexts => [.. _embeddingExamples, KnowledgeData];
+
+        private readonly string[] _embeddingExamples = [];
         /// <summary>
         /// 向量
         /// </summary>

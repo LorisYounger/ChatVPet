@@ -4,3 +4,4 @@ Microsoft.CognitiveServices.Speech.extension.kws.dll:|skip#true:|
 Microsoft.CognitiveServices.Speech.extension.kws.ort.dll:|skip#true:|
 Microsoft.CognitiveServices.Speech.extension.lu.dll:|skip#true:|
 Microsoft.CognitiveServices.Speech.core.dll:|skip#true:|
+/// 备注: 记得把发布的runtimes里面的windows直接复制到根目录

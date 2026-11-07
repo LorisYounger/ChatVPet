@@ -158,16 +158,16 @@ namespace VPet.Plugin.ChatVPet
                     if (needinittool)
                     {
                         VPetChatProcess.Tools.AddRange(VPetChatProcess.GetBuiltinDiaryTools());
-                        VPetChatProcess.Tools.Add(new ToolUse("dance", "让桌宠跳舞".Translate(), "跳舞 舞".Translate().Split(' '), ToolDance, [], VPetChatProcess.Localization));
-                        VPetChatProcess.Tools.Add(new ToolUse("stopactive", "让桌宠停止当前进行的活动,例如工作/玩耍/学习".Translate(), "停止 活动 结束 别去 工作 干活 玩耍 玩 学习 学".Translate().Split(' '), ToolStopWork, [], VPetChatProcess.Localization, 2, 0.05));
-                        VPetChatProcess.Tools.Add(new ToolUse("idle", "让桌宠发呆".Translate(), "发呆 呆".Translate().Split(' '), ToolIdel, [], VPetChatProcess.Localization));
-                        VPetChatProcess.Tools.Add(new ToolUse("sleep", "让桌宠睡觉".Translate(), "睡觉 睡眠 就寝".Translate().Split(' '), ToolSleep, [], VPetChatProcess.Localization));
-                        VPetChatProcess.Tools.Add(new ToolUse("wakeup", "让桌宠起床".Translate(), "起床 别睡了 睡".Translate().Split(' '), ToolWakeup, [], VPetChatProcess.Localization));
-                        VPetChatProcess.Tools.Add(new ToolUse("touchhead", "摸桌宠的头".Translate(), "摸头 摸脑袋 摸".Translate().Split(' '), ToolTouchHead, [], VPetChatProcess.Localization));
-                        VPetChatProcess.Tools.Add(new ToolUse("touchbody", "摸桌宠的身体".Translate(), "摸身体 摸肚子".Translate().Split(' '), ToolTouchBody, [], VPetChatProcess.Localization));
-                        VPetChatProcess.Tools.Add(new ToolUse("move", "让桌宠自由移动".Translate(), "移动 走动 走路".Translate().Split(' '), ToolMove, [], VPetChatProcess.Localization));
+                        VPetChatProcess.Tools.Add(new ToolUse("dance", "让桌宠跳舞".Translate(), "跳舞 舞".Translate().Split(' '), ["你能跳个舞吗".Translate(), "给我跳舞看看".Translate(), "我想看你跳舞".Translate(), "来一段舞蹈吧".Translate(), "跳个舞给我看".Translate()], ToolDance, [], VPetChatProcess.Localization));
+                        VPetChatProcess.Tools.Add(new ToolUse("stopactive", "让桌宠停止当前进行的活动,例如工作/玩耍/学习".Translate(), "停止 活动 结束 别去 工作 干活 玩耍 玩 学习 学".Translate().Split(' '), ["别工作了,休息一下吧".Translate(), "停下来歇一歇".Translate(), "不要再干活了".Translate(), "先停下来吧".Translate(), "放下手头的事".Translate(), "不要再玩了".Translate(), "别学习了".Translate()], ToolStopWork, [], VPetChatProcess.Localization, 2, 0.05));
+                        VPetChatProcess.Tools.Add(new ToolUse("idle", "让桌宠发呆".Translate(), "发呆 呆".Translate().Split(' '), ["发会儿呆吧".Translate(), "你就这样发呆好了".Translate(), "放空一下吧".Translate(), "什么都不用做,发呆就好".Translate(), "就这样待着吧".Translate()], ToolIdel, [], VPetChatProcess.Localization));
+                        VPetChatProcess.Tools.Add(new ToolUse("sleep", "让桌宠睡觉".Translate(), "睡觉 睡眠 就寝".Translate().Split(' '), ["快去睡觉吧".Translate(), "该休息了,去睡觉".Translate(), "你看起来很累,去睡吧".Translate(), "早点睡觉哦".Translate(), "去好好睡一觉".Translate()], ToolSleep, [], VPetChatProcess.Localization));
+                        VPetChatProcess.Tools.Add(new ToolUse("wakeup", "让桌宠起床".Translate(), "起床 别睡了 睡".Translate().Split(' '), ["快起床了".Translate(), "不要再睡了,起来吧".Translate(), "天都亮了,该起床了".Translate(), "起来起来,别睡了".Translate(), "该醒了".Translate()], ToolWakeup, [], VPetChatProcess.Localization));
+                        VPetChatProcess.Tools.Add(new ToolUse("touchhead", "摸桌宠的头".Translate(), "摸头 摸脑袋 摸".Translate().Split(' '), ["我想摸摸你的头".Translate(), "让我摸摸你的脑袋".Translate(), "摸摸头".Translate(), "给你一个摸头杀".Translate(), "头好软,摸一摸".Translate()], ToolTouchHead, [], VPetChatProcess.Localization));
+                        VPetChatProcess.Tools.Add(new ToolUse("touchbody", "摸桌宠的身体".Translate(), "摸身体 摸肚子".Translate().Split(' '), ["让我摸摸你的肚子".Translate(), "摸摸你的身体".Translate(), "肚子摸摸".Translate(), "摸一下肚子".Translate(), "揉揉肚子".Translate()], ToolTouchBody, [], VPetChatProcess.Localization));
+                        VPetChatProcess.Tools.Add(new ToolUse("move", "让桌宠自由移动".Translate(), "移动 走动 走路".Translate().Split(' '), ["去到处走走吧".Translate(), "到处移动一下".Translate(), "你可以自由走动".Translate(), "随便走走吧".Translate(), "动一动".Translate()], ToolMove, [], VPetChatProcess.Localization));
                         VPetChatProcess.Tools.Add(new ToolUse("modifystate", "根据对话情绪和上下文适当调整桌宠的状态(例如：聊天高兴时增加心情或好感度，获得奖励时增加经验值或金钱)".Translate(),
-                            "调整状态 高兴 心情 好感度 奖励 经验值 金钱".Translate().Split(' '), ToolModifyState, [
+                            "调整状态 高兴 心情 好感度 奖励 经验值 金钱".Translate().Split(' '), ["好好学习了吗".Translate(), "给我点钱".Translate(), "开心一点".Translate(), "喜欢我吗".Translate()], ToolModifyState, [
                             new Arg(){  Name = "exp",Type = "double" , Description="增加经验值(负数为扣除)[±1000]".Translate() },
                             new Arg(){  Name = "money",Type = "double" ,Description="增加金钱(负数为扣除)[±1000]".Translate() },
                             new Arg(){  Name = "feeling",Type = "double" ,Description="增加心情值(负数为扣除)[±20]".Translate() },
@@ -178,17 +178,20 @@ namespace VPet.Plugin.ChatVPet
                         {
                             var x = MW.Foods[i];
                             VPetChatProcess.Tools.Add(new ToolUse("take" + x.Name, "让桌宠 {0} {1}".Translate((x.Type.ToString() + "ing").Translate(), x.TranslateName),
-                                ["吃".Translate(), "喝".Translate(), (x.Type.ToString() + "ing").Translate(), x.Name, x.TranslateName, x.Description], (_) => ToolTakeItem(x), [], VPetChatProcess.Localization));
+                                ["吃".Translate(), "喝".Translate(), (x.Type.ToString() + "ing").Translate(), x.Name, x.TranslateName, x.Description],
+                                [$"{(x.Type.ToString() + "ing").Translate()} {x.TranslateName}"], (_) => ToolTakeItem(x), [], VPetChatProcess.Localization));
                         }
                         for (int i = 0; i < MW.Core.Graph.GraphConfig.Works.Count; i++)
                         {
                             var x = MW.Core.Graph.GraphConfig.Works[i];
                             VPetChatProcess.Tools.Add(new ToolUse("do" + x.Name, "让桌宠 {0} {1}".Translate((x.Type.ToString() + "ing").Translate(), x.NameTrans),
-                                ["干活".Translate(), "工作".Translate(), "玩".Translate(), "学".Translate(), (x.Type.ToString() + "ing").Translate(), x.Name, x.NameTrans], (_) => ToolDoWork(x), [], VPetChatProcess.Localization));
+                                ["干活".Translate(), "工作".Translate(), "玩".Translate(), "学".Translate(), (x.Type.ToString() + "ing").Translate(), x.Name, x.NameTrans],
+                                [$"{(x.Type.ToString() + "ing").Translate()} {x.NameTrans}"],
+                                (_) => ToolDoWork(x), [], VPetChatProcess.Localization));
                         }
 
                         foreach (ISub sub in MW.Set["diy"])
-                            VPetChatProcess.Tools.Add(new ToolUse(sub.Name, sub.Name, [], (x) => { RunDIY(sub.Info); return null; }, [], VPetChatProcess.Localization));
+                            VPetChatProcess.Tools.Add(new ToolUse(sub.Name, sub.Name, [], [], (x) => { RunDIY(sub.Info); return null; }, [], VPetChatProcess.Localization));
 
                     }
                     //然后历史消息从设置中加载
@@ -210,9 +213,12 @@ namespace VPet.Plugin.ChatVPet
                     }
                     if (File.Exists(ExtensionValue.BaseDirectory + @"\OpenAISetting.json"))
                     {
-                        OpenAIConfig = JsonConvert.DeserializeObject<OpenAIChatConfig>(File.ReadAllText(ExtensionValue.BaseDirectory + @"\OpenAISetting.json"));
-                        if (OpenAIConfig != null)
+                        var oas = JsonConvert.DeserializeObject<OpenAIChatConfig>(File.ReadAllText(ExtensionValue.BaseDirectory + @"\OpenAISetting.json"));
+                        if (oas != null)
+                        {
+                            OpenAIConfig = oas;
                             VPetChatProcess.SystemDescription = OpenAIConfig.SystemPrompt;
+                        }
                     }
 
                     // Apply persisted settings to VPetChatProcess
@@ -225,6 +231,17 @@ namespace VPet.Plugin.ChatVPet
                     VPetChatProcess.DiaryDecayRate = DiaryDecayRate;
                     VPetChatProcess.MaxDiaryInContext = MaxDiaryInContext;
 
+
+                    VPetChatProcess.W2VEngine = new W2VEngine(VPetChatProcess);
+                    if (!string.IsNullOrWhiteSpace(OpenAIConfig?.EmbeddingApiKey))
+                    {//只有写过设置的才预先生成EMBedding向量，避免没有设置API就加载插件时因为调用API而报错
+                        VPetChatProcess.W2VEngine.GetQueryVector(VPetChatProcess.KnowledgeDataBases);
+                        VPetChatProcess.W2VEngine.GetQueryVector(VPetChatProcess.Tools);
+                        VPetChatProcess.W2VEngine.GetQueryVector(VPetChatProcess.Dialogues);
+                        VPetChatProcess.W2VEngine.GetQueryVector(VPetChatProcess.DiaryEntries);
+                    }
+
+                    //最后初始化语音识别, 这玩意最容易出bug，所以放最后，前面都成功了就算这个失败了也不至于影响使用
                     if (AzureVoiceEnable)
                     {
                         try
@@ -239,12 +256,7 @@ namespace VPet.Plugin.ChatVPet
                             MessageBox.Show(e.ToString());
                         }
                     }
-                    VPetChatProcess.W2VEngine = new W2VEngine(VPetChatProcess);
 
-                    VPetChatProcess.W2VEngine.GetQueryVector(VPetChatProcess.KnowledgeDataBases);
-                    VPetChatProcess.W2VEngine.GetQueryVector(VPetChatProcess.Tools);
-                    VPetChatProcess.W2VEngine.GetQueryVector(VPetChatProcess.Dialogues);
-                    VPetChatProcess.W2VEngine.GetQueryVector(VPetChatProcess.DiaryEntries);
                 }
                 catch (Exception e)
                 {

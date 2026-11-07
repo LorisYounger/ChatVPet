@@ -30,8 +30,14 @@ internal sealed class Program
     private HttpClient? _proxyHttpClient;
     private HttpClientHandler? _proxyHttpHandler;
 
-    private static void Main()
+    private static void Main(string[] args)
     {
+        if (args.Contains("--self-test"))
+        {
+            RetrievalChecks.Run();
+            return;
+        }
+
         new Program().Run();
     }
 
@@ -548,10 +554,10 @@ internal sealed class Program
 
         _process.Tools.Clear();
         _process.Tools.AddRange(_process.GetBuiltinDiaryTools());
-        _process.Tools.Add(new ToolUse("dance", "让桌宠跳舞(测试用)", [], ToolDance, [], _process.Localization));
-        _process.Tools.Add(new ToolUse("idle", "让桌宠发呆(测试用)", [], ToolIdle, [], _process.Localization));
-        _process.Tools.Add(new ToolUse("move", "让桌宠自由移动(测试用)", [], ToolMove, [], _process.Localization));
-        _process.Tools.Add(new ToolUse("modifystate", "调整状态(测试用)", [], ToolModifyState,
+        _process.Tools.Add(new ToolUse("dance", "让桌宠跳舞(测试用)", [], [], ToolDance, [], _process.Localization));
+        _process.Tools.Add(new ToolUse("idle", "让桌宠发呆(测试用)", [], [], ToolIdle, [], _process.Localization));
+        _process.Tools.Add(new ToolUse("move", "让桌宠自由移动(测试用)", [], [], ToolMove, [], _process.Localization));
+        _process.Tools.Add(new ToolUse("modifystate", "调整状态(测试用)", [], [], ToolModifyState,
         [
             new Arg { Name = "exp", Type = "number", Description = "经验值增量" },
             new Arg { Name = "money", Type = "number", Description = "金钱增量" },

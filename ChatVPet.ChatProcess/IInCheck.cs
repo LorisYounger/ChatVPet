@@ -30,7 +30,9 @@ namespace ChatVPet.ChatProcess
         /// <param name="message">当前用户消息</param>
         /// <param name="similarity">相似度分数</param>
         float InCheck(string message, float similarity);
-
+        /// <summary>
+        /// INCHECK 数值越小越优先
+        /// </summary>
         public static float InCheck(string message, float similarity, IInCheck inCheck)
         {
             return Math.Max(0, 1 - similarity * inCheck.ImportanceWeight_Muti - inCheck.ImportanceWeight_Plus);

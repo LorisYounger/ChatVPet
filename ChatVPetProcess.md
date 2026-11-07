@@ -1,19 +1,22 @@
-## ChatVPetProcess
+# ChatVPetProcess
 
-### 简介
-ChatVPetProcess 是一个用于处理和模拟自然语言交互的聊天系统。它通过整合 GPT 模型、知识库和工具，实现了对用户输入的自然语言的理解和处理。
+## 简介
 
-ChatVPet 和 后续训练均会使用该处理模式和结构
+ChatVPetProcess 是配合 ChatVPet 使用的聊天处理库. 每次聊天时找出相关的知识、历史和日记, 交给 ChatVPet 回答. 需要操作桌宠时再交给 ToolCallAI 判断, 桌宠做完后把结果传回来, 由 ChatVPet 接着告诉玩家. 可以接自己的聊天模型, 也可以接其他 AI 服务.
 
-### 功能介绍
-- **知识库管理**：
-  - 允许添加、编辑和管理多个知识库，以支持丰富的问答系统。
-- **自定义工具**：
-  - 可以集成各种自定义工具，以扩展插件的功能和行为。
-- **本地化支持**：
-  - 内置多种语言支持，根据不同区域设置提供适当的翻译和资源
+处理库源码在 [ChatVPet.ChatProcess](ChatVPet.ChatProcess), 桌宠插件在 [VPet.Plugin.ChatVPet](VPet.Plugin.ChatVPet).
 
-### 安装
+## 功能介绍
+
+- 知识库和工具: 根据向量、关键词和重要性查找相关内容, 再通过重排选出需要的部分. 可以添加自己的知识和工具, 也支持读取实时数据的动态知识.
+- 聊天历史: 保留一部分最近的聊天, 再找相关的旧对话, 按原来的顺序发给 AI.
+- 日记: 聊天记录太多时, 把较早的聊天总结成日记. 有效摘要生成后删掉对应的旧记录, 最近的聊天继续保留. 后续聊天会查找相关日记, 用到的增加权重, 没用到的逐渐衰减.
+- 工具调用: ToolCallAI 根据玩家原话和桌宠初答选择工具, 桌宠插件检查并执行, 返回实际结果. 需要告诉玩家的结果交给 ChatVPet 续答, 纯心情或好感调整可以静默完成.
+- 表情和动作: ChatVPet 选择说话表情, 具体动作由 ToolCallAI 从桌宠的动画库里选择. 也支持补查旧聊天、看截图和说完后退出游戏.
+- 本地化: 通过 `ILocalization` 修改处理过程中使用的提示文本.
+
+## 安装
+
 - 通过Parckage Manager
 
      ```
@@ -24,84 +27,100 @@ ChatVPet 和 后续训练均会使用该处理模式和结构
 
   [ChatVPet.ChatProcess](https://www.nuget.org/packages/ChatVPet.ChatProcess/)
 
-### 快速入门
-1. **准备聊天方法**：
+## 快速入门
 
-   ```csharp
-   // 可以用自己或者其他的AI聊天程序, 这里是使用 ChatGPT.API.Framework
-   // https://github.com/LorisYounger/ChatGPT.API.Framework
-   /// <summary>
-   /// 调用GPT的方法
-   /// </summary>
-   public string GPTAsk(string system, List<string[]> historys, string message)
-   {
-       Completions completions = new Completions();
-       completions.max_tokens = 8000;//最大token限制
-       completions.model = "gpt-4o-mini";
-       
-       completions.messages.Add(new Message() { role = Message.RoleType.system, content = system });
-       foreach (var h in historys)
-       {
-           completions.messages.Add(new Message() { role = Message.RoleType.user, content = h[0] });
-           completions.messages.Add(new Message() { role = Message.RoleType.system, content = h[1] });
-       }
-       completions.messages.Add(new Message() { role = Message.RoleType.user, content = message });
-       var resp = completions.GetResponse("APIUrl", "APIKey");
-       var reply = resp.GetMessageContent();
-       if (resp.choices.Length == 0)
-       {
-           return "请检查API token设置".Translate();
-       }
-       else if (resp.choices[0].finish_reason == "length")
-       {
-           reply += " ...";
-       }
-       temptoken = resp.usage.total_tokens;
-       TokenCount = temptoken;
-       return reply;
-   }
-   ```
+### 准备模型接口
 
-2.  **实例化 VPetChatProcess**
+聊天和操作分别配置, 检索用的向量和重排服务也可以单独选择:
 
-   ```C#
-   public VPetChatProcess VPetChatProcess = new VPetChatProcess(new ILocalization.LChineseSimple(),GPTAsk);
-   ```
+| 接口 | 用途 |
+|---|---|
+| ChatVPet | 普通聊天接口, 输入角色设定、历史和本轮消息, 返回带抬头的对白 |
+| ToolCallAI | 支持工具调用和视觉的接口, 根据玩家原话、桌宠初答和现场信息选择工具 |
+| Embedding | 批量生成文字向量, 例如 `Qwen/Qwen3-Embedding-0.6B` |
+| Reranker | 给查询与候选内容打相关性分数, 例如 `Qwen/Qwen3-Reranker-0.6B` |
 
-3. **加载知识和工具**：
+按使用的服务填写地址、模型名和密钥. ChatVPet 只收文字, 不需要自己调用工具; 图片先交给视觉接口识别, 再把文字结果放进聊天消息. 普通聊天只请求 ChatVPet, 单独补查历史也不用请求 ToolCallAI.
 
-   ```c#
-   // 加载知识库
-   VPetChatProcess.AddKnowledgeDataBase(KnowledgeDataBase.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
-   // 加载工具
-   VPetChatProcess.Tools.Add(new Tool("takeitem", "购买并使用有物品id的物品,例如(吃)食物/正餐/零食/(喝)饮料/功能性/药品/(送)礼品".Translate(), ToolTakeItem, new List<Tool.Arg>()
-   {
-       new Tool.Arg(){ Name = "itemID", Description = "(int)物品id, 没有物品ID的物品没法使用".Translate() }
-   }, VPetChatProcess.Localization));
-   ```
+向量接口按输入顺序返回对应的向量, 数量要一致. 重排接口返回查询与候选的相关性评分, 需要按服务的字段和分数方向接入.
 
-4. **发送聊天请求**：
-   ```csharp
-   // 聊天控制器
-   var pc = new ProcessControl();
-   VPetChatProcess.Ask(content, (pr) =>
-   {
-       if (pr.IsError)
-       {// 处理错误情况
-          	MessageBox.Show("VCP报错: " + pr.Reply);
-       }
-       else if (!string.IsNullOrWhiteSpace(pr.Reply))
-       {// 处理正常回复
-           MessageBox.Show(pr.Reply);
-       }
-       if (pr.IsEnd || pr.IsError)
-       {
-           //结束前的处理
-       }
-       else if (pr.ListPosition >= 5)
-       {
-           MessageBox.Show("轮询次数超过5,已停止下一轮轮询");
-           pc.StopBeforeNext = true;
-       }
-   }, pc);
-   ```
+### 加载知识与工具
+
+知识库放角色和游戏相关的说明, 动态知识在使用时读取桌宠当前状态. 工具提供名称、描述、参数和相关例句, 方便 Process 找出这次可能用到的工具.
+
+工具沿用 `ToolUse` 注册, 参数在 `ToolUse.Arg` 里填写名称、JSON Schema 类型、说明和是否必填. 首次生成对白只检索相关知识和记忆, 收到操作抬头后才检索工具, 过滤掉本轮不允许使用的项目, 再交给 ToolCallAI.
+
+执行前由桌宠插件检查参数和游戏状态. 做完后返回实际结果, 比如买了几个、花了多少钱、有没有吃掉. 没执行、失败和暂时不知道结果也要分别回报, 不能用没有返回内容表示已经成功.
+
+### 发送聊天请求
+
+每次发言按下面的顺序处理:
+
+1. 读取当前存档和时间, 找出相关知识、聊天历史和日记, 组装本轮消息.
+2. ChatVPet 生成带抬头的初答. 普通对白可以流式显示, 有操作的初答等生成完整、正文非空后再执行.
+3. Process 按抬头分流. 补查历史直接走检索, 查询和游戏操作交给 ToolCallAI, 截图交给视觉接口处理.
+4. 桌宠插件返回各步的实际结果. Process 收齐需要的回执, 连同原话和初答交给 ChatVPet, 把续答追加到原来这一轮.
+
+界面只显示去掉抬头后的对白. 普通聊天到初答就结束, 需要查询或操作的回合则先说正在做什么, 等有结果再接着说. 生成续答时复用原来的历史和玩家原话, 不重复保存一次玩家发言.
+
+### 检索与日记配置
+
+旧聊天和日记共用记忆条数上限, 普通聊天默认最多取 5 条, 带 `[recall]` 时最多取 20 条. 这些是去重、重排后送给模型的数量, 相关内容不够就少给, 也要留意上下文长度. 最近的必要对话单独保留, 避免聊着聊着接不上前一句.
+
+聊天记录超过 `MaxHistoryBeforeCompress` 后生成日记, 留下最近 `DiaryKeepRecentCount` 条聊天. 不想自动压缩历史, 把 `MaxHistoryBeforeCompress` 设为 0 或负数即可.
+
+候选内容的向量可以缓存, 文字变了就重新生成, 换向量模型也要清掉旧缓存. 查询向量和重排分数只在相同存档、查询和服务配置下复用. 价格、余额和操作结果直接读桌宠, 不从缓存里取.
+
+## 对话流程
+
+### 角色对白与操作分工
+
+ChatVPet 负责和玩家聊天、选说话表情. 需要操作时, Process 把玩家原话、桌宠刚说的话、相关状态和可用工具交给 ToolCallAI, 由它判断怎么做, 最后由桌宠插件检查并执行. 找记忆、拼消息和传回结果也由 Process 处理.
+
+普通聊天直接回答就好. 查东西或者做事情时, 等结果回来再接着说, 不用玩家再问一次. 如果只是调整心情或好感, 可以在后台处理, 不用专门报一次数值. 查到有货、买到了、吃掉了要分别记录, 重新生成回答也不能再执行一遍.
+
+### 输入与输出约定
+
+固定的角色设定放在 `system`. 每轮 `user` 开头带上本机日期时间、桌宠状态和好感档位, 读不到的项目省略. 有参考资料、图片识别结果、初答或本轮回执时也放在这里. 平时不塞整张背包和所有属性, 问到余额、价格或具体数值时再查.
+
+前缀只占一行, 按常态信息、`[参考:…]`、`[观察:…]`、`[初答:…]`、`[回执:…]` 排列, 下一行是玩家正文. 初答请求不带初答和回执字段, 结果续答才补上. 历史消息保持各轮原样, 同轮重试复用同一份状态.
+
+好感分为陌生、初识、熟悉、有好感、喜欢、亲近、亲密、依恋、挚爱、深爱十档, 给 AI 一个词就够了. 关系近可以说得亲近一点, 以前一起做过什么还是要看聊天记录. 具体加减多少由操作侧提出, 桌宠按当前存档检查和结算.
+
+这些前缀由 Process 生成, 不能把玩家自己写的内容或者旧资料当作当前状态. 发给 AI 时, 玩家正文和引用资料里的半角方括号换成 `〔〕`, 界面和原始记录照旧保留. 实际执行还要检查玩家这次让做什么, 以及游戏里能不能做.
+
+AI 回答第一行写抬头, 每项各用一对方括号, 连在一起. 第二行开始写能直接念出来的对白, 不能为空. 抬头按 `delegate`、`mood`、`affinity`、`expression`、`recall`、`screenshot`、`animation`、`quit` 的顺序写, 需要哪个写哪个, 每种最多一次.
+
+| 抬头 | 用途 |
+|---|---|
+| `[delegate]` | 需要查东西或做事情, 交给 **ToolCallAI** 判断 |
+| `[mood]`、`[affinity]` | 这次聊天可能影响心情或好感, 和委托一起判断, 桌宠决定实际调整 |
+| `[expression:gentle]` | 这句话用什么表情说, 只有表情就不用请求操作模型 |
+| `[recall]` | 现有上下文不够, 翻一下本存档的旧聊天或日记再回答 |
+| `[screenshot]` | 按玩家开启的范围截图, 让视觉服务看图后返回文字 |
+| `[animation]` | 从桌宠已注册的动画里选一个动作, 这句话不播普通说话动画 |
+| `[quit]` | 配合一个表情, 桌宠允许时说完这句、保存并退出游戏 |
+
+说话表情有 `affectionate`、`angry`、`cheerful`、`conscientious`、`disgruntled`、`embarrassed`、`fearful`、`gentle`、`sad`、`serious` 十种. 普通聊天选一个表情, 要表演具体动作就改用 `animation`. 皮肤没有对应表情时, 用普通说话动画.
+
+只解析第一次回答开头的抬头, 正文里的方括号不用管. 正文为空、格式不对或者生成中断时都不操作. 遇到没见过的操作名, 交给 ToolCallAI 连同玩家原话一起判断, 不直接调用同名工具. 结果回来后的回答只写一个表情和正文, 不再委托一次. 给气泡、语音和聊天记录显示的文字要去掉抬头.
+
+### 检索与宿主回执
+
+知识、日记和工具先通过向量与关键词找出相关内容, 再做重排. 向量和重排服务分别由玩家配置. 最近的聊天要能接得上, 之前给玩家展示的选项顺序也要保留. 旧聊天和日记只查当前存档, 实时数值用的时候再读. 重排失败就沿用初筛顺序, 向量服务不可用时用关键词和近期对话.
+
+回执要记清是哪轮聊天、哪一步操作的结果, 以及没执行、做完了、失败还是暂时不知道结果. 重复收到回调不能再次购买、扣款或者播报, 迟到的结果也要更新回原来那轮. 如果只是后续回答生成失败, 就只重试回答. 中途换了存档, 结果仍记在原存档里.
+
+宿主回执包含 `saveId`、`turnId`、`stepId` 和 `status`, `facts` 放这一步已经核实的事实, 失败或没执行时可以附上原因. `status` 使用以下值:
+
+| 状态 | 含义 |
+|---|---|
+| `observed` | 已查到信息 |
+| `applied` | 操作已经生效 |
+| `skipped` | 没有执行 |
+| `failed` | 确认失败 |
+| `unknown` | 结果还没确认 |
+
+Process 按存档、轮次和步骤识别重复回执, 确认过的结果不能被迟到的 `unknown` 覆盖. 发给 ChatVPet 时, 把事实转成 `[回执:…]` 里的短句, 不带内部 ID. 买入成功但食用失败就分别记录, 超时没收到结果也不能自动再买一次.
+
+模型训练和在线聊天使用同一套消息格式.

@@ -160,6 +160,7 @@ namespace ChatVPet.ChatProcess
                     code: "diary_adjust_weight",
                     descriptive: Localization.DiaryAdjustWeightToolDesc,
                     keyword: ["diary", "weight", "adjust", "日记", "权重"],
+                    embeddingTexts: [],
                     toolFunction: args =>
                     {
                         if (!args.TryGetValue("diary_id", out var diaryIdStr) || string.IsNullOrWhiteSpace(diaryIdStr))
@@ -194,7 +195,7 @@ namespace ChatVPet.ChatProcess
             foreach (var knowledge in knowledgedb)
             {
                 if (KnowledgeDataBases.Find(x => x.KnowledgeData == knowledge) == null)
-                    KnowledgeDataBases.Add(new KnowledgeDataBase(knowledge, [], Localization));
+                    KnowledgeDataBases.Add(new KnowledgeDataBase(knowledge, [], [], Localization));
             }
         }
 
@@ -319,13 +320,68 @@ namespace ChatVPet.ChatProcess
             }
         }
 
+        /// <summary>
+        /// 向量相似度查询结果
+        /// </summary>
+        public class QuerySimilarResult
+        {
+            /// <summary>知识库命中条目及其评分（分数越低越相关）</summary>
+            public List<(KnowledgeDataBase Item, float Score)> Knowledges { get; set; } = [];
+            /// <summary>工具命中条目及其评分（分数越低越相关）</summary>
+            public List<(ToolUse Item, float Score)> Tools { get; set; } = [];
+            /// <summary>对话历史命中条目及其评分（分数越低越相关）</summary>
+            public List<(Dialogue Item, float Score)> Dialogues { get; set; } = [];
+        }
+
+        /// <summary>
+        /// 根据向量相似度检索与 <paramref name="query"/> 相关的知识库、工具和对话历史，
+        /// 结果按评分升序排列（分数越低越相关），并过滤掉超出 <see cref="IInCheck.IgnoreValue"/> 阈值的条目。
+        /// </summary>
+        /// <param name="query">查询文本</param>
+        /// <returns>包含各类别已评分并排序结果的 <see cref="QuerySimilarResult"/></returns>
+        /// <exception cref="InvalidOperationException"><see cref="W2VEngine"/> 未初始化时抛出</exception>
+        public QuerySimilarResult QuerySimilar(string query)
+        {
+            if (W2VEngine == null)
+                throw new InvalidOperationException("W2VEngine is null");
+
+            var vector = W2VEngine.GetQueryVector(query);
+            W2VEngine.GetQueryVector(KnowledgeDataBases);
+            W2VEngine.GetQueryVector(Tools);
+            W2VEngine.GetQueryVector(Dialogues);
+
+            var knowledges = KnowledgeDataBases
+                .Select(x => (Item: x, Score: x.InCheck(query, W2VEngine.ComputeSimilarity(query, x, vector))))
+                .Where(x => x.Score < IInCheck.IgnoreValue)
+                .OrderBy(x => x.Score)
+                .ToList();
+
+            var tools = Tools
+                .Select(x => (Item: x, Score: x.InCheck(query, W2VEngine.ComputeSimilarity(query, x, vector))))
+                .Where(x => x.Score < IInCheck.IgnoreValue)
+                .OrderBy(x => x.Score)
+                .ToList();
+
+            var dialogues = Dialogues
+                .Select(x => (Item: x, Score: x.InCheck(query, W2VEngine.ComputeSimilarity(query, x, vector))))
+                .Where(x => x.Score < IInCheck.IgnoreValue)
+                .OrderBy(x => x.Score)
+                .ToList();
+
+            return new QuerySimilarResult
+            {
+                Knowledges = knowledges,
+                Tools = tools,
+                Dialogues = dialogues
+            };
+        }
+
         private List<string> SelectKnowledge(string message, float[] queryVector)
         {
             if (MaxKnowledgeCount <= 0)
                 return [];
 
             return KnowledgeDataBases
-                .Where(x => (x.EmbeddingVectors != null && x.EmbeddingVectors.Length > 0) || (x.Vector != null && x.Vector.Length > 0))
                 .Select(x => (x, score: x.InCheck(message, W2VEngine!.ComputeSimilarity(message, x, queryVector))))
                 .OrderBy(x => x.score)
                 .Take(MaxKnowledgeCount)
@@ -340,7 +396,6 @@ namespace ChatVPet.ChatProcess
                 return [];
 
             return Tools
-                .Where(x => (x.EmbeddingVectors != null && x.EmbeddingVectors.Length > 0) || (x.Vector != null && x.Vector.Length > 0))
                 .Select(x => (x, score: x.InCheck(message, W2VEngine!.ComputeSimilarity(message, x, queryVector))))
                 .OrderBy(x => x.score)
                 .Take(MaxToolCount)
@@ -384,7 +439,6 @@ namespace ChatVPet.ChatProcess
             if (candidates.Count > 0 && selected.Count < MaxHistoryCount)
             {
                 var bySimilarity = candidates
-                    .Where(x => (x.dialogue.EmbeddingVectors != null && x.dialogue.EmbeddingVectors.Length > 0) || (x.dialogue.Vector != null && x.dialogue.Vector.Length > 0))
                     .Select(x => (x.dialogue, x.index, score: x.dialogue.InCheck(message, W2VEngine!.ComputeSimilarity(message, x.dialogue, queryVector))))
                     .OrderBy(x => x.score)
                     .ToList();
@@ -460,7 +514,6 @@ namespace ChatVPet.ChatProcess
                 return [];
 
             return DiaryEntries
-                .Where(x => (x.EmbeddingVectors != null && x.EmbeddingVectors.Length > 0) || (x.Vector != null && x.Vector.Length > 0))
                 .Select(x => (entry: x, score: x.InCheck(message, W2VEngine!.ComputeSimilarity(message, x, queryVector))))
                 .OrderBy(x => x.score)
                 .Take(MaxDiaryInContext)

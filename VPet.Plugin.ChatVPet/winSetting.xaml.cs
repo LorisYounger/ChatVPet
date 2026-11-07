@@ -278,7 +278,6 @@ namespace VPet.Plugin.ChatVPet
 
         private void btn_SearchDB_vec(object sender, RoutedEventArgs e)
         {
-
             string search = tbSeachDB.Text;
             if (string.IsNullOrEmpty(search))
             {
@@ -287,40 +286,36 @@ namespace VPet.Plugin.ChatVPet
                 lbTool.ItemsSource = Tools;
                 return;
             }
-            var vector = plugin.VPetChatProcess.W2VEngine!.GetQueryVector(search);
-            ////为所有知识库和工具添加向量 已经自动更新 除了新插入的消息可能需要手动更新
-            plugin.VPetChatProcess.W2VEngine.GetQueryVector(plugin.VPetChatProcess.Tools);
-            plugin.VPetChatProcess.W2VEngine.GetQueryVector(plugin.VPetChatProcess.KnowledgeDataBases);
-            plugin.VPetChatProcess.W2VEngine.GetQueryVector(plugin.VPetChatProcess.Dialogues);
 
-            ObservableCollection<string> kdbs = new ObservableCollection<string>(plugin.VPetChatProcess.KnowledgeDataBases.Select(x => (x, x.InCheck(search, plugin.VPetChatProcess.W2VEngine!.ComputeSimilarity(search, x, vector))))
-                    .OrderBy(x => x.Item2).Where(x => x.Item2 < IInCheck.IgnoreValue)
-                    .Select(x => x.x.KnowledgeData).ToList());
-            List<ToolUse> tools = plugin.VPetChatProcess.Tools.Select(x => (x, x.InCheck(search, plugin.VPetChatProcess.W2VEngine!.ComputeSimilarity(search, x, vector))))
-                .OrderBy(x => x.Item2).Where(x => x.Item2 < IInCheck.IgnoreValue).Select(x => x.x).ToList();
-            List<Dialogue> dialogues = plugin.VPetChatProcess.Dialogues.Select(x => (x, x.InCheck(search, plugin.VPetChatProcess.W2VEngine!.ComputeSimilarity(search, x, vector)))).OrderBy(x => x.Item2)
-                .Where(x => x.Item2 < IInCheck.IgnoreValue).Select(x => x.x).ToList();
-            lbKnow.ItemsSource = kdbs;
+            var result = plugin.VPetChatProcess.QuerySimilar(search);
+
+            lbKnow.ItemsSource = new ObservableCollection<string>(
+                result.Knowledges.Select(x => $"[{x.Score:F3}] {x.Item.KnowledgeData}"));
 
             ObservableCollection<string> di = new ObservableCollection<string>();
-            for (int i = 0; i < dialogues.Count; i++)
+            for (int i = 0; i < result.Dialogues.Count; i++)
             {
-                Dialogue? item = dialogues[i];
-                di.Add(i + "_Q:" + item.Question);
-                di.Add(i + "_A:" + item.Answer);
-                di.Add(i + "_T:" + item.ToolCall);
+                var (item, score) = result.Dialogues[i];
+                int dialogueIndex = plugin.VPetChatProcess.Dialogues.IndexOf(item);
+                if (dialogueIndex < 0)
+                    continue;
+
+                di.Add($"{dialogueIndex}_[{score:F3}]_Q:{item.Question}");
+                di.Add($"{dialogueIndex}_[{score:F3}]_A:{item.Answer}");
+                di.Add($"{dialogueIndex}_[{score:F3}]_T:{item.ToolCall}");
             }
             lbHistory.ItemsSource = di;
 
-            lbTool.ItemsSource = new ObservableCollection<string>(tools.Select(x => x.Code + ": " + x.Descriptive));
+            lbTool.ItemsSource = new ObservableCollection<string>(
+                result.Tools.Select(x => $"[{x.Score:F3}] {x.Item.Code}: {x.Item.Descriptive}"));
         }
 
         private void TextBlock_MouseDown_1(object sender, MouseButtonEventArgs e)
         {
             if (LocalizeCore.CurrentCulture.StartsWith("zh"))
-                ExtensionFunction.StartURL("https://space.bilibili.com/690425399");
+                ExtensionFunction.StartURL("https://wiki.exlb.net/vpet/mod/chatvpetprocess");
             else
-                ExtensionFunction.StartURL("https://github.com/LorisYounger/VPet");
+                ExtensionFunction.StartURL("https://wiki.exlb.net/en/vpet/mod/chatvpetprocess");
         }
     }
 }

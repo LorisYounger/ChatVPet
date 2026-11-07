@@ -18,12 +18,12 @@ namespace ChatVPet.ChatProcess
         /// <summary>
         /// 综合分数中向量权重
         /// </summary>
-        public float VectorWeight { get; set; } = 0.75f;
+        public float VectorWeight { get; set; } = 0.8f;
 
         /// <summary>
-        /// 综合分数中关键词 BM25 权重
+        /// 综合分数中关键词评分的权重。属性沿用 BM25 命名，实际使用命中词评分。
         /// </summary>
-        public float BM25Weight { get; set; } = 0.25f;
+        public float BM25Weight { get; set; } = 0.2f;
 
         /// <summary>
         /// 多向量聚合时去掉最低分数量
@@ -69,7 +69,7 @@ namespace ChatVPet.ChatProcess
         public void GetQueryVector(IEnumerable<Iw2vSource> iw2vSource)
         {
             var needUpdate = iw2vSource
-                .Where(x => x.EmbeddingVectors == null || x.EmbeddingVectors.Length == 0 || x.Vector == null || x.Vector.Length == 0)
+                .Where(x => x.EmbeddingVectors == null || x.EmbeddingVectors.Length == 0)
                 .ToList();
             if (needUpdate.Count == 0)
                 return;
@@ -146,7 +146,9 @@ namespace ChatVPet.ChatProcess
                 merged[i] /= vectors.Length;
             return merged;
         }
-
+        /// <summary>
+        /// 计算查询文本与来源的综合相似度，结合向量余弦相似度和关键词命中率。 越大越相似
+        /// </summary>
         public float ComputeSimilarity(string message, Iw2vSource source, float[] queryVector)
         {
             var vectors = source.EmbeddingVectors?.Where(x => x != null && x.Length > 0).ToList() ?? [];
@@ -159,9 +161,12 @@ namespace ChatVPet.ChatProcess
                 .ToList();
 
             float vectorScore = AggregateSimilarity(cosineScores, DropLowScoreCount);
-            float bm25Score = ComputeBM25Similarity(message, source.KeyWords);
-            float totalWeight = Math.Max(MinTotalWeight, VectorWeight + BM25Weight);
-            return (vectorScore * VectorWeight + bm25Score * BM25Weight) / totalWeight;
+            float keywordScore = ComputeKeywordSimilarity(message, source.KeyWords, CP?.Localization);
+
+            // 无向量时退化为仅用关键词权重，避免向量为0时稀释总分
+            float usedVectorWeight = cosineScores.Count > 0 ? VectorWeight : 0f;
+            float totalWeight = Math.Max(MinTotalWeight, usedVectorWeight + BM25Weight);
+            return (vectorScore * usedVectorWeight + keywordScore * BM25Weight) / totalWeight;
         }
 
         public static float AggregateSimilarity(List<float> scores, int dropLowCount)
@@ -172,75 +177,92 @@ namespace ChatVPet.ChatProcess
                 return scores[0];
 
             var ordered = scores.OrderByDescending(x => x).ToList();
-            int keepCount = Math.Max(1, ordered.Count - Math.Max(0, dropLowCount));
-            return ordered.Take(keepCount).Average();
+            // 只在向量数量 >= 3 时才丢弃低分，避免双向量时退化为 Max 操作
+            int effectiveDrop = ordered.Count >= 3 ? Math.Max(0, dropLowCount) : 0;
+            int keepCount = Math.Max(1, ordered.Count - effectiveDrop);
+            return (float)Math.Clamp(ordered.Take(keepCount).Sum() / Math.Sqrt(keepCount), 0, 1);
         }
 
-        public static float ComputeBM25Similarity(string query, IEnumerable<string> documents)
+        /// <summary>
+        /// 计算查询文本与关键词集合的关键词命中率。 数值越大越相似
+        /// <para>
+        /// KeyWords 是程序员预先编辑的可能会碰撞的词语（如 <c>"钱"</c>、<c>"体力"</c>），
+        /// 当查询词命中关键词时提高匹配程度。<br/>
+        /// KeyWords 在各来源格式不统一：<br/>
+        /// - DynKDBStatic 等手动设置关键词的来源：<c>localization.WordSplit(...)</c>
+        ///   每个分词词语一个元素（如 <c>"钱"</c>、<c>"体力"</c>）<br/>
+        /// - 知识和工具包含原始描述；<see cref="Dialogue"/> 包含空格拼接的分词文本。
+        /// </para>
+        /// 当 <paramref name="localization"/> 可用时，查询词和关键词均使用词语级别分词（<c>localization.WordSplit</c>），
+        /// 确保多字词（如 <c>"体力"</c>）能在双侧正确匹配，同时对查询词过滤停用词。<br/>
+        /// 不可用时退回正则 Tokenize（CJK 单字拆分）。<br/>
+        /// 返回命中词数除以关键词总数的平方根，并限制到 [0, 1]。
+        /// </summary>
+        /// <param name="query">用户输入的查询文本</param>
+        /// <param name="keywords">来源的 KeyWords 集合（格式可能为单词元素或空格拼接整句）</param>
+        /// <param name="localization">本地化接口，用于词语级别分词和停用词过滤；为 null 时退回正则 Tokenize</param>
+        /// <returns>关键词命中率，范围 [0, 1]；关键词集合为空时返回 0</returns>
+        public static float ComputeKeywordSimilarity(string query, IEnumerable<string> keywords, ILocalization? localization = null)
         {
-            var docList = documents
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Select(x => x.Trim())
-                .ToList();
-            if (docList.Count == 0 || string.IsNullOrWhiteSpace(query))
+            if (keywords == null || string.IsNullOrWhiteSpace(query))
                 return 0;
 
-            var queryTerms = Tokenize(query).Distinct().ToList();
+            // ── 查询词处理：优先用 Localization 词级别分词 + 停用词过滤 ──
+            List<string> queryTerms;
+            if (localization != null)
+            {
+                var stopWords = localization.StopWords.ToHashSet(StringComparer.OrdinalIgnoreCase);
+                queryTerms = localization.WordSplit(query)
+                    .Where(w => !string.IsNullOrWhiteSpace(w) && !stopWords.Contains(w))
+                    .Select(w => w.ToLowerInvariant())
+                    .Distinct()
+                    .ToList();
+            }
+            else
+            {
+                queryTerms = Tokenize(query).Distinct().ToList();
+            }
+
             if (queryTerms.Count == 0)
                 return 0;
 
-            var tokenizedDocs = docList.Select(Tokenize).ToList();
-            double avgDocLen = Math.Max(1, tokenizedDocs.Average(x => x.Count));
-            const double k1 = 1.5; // BM25 参数：词频饱和控制
-            const double b = 0.75; // BM25 参数：文档长度归一化强度
-
-            // 预计算每个文档的词频表，避免内层循环重复遍历
-            var tfTables = tokenizedDocs
-                .Select(tokens => tokens.GroupBy(t => t).ToDictionary(g => g.Key, g => g.Count()))
-                .ToList();
-
-            // 预计算每个查询词在多少文档中出现（文档频率），避免在评分循环中重复扫描
-            var dfMap = queryTerms.ToDictionary(
-                term => term,
-                term => tfTables.Count(tf => tf.ContainsKey(term)));
-
-            var scores = new List<double>(tokenizedDocs.Count);
-            for (int di = 0; di < tokenizedDocs.Count; di++)
+            // ── 关键词处理：与查询词使用相同粒度的分词策略 ──
+            // 当 localization 可用时，使用 WordSplit 进行词语级别分词，
+            // 确保多字中文词（如"体力"）在两侧保持一致，避免粒度不匹配导致命中率为 0。
+            // 无论元素是单个词语（"钱"）还是空格拼接整句（"金钱 数据 体力"），均可正确处理。
+            HashSet<string> keywordSet;
+            if (localization != null)
             {
-                var docTokens = tokenizedDocs[di];
-                if (docTokens.Count == 0)
-                {
-                    scores.Add(0);
-                    continue;
-                }
-
-                var tfTable = tfTables[di];
-                double score = 0;
-                foreach (var term in queryTerms)
-                {
-                    if (!tfTable.TryGetValue(term, out int tf))
-                        continue;
-
-                    int df = dfMap[term];
-                    double idf = Math.Log(1 + (tokenizedDocs.Count - df + 0.5) / (df + 0.5));
-                    double denom = tf + k1 * (1 - b + b * docTokens.Count / avgDocLen);
-                    score += idf * (tf * (k1 + 1)) / denom;
-                }
-                scores.Add(score);
+                keywordSet = keywords
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .SelectMany(x => localization.WordSplit(x))
+                    .Where(w => !string.IsNullOrWhiteSpace(w))
+                    .Select(w => w.ToLowerInvariant())
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            }
+            else
+            {
+                keywordSet = keywords
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .SelectMany(x => Tokenize(x))
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
             }
 
-            double sum = 0;
-            double max = 0;
-            foreach (var score in scores)
-            {
-                sum += score;
-                if (score > max)
-                    max = score;
-            }
-            if (max <= 0)
+            if (keywordSet.Count == 0)
                 return 0;
-            return (float)((sum / scores.Count) / max);
+
+            // 用词表大小的平方根归一化命中词数
+            int hitCount = queryTerms.Count(t => keywordSet.Contains(t));
+            return (float)Math.Clamp(hitCount / Math.Sqrt(keywordSet.Count), 0, 1);
         }
+
+        /// <summary>
+        /// 已废弃：请使用 <see cref="ComputeKeywordSimilarity(string, IEnumerable{string}, ILocalization?)"/>。
+        /// 保留此方法仅为兼容外部调用。
+        /// </summary>
+        [Obsolete("Use ComputeKeywordSimilarity(string, IEnumerable<string>, ILocalization?) instead.")]
+        public static float ComputeBM25Similarity(string query, IEnumerable<string> documents)
+            => ComputeKeywordSimilarity(query, documents);
 
         private static List<string> Tokenize(string text)
         {
@@ -253,12 +275,15 @@ namespace ChatVPet.ChatProcess
         }
 
         /// <summary>
-        /// 计算余弦相似度
+        /// 计算余弦相似度，返回值已 clamp 到 [0, 1] 数值越大越相似。
         /// </summary>
         public static float ComputeCosineSimilarity(float[] vectorA, float[] vectorB)
         {
             if (vectorA.Length != vectorB.Length)
+            {
+                Console.WriteLine($"[W2VEngine] Vector dimension mismatch: {vectorA.Length} vs {vectorB.Length}. Did you change the Embedding model? Clear vector cache via ClearVectors(IEnumerable<Iw2vSource> sources), for example by clearing vectors for KnowledgeDataBases/Tools/Dialogues/DiaryEntries.");
                 return 0;
+            }
 
             float dotProduct = 0;
             float magnitudeA = 0;
@@ -272,7 +297,7 @@ namespace ChatVPet.ChatProcess
             }
 
             if (magnitudeA == 0 || magnitudeB == 0) return 0;
-            return dotProduct / (float)(Math.Sqrt(magnitudeA) * Math.Sqrt(magnitudeB));
+            return Math.Clamp(dotProduct / (float)(Math.Sqrt(magnitudeA) * Math.Sqrt(magnitudeB)), 0f, 1f);
         }
     }
 }

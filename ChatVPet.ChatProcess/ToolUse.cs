@@ -10,7 +10,7 @@ namespace ChatVPet.ChatProcess
     public class ToolUse : IInCheck, Iw2vSource
     {
         /// <summary>
-        /// 工具类型
+        /// 工具类型 (一般保持 "function", 遵循OpenAI函数调用规范)
         /// </summary>
         [JsonProperty("type")]
         public virtual string Type { get; set; } = "function";
@@ -27,7 +27,6 @@ namespace ChatVPet.ChatProcess
         public ToolUse()
         {
             KeyWords = [];
-            Args = new List<Arg>();
         }
         /// <summary>
         /// 初始化 ToolUse 类的新实例
@@ -35,12 +34,15 @@ namespace ChatVPet.ChatProcess
         /// <param name="code">工具代码</param>
         /// <param name="descriptive">工具描述</param>
         /// <param name="keyword">关键字数组</param>
+        /// <param name="embeddingTexts">用于生成向量的文本数组</param>
         /// <param name="toolFunction">工具功能委托</param>
         /// <param name="args">参数列表</param>
         /// <param name="localization">本地化接口</param>
         /// <param name="important_muit">重要性乘法权重</param>
         /// <param name="important_plus">重要性加法权重</param>
-        public ToolUse(string code, string descriptive, string[] keyword, Func<Dictionary<string, string>, string?> toolFunction, List<Arg> args, ILocalization localization, double important_muit = 2, double important_plus = 0)
+        public ToolUse(string code, string descriptive, string[] keyword, string[] embeddingTexts,
+                       Func<Dictionary<string, string>, string?> toolFunction, List<Arg> args,
+                       ILocalization localization, double important_muit = 2, double important_plus = 0)
         {
             Code = code;
             Descriptive = descriptive;
@@ -48,7 +50,8 @@ namespace ChatVPet.ChatProcess
             ImportanceWeight_Plus = (float)important_plus;
             ToolFunction = toolFunction;
             Args = args;
-            KeyWords = [.. keyword.Select(x => string.Join(" ", localization.WordSplit(x))), string.Join(" ", localization.WordSplit(descriptive))];
+            KeyWords = [Code, Descriptive, .. (Args ?? []).Select(x => $"{x.Name} {x.Description}"), .. keyword];
+            _embeddingExamples = embeddingTexts;
         }
 
 
@@ -101,7 +104,7 @@ namespace ChatVPet.ChatProcess
         /// 可选参数
         /// </summary>
         [JsonIgnore]
-        public virtual List<Arg> Args { get; set; }
+        public virtual List<Arg> Args { get; set; } = [];
         /// <summary>
         /// 工具描述
         /// </summary>
@@ -150,9 +153,11 @@ namespace ChatVPet.ChatProcess
         [
             Code,
             Descriptive,
-            .. (Args ?? []).Select(x => $"{x.Name} {x.Description}")
+            .. (Args ?? []).Select(x => $"{x.Name} {x.Description}"),
+            .. _embeddingExamples
         ];
 
+        private readonly string[] _embeddingExamples = [];
 
         /// <summary>
         /// 向量
