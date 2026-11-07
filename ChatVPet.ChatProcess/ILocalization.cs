@@ -80,18 +80,18 @@ namespace ChatVPet.ChatProcess
             public string ToolReturn => "工具 `{0}` 返回:\n```\n{1}\n```\n";
 
             public string DiaryCompressionSystemPrompt =>
-                "你是一个记忆整理助手。请将提供的对话历史整理成一段简洁的日记摘要，重点记录重要的事件、情感和信息，使用第一人称（\"我\"）撰写，不要遗漏关键细节。";
+                "你是一个记忆整理助手。请将提供的对话历史整理成一段简洁的日记摘要,重点记录重要的事件、情感和信息,使用第一人称(\"我\")撰写,不要遗漏关键细节。";
 
             public string DiaryCompressionUserPrompt =>
-                "请为以下对话历史生成一段日记摘要：\n\n{0}";
+                "请为以下对话历史生成一段日记摘要:\n\n{0}";
 
-            public string DiaryHeader => "【历史日记记录】";
+            public string DiaryHeader => "(历史日记记录)";
 
             public string DiaryAdjustWeightToolDesc =>
-                "调整指定日记条目的重要性权重。diary_id 为日记条目的 ID（见系统提示中 # 后面的十六进制整数，例如 #1a），delta 为浮点数调整量（正数增加，负数减少）。";
+                "调整指定日记条目的重要性权重。diary_id 为日记条目的 ID(见系统提示中 # 后面的十六进制整数,例如 #1a),delta 为浮点数调整量(正数增加,负数减少)。";
 
-            public string DiaryArgIdDesc => "日记条目 ID（系统提示中 # 后面的十六进制整数，例如 1a 或 2b）";
-            public string DiaryArgDeltaDesc => "权重调整量，正数增加，负数减少，例如 0.5 或 -0.5";
+            public string DiaryArgIdDesc => "日记条目 ID(系统提示中 # 后面的十六进制整数,例如 1a 或 2b)";
+            public string DiaryArgDeltaDesc => "权重调整量,正数增加,负数减少,例如 0.5 或 -0.5";
 
             public JiebaNet.Segmenter.JiebaSegmenter Segmenter = new JiebaNet.Segmenter.JiebaSegmenter();
             public string[] WordSplit(string text) => Segmenter.Cut(text).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
@@ -143,18 +143,18 @@ namespace ChatVPet.ChatProcess
             public string ToolReturn => "工具 `{0}` 返回:\n```\n{1}\n```\n";
 
             public string DiaryCompressionSystemPrompt =>
-                "你是一個記憶整理助手。請將提供的對話歷史整理成一段簡潔的日記摘要，重點記錄重要的事件、情感和資訊，使用第一人稱（「我」）撰寫，不要遺漏關鍵細節。";
+                "你是一個記憶整理助手。請將提供的對話歷史整理成一段簡潔的日記摘要,重點記錄重要的事件、情感和資訊,使用第一人稱(「我」)撰寫,不要遺漏關鍵細節。";
 
             public string DiaryCompressionUserPrompt =>
-                "請為以下對話歷史生成一段日記摘要：\n\n{0}";
+                "請為以下對話歷史生成一段日記摘要:\n\n{0}";
 
-            public string DiaryHeader => "【歷史日記記錄】";
+            public string DiaryHeader => "(歷史日記記錄)";
 
             public string DiaryAdjustWeightToolDesc =>
-                "調整指定日記條目的重要性權重。diary_id 為日記條目的 ID（見系統提示中 # 後面的十六進制整數，例如 #1a），delta 為浮點數調整量（正數增加，負數減少）。";
+                "調整指定日記條目的重要性權重。diary_id 為日記條目的 ID(見系統提示中 # 後面的十六進制整數,例如 #1a),delta 為浮點數調整量(正數增加,負數減少)。";
 
-            public string DiaryArgIdDesc => "日記條目 ID（系統提示中 # 後面的十六進制整數，例如 1a 或 2b）";
-            public string DiaryArgDeltaDesc => "權重調整量，正數增加，負數減少，例如 0.5 或 -0.5";
+            public string DiaryArgIdDesc => "日記條目 ID(系統提示中 # 後面的十六進制整數,例如 1a 或 2b)";
+            public string DiaryArgDeltaDesc => "權重調整量,正數增加,負數減少,例如 0.5 或 -0.5";
 
             public JiebaNet.Segmenter.JiebaSegmenter Segmenter = new JiebaNet.Segmenter.JiebaSegmenter();
             public string[] WordSplit(string text) => Segmenter.Cut(text).Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();

@@ -356,3 +356,13 @@ MigrationBackup/
 VPet-Simulator.Windows/mod/1111_ChatGPTPlus
 VPet.Solution/Properties/launchSettings.json
 .rgignore
+
+
+# Generated caches and model weights are not useful text-search targets.
+**/__pycache__/
+*.pyc
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.gguf
