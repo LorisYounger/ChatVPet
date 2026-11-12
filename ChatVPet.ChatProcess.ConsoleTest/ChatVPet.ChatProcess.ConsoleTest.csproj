@@ -6,7 +6,8 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="OpenAI" Version="2.10.0" />
+    <Compile Include="..\VPet.Plugin.ChatVPet\OpenAIChatConfig.cs" Link="OpenAIChatConfig.cs" />
+    <None Update="Fixtures\vision.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <PropertyGroup>

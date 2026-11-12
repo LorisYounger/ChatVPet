@@ -1,4 +1,4 @@
-﻿using LinePutScript;
+using LinePutScript;
 using LinePutScript.Localization.WPF;
 using System;
 using System.Collections.Generic;
@@ -15,62 +15,54 @@ namespace VPet.Plugin.ChatVPet
         /// </summary>
         public bool ShowToken
         {
-            get => !MW.Set["CGPTV"][(gbol)"noshowtoken"];
-            set => MW.Set["CGPTV"][(gbol)"noshowtoken"] = !value;
-        }
-        /// <summary>
-        /// 是否允许提交
-        /// </summary>
-        public bool AllowSubmit
-        {
-            get => MW.Set["CGPTV"][(gbol)"submit"];
-            set => MW.Set["CGPTV"][(gbol)"submit"] = value;
+            get => !MW.Set["ChatVPetProcess"][(gbol)"noshowtoken"];
+            set => MW.Set["ChatVPetProcess"][(gbol)"noshowtoken"] = !value;
         }
         /// <summary>
         /// 知识库设置
         /// </summary>
         public string KnowledgeDataBase
         {
-            get => MW.Set["CGPTV"][(gstr)"KnowledgeDataBase"] ?? "";
-            set => MW.Set["CGPTV"][(gstr)"KnowledgeDataBase"] = value.Replace("\r", "");
+            get => MW.Set["ChatVPetProcess"][(gstr)"KnowledgeDataBase"] ?? "";
+            set => MW.Set["ChatVPetProcess"][(gstr)"KnowledgeDataBase"] = value.Replace("\r", "");
         }
         /// <summary>
         /// 最大反复调用次数
         /// </summary>
         public int MaxRecallCount
         {
-            get => MW.Set["CGPTV"].GetInt("MaxRecallCount", 5);
-            set => MW.Set["CGPTV"][(gint)"MaxRecallCount"] = value;
+            get => MW.Set["ChatVPetProcess"].GetInt("MaxRecallCount", 5);
+            set => MW.Set["ChatVPetProcess"][(gint)"MaxRecallCount"] = value;
         }
         /// <summary>
         /// 累计使用Token数量
         /// </summary>
         public int TokenCount
         {
-            get => MW.Set["CGPTV"][(gint)"TokenCount"];
-            set => MW.Set["CGPTV"][(gint)"TokenCount"] = value;
+            get => MW.Set["ChatVPetProcess"][(gint)"TokenCount"];
+            set => MW.Set["ChatVPetProcess"][(gint)"TokenCount"] = value;
         }
 
         public string AzureKey
         {
-            get => MW.Set["CGPTV"][(gstr)"AzureKey"] ?? "";
-            set => MW.Set["CGPTV"][(gstr)"AzureKey"] = value;
+            get => MW.Set["ChatVPetProcess"][(gstr)"AzureKey"] ?? "";
+            set => MW.Set["ChatVPetProcess"][(gstr)"AzureKey"] = value;
         }
         public string AzureRegion
         {
-            get => MW.Set["CGPTV"][(gstr)"AzureRegion"] ?? "";
-            set => MW.Set["CGPTV"][(gstr)"AzureRegion"] = value;
+            get => MW.Set["ChatVPetProcess"][(gstr)"AzureRegion"] ?? "";
+            set => MW.Set["ChatVPetProcess"][(gstr)"AzureRegion"] = value;
         }
         public bool AzureVoiceEnable
         {
-            get => MW.Set["CGPTV"][(gbol)"AzureVoiceEnable"];
-            set => MW.Set["CGPTV"][(gbol)"AzureVoiceEnable"] = value;
+            get => MW.Set["ChatVPetProcess"][(gbol)"AzureVoiceEnable"];
+            set => MW.Set["ChatVPetProcess"][(gbol)"AzureVoiceEnable"] = value;
         }
         public string AzureRecognitionLanguage
         {
             get
             {
-                var lang = MW.Set["CGPTV"][(gstr)"AzureRecognitionLanguage"];
+                var lang = MW.Set["ChatVPetProcess"][(gstr)"AzureRecognitionLanguage"];
                 if (string.IsNullOrWhiteSpace(lang))
                 {
                     switch (LocalizeCore.CurrentCulture)
@@ -89,31 +81,31 @@ namespace VPet.Plugin.ChatVPet
                 }
                 return lang;
             }
-            set => MW.Set["CGPTV"][(gstr)"AzureRecognitionLanguage"] = value;
+            set => MW.Set["ChatVPetProcess"][(gstr)"AzureRecognitionLanguage"] = value;
         }
 
         public int MaxHistoryCount
         {
-            get => MW.Set["CGPTV"].GetInt("MaxHistoryCount", 20);
-            set => MW.Set["CGPTV"][(gint)"MaxHistoryCount"] = value;
+            get => MW.Set["ChatVPetProcess"].GetInt("MaxHistoryCount", 6);
+            set => MW.Set["ChatVPetProcess"][(gint)"MaxHistoryCount"] = value;
         }
 
         public int MaxToolCount
         {
-            get => MW.Set["CGPTV"].GetInt("MaxToolCount", 10);
-            set => MW.Set["CGPTV"][(gint)"MaxToolCount"] = value;
+            get => MW.Set["ChatVPetProcess"].GetInt("MaxToolCount", 4);
+            set => MW.Set["ChatVPetProcess"][(gint)"MaxToolCount"] = value;
         }
 
         public int MaxKnowledgeCount
         {
-            get => MW.Set["CGPTV"].GetInt("MaxKnowledgeCount", 10);
-            set => MW.Set["CGPTV"][(gint)"MaxKnowledgeCount"] = value;
+            get => MW.Set["ChatVPetProcess"].GetInt("MaxKnowledgeCount", 4);
+            set => MW.Set["ChatVPetProcess"][(gint)"MaxKnowledgeCount"] = value;
         }
 
         public int TotalTokensUsage
         {
-            get => MW.Set["CGPTV"].GetInt("TotalTokensUsage");
-            set => MW.Set["CGPTV"][(gint)"TotalTokensUsage"] = value;
+            get => MW.Set["ChatVPetProcess"].GetInt("TotalTokensUsage");
+            set => MW.Set["ChatVPetProcess"][(gint)"TotalTokensUsage"] = value;
         }
 
         /// <summary>
@@ -121,8 +113,8 @@ namespace VPet.Plugin.ChatVPet
         /// </summary>
         public int MaxHistoryBeforeCompress
         {
-            get => MW.Set["CGPTV"].GetInt("MaxHistoryBeforeCompress", 24);
-            set => MW.Set["CGPTV"][(gint)"MaxHistoryBeforeCompress"] = value;
+            get => MW.Set["ChatVPetProcess"].GetInt("MaxHistoryBeforeCompress", 24);
+            set => MW.Set["ChatVPetProcess"][(gint)"MaxHistoryBeforeCompress"] = value;
         }
 
         /// <summary>
@@ -130,8 +122,8 @@ namespace VPet.Plugin.ChatVPet
         /// </summary>
         public int DiaryKeepRecentCount
         {
-            get => MW.Set["CGPTV"].GetInt("DiaryKeepRecentCount", 10);
-            set => MW.Set["CGPTV"][(gint)"DiaryKeepRecentCount"] = value;
+            get => MW.Set["ChatVPetProcess"].GetInt("DiaryKeepRecentCount", 10);
+            set => MW.Set["ChatVPetProcess"][(gint)"DiaryKeepRecentCount"] = value;
         }
 
         /// <summary>
@@ -139,17 +131,8 @@ namespace VPet.Plugin.ChatVPet
         /// </summary>
         public float DiaryDecayRate
         {
-            get => (float)MW.Set["CGPTV"].GetDouble("DiaryDecayRate", 0.03);
-            set => MW.Set["CGPTV"][(gdbe)"DiaryDecayRate"] = value;
-        }
-
-        /// <summary>
-        /// 每次对话最多向系统提示注入的日记条目数
-        /// </summary>
-        public int MaxDiaryInContext
-        {
-            get => MW.Set["CGPTV"].GetInt("MaxDiaryInContext", 10);
-            set => MW.Set["CGPTV"][(gint)"MaxDiaryInContext"] = value;
+            get => (float)MW.Set["ChatVPetProcess"].GetDouble("DiaryDecayRate", 0.03);
+            set => MW.Set["ChatVPetProcess"][(gdbe)"DiaryDecayRate"] = value;
         }
 
     }

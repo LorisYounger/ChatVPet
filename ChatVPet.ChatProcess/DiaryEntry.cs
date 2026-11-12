@@ -5,6 +5,7 @@ namespace ChatVPet.ChatProcess
     /// </summary>
     public class DiaryEntry : Dialogue
     {
+        public List<string> SourceTurns { get; set; } = [];
         /// <summary>衰减下限，防止权重归零</summary>
         public const float MinDecayFactor = 0.05f;
         /// <summary>每次命中时衰减因子的恢复量</summary>
@@ -41,7 +42,7 @@ namespace ChatVPet.ChatProcess
         public DateTime RecordedAt { get; set; } = DateTime.Now;
 
         /// <summary>
-        /// 基础重要性乘法权重（由 <see cref="VPetChatProcess.CalImportanceFunction"/> 初始化，LLM 可通过 toolcall 调节）
+        /// 基础重要性乘法权重
         /// </summary>
         public float BaseImportanceWeight { get; set; } = 2f;
 
@@ -66,10 +67,10 @@ namespace ChatVPet.ChatProcess
         /// </summary>
         /// <param name="summary">日记摘要文本</param>
         /// <param name="localization">本地化实例</param>
-        /// <param name="baseImportanceWeight">基础重要性权重（由调用方通过 CalImportanceFunction 计算后传入）</param>
+        /// <param name="baseImportanceWeight">基础重要性权重</param>
         /// <param name="recordedAt">记录时间（null 取当前时间）</param>
         public DiaryEntry(string summary, ILocalization localization, float baseImportanceWeight = 2f, DateTime? recordedAt = null)
-            : base("", summary, "", localization)
+            : base("", summary, localization)
         {
             RecordedAt = recordedAt ?? DateTime.Now;
             BaseImportanceWeight = baseImportanceWeight;

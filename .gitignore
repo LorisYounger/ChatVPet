@@ -3,7 +3,15 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Shared runtime protocol resource; all other training material stays local.
+!/training/
+/training/*
+!/training/chatvpet/
+/training/chatvpet/*
+!/training/chatvpet/system-process-template.txt
+
 # User-specific files
+/Local/
 *.rsuser
 *.suo
 *.user
@@ -366,3 +374,4 @@ VPet.Solution/Properties/launchSettings.json
 *.pt
 *.pth
 *.gguf
+/ChatVPet.ChatProcess.ConsoleTest

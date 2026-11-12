@@ -6,21 +6,12 @@ namespace ChatVPet.ChatProcess
     /// 可用工具 (AIAPI ToolUse)
     /// </summary>
     /// virtual 意味着你可以继承重写个动态工具库
-    /// 不想重写也可以使用 ToolFunction 来实现
+    /// 宿主通过 Execute 返回可核对的执行回执
     public class ToolUse : IInCheck, Iw2vSource
     {
-        /// <summary>
-        /// 工具类型 (一般保持 "function", 遵循OpenAI函数调用规范)
-        /// </summary>
-        [JsonProperty("type")]
-        public virtual string Type { get; set; } = "function";
-
-        /// <summary>
-        /// 是否使用严格模式
-        /// </summary>
-        [JsonProperty("strict")]
-        public virtual bool Strict { get; set; } = true;
-
+        [JsonIgnore] public bool Enabled { get; set; } = true;
+        [JsonIgnore] public bool ReadOnly { get; set; }
+        [JsonIgnore] public Func<ChatTurn, Dictionary<string, string>, HostReceipt>? Execute { get; set; }
         /// <summary>
         /// 初始化 ToolUse 类的新实例
         /// </summary>
@@ -35,39 +26,24 @@ namespace ChatVPet.ChatProcess
         /// <param name="descriptive">工具描述</param>
         /// <param name="keyword">关键字数组</param>
         /// <param name="embeddingTexts">用于生成向量的文本数组</param>
-        /// <param name="toolFunction">工具功能委托</param>
         /// <param name="args">参数列表</param>
         /// <param name="localization">本地化接口</param>
         /// <param name="important_muit">重要性乘法权重</param>
         /// <param name="important_plus">重要性加法权重</param>
         public ToolUse(string code, string descriptive, string[] keyword, string[] embeddingTexts,
-                       Func<Dictionary<string, string>, string?> toolFunction, List<Arg> args,
+                       List<Arg> args,
                        ILocalization localization, double important_muit = 2, double important_plus = 0)
         {
             Code = code;
             Descriptive = descriptive;
             ImportanceWeight_Muti = (float)important_muit;
             ImportanceWeight_Plus = (float)important_plus;
-            ToolFunction = toolFunction;
             Args = args;
-            KeyWords = [Code, Descriptive, .. (Args ?? []).Select(x => $"{x.Name} {x.Description}"), .. keyword];
+            KeyWords = [Code, Descriptive, .. Args.Select(x => $"{x.Name} {x.Description}"), .. keyword];
             _embeddingExamples = embeddingTexts;
         }
 
 
-        /// <summary>
-        /// 执行工具代码, 如果有返回值, 则返回值为工具的输出
-        /// 注: 若无需AI进行二次处理,请退回null !!
-        /// </summary>
-        [JsonIgnore] public Func<Dictionary<string, string>, string?>? ToolFunction;
-
-        /// <summary>
-        /// 执行工具代码
-        /// </summary>
-        /// <param name="args">AI给的参数</param>
-        /// <returns> 如果有返回值, 则返回值为工具的输出
-        /// 注: 若无需AI进行二次处理,请退回null !!</returns>
-        public virtual string? RunToolFunction(Dictionary<string, string> args) => ToolFunction?.Invoke(args);
         [JsonIgnore]
         public float ImportanceWeight_Muti { get; set; } = 2;
         [JsonIgnore]
@@ -119,23 +95,17 @@ namespace ChatVPet.ChatProcess
         {
             get
             {
-                var normalizedArgs = (Args ?? [])
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Name))
-                    .GroupBy(x => x.Name)
-                    .Select(x => x.Last())
-                    .ToList();
-
-                var properties = normalizedArgs.ToDictionary(
+                var properties = Args.ToDictionary(
                     x => x.Name,
                     x => new ParameterProperty
                     {
-                        Type = string.IsNullOrWhiteSpace(x.Type) ? "string" : x.Type,
+                        Type = x.Type,
                         Description = x.Description
                     });
                 return new ParameterSchema
                 {
                     Properties = properties,
-                    Required = [.. normalizedArgs.Where(x => x.IsRequired).Select(x => x.Name)]
+                    Required = [.. Args.Where(x => x.IsRequired).Select(x => x.Name)]
                 };
             }
         }
@@ -153,7 +123,7 @@ namespace ChatVPet.ChatProcess
         [
             Code,
             Descriptive,
-            .. (Args ?? []).Select(x => $"{x.Name} {x.Description}"),
+            .. Args.Select(x => $"{x.Name} {x.Description}"),
             .. _embeddingExamples
         ];
 

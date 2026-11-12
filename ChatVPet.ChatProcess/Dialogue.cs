@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +12,10 @@ namespace ChatVPet.ChatProcess
     /// </summary>
     public class Dialogue : Iw2vSource, IInCheck
     {
+        public string SaveId { get; set; } = "default";
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public bool IsActive { get; set; } = true;
+        public ChatTurn? Turn { get; set; }
         /// <summary>
         /// 问题
         /// </summary>
@@ -21,11 +25,6 @@ namespace ChatVPet.ChatProcess
         /// </summary>
         public string Answer { get; set; } = "";
 
-        /// <summary>
-        /// 工具调用 (源文本)
-        /// </summary>
-        public string ToolCall { get; set; } = "";
-
         public float ImportanceWeight_Muti { get; set; } = 2;
         public float ImportanceWeight_Plus { get; set; } = 0;
 
@@ -33,19 +32,18 @@ namespace ChatVPet.ChatProcess
         /// <summary>
         /// 转换为消息
         /// </summary>
-        public string[] ToMessages(ILocalization localization)
+        public string[] ToMessages()
         {
-            return [Question, localization.Response + "\n" + Answer + "\n" + localization.ToolCall + "\n" + ToolCall];
+            return [Turn == null ? Question : (Turn.ResultInput.Length > 0 ? Turn.ResultInput : Turn.InitialInput), Answer];
         }
 
         public float InCheck(string message, float similarity) => IInCheck.InCheck(message, similarity, this);
 
         public Dialogue() { KeyWords = []; }
-        public Dialogue(string question, string answer, string toolCall, ILocalization localization, double important_muit = 2, double important_plus = 0)
+        public Dialogue(string question, string answer, ILocalization localization, double important_muit = 2, double important_plus = 0)
         {
             Question = question;
             Answer = answer;
-            ToolCall = toolCall;
             KeyWords =
             [
                  string.Join(" ", localization.WordSplit(question)),

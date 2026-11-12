@@ -19,7 +19,7 @@ internal static class RetrievalChecks
         var engine = new W2VEngine(process);
         process.W2VEngine = engine;
         var knowledge = new KnowledgeDataBase("balance", ["balance"], ["money left"], process.Localization);
-        var tool = new ToolUse("balance", "read balance", ["money"], ["money left"], _ => null, [], process.Localization);
+        var tool = new ToolUse("balance", "read balance", ["money"], ["money left"], [], process.Localization);
         Check(knowledge.EmbeddingTexts.SequenceEqual(["money left", "balance"]), "Knowledge retrieval examples");
         Check(tool.EmbeddingTexts.Contains("money left"), "Tool retrieval examples");
         var plainKnowledge = new KnowledgeDataBase("balance", [], [], process.Localization);
@@ -65,7 +65,7 @@ internal static class RetrievalChecks
         process.KnowledgeDataBases.Add(knowledge);
         process.KnowledgeDataBases.Add(new KnowledgeDataBase("partial", ["balance", "other"], [], process.Localization, 0.5));
         process.Tools.Add(tool);
-        var dialogue = new Dialogue("balance", "balance", "", process.Localization);
+        var dialogue = new Dialogue("balance", "balance", process.Localization);
         process.Dialogues.Add(dialogue);
         // Return an empty vector per input to exercise keyword-only scoring without a network service.
         process.AIAPIEmbeddingFunction = texts => texts.Select(_ => Array.Empty<float>()).ToArray();

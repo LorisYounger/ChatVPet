@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="..\training\chatvpet\system-process-template.txt" LogicalName="ChatVPet.SystemTemplate" />
     <PackageReference Include="Faithlife.JiebaNet.Segmenter" Version="0.1.1" />
     <PackageReference Include="LinePutScript" Version="1.11.9" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />

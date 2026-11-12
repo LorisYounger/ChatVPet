@@ -1,4 +1,4 @@
-﻿<Window x:Class="VPet.Plugin.ChatVPet.winSetting" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<Window x:Class="VPet.Plugin.ChatVPet.winSetting" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -78,10 +78,10 @@
                         <ComboBoxItem Content="gpt-4-turbo" />
                         <ComboBoxItem Content="gpt-4" />
                     </ComboBox>
-                    <TextBox x:Name="tbSystem" Grid.Row="5" Grid.Column="1"
+                    <TextBox x:Name="tbSystem" IsReadOnly="True" Grid.Row="5" Grid.Column="1"
                             Style="{DynamicResource StandardTextBoxStyle}" FontSize="16"
-                            pu:TextBoxHelper.Watermark="{ll:Str '不会被忘记的初始化关键字, 字越多越贵'}"
-                            ToolTip="{ll:Str '不会被忘记的初始化关键字, 字越多越贵'}" AcceptsReturn="True"
+                            pu:TextBoxHelper.Watermark="{ll:Str '与训练共用的系统消息，姓名与称呼来自存档'}"
+                            ToolTip="{ll:Str '与训练共用的系统消息，姓名与称呼来自存档'}" AcceptsReturn="True"
                             TextWrapping="WrapWithOverflow" Height="Auto" MaxHeight="100"
                             VerticalScrollBarVisibility="Visible"
                             Text="请使用口语化的、可爱的、女性化的、调皮的语言风格和我交流. &#13;你是一只桌宠, 你的名字叫{Name}, 你喜欢玩 虚拟主播模拟器. &#13;你需要尝试体会我与你对话中的感情、产生自己的情感并尽可能给出可爱的回答"
@@ -95,16 +95,16 @@
                             ToolTip="{ll:Str '累计在此花费的Token个数'}" />
                     <TextBox x:Name="tbEmbeddingAPIURL" Grid.Row="9" Grid.Column="1"
                             Style="{DynamicResource StandardTextBoxStyle}" FontSize="16"
-                            pu:TextBoxHelper.Watermark="{ll:Str '留空则使用主API URL'}"
-                            ToolTip="{ll:Str 'Embedding API 链接, 留空则使用主API URL'}" Margin="15,5,0,5" Grid.ColumnSpan="2" />
+                            pu:TextBoxHelper.Watermark="{ll:Str '留空使用关键词检索'}"
+                            ToolTip="{ll:Str 'Embedding API 链接, 留空使用关键词检索'}" Margin="15,5,0,5" Grid.ColumnSpan="2" />
                     <TextBox x:Name="tbEmbeddingAPIKey" Grid.Row="10" Grid.Column="1"
                             Style="{DynamicResource StandardTextBoxStyle}" FontSize="16"
-                            pu:TextBoxHelper.Watermark="{ll:Str '留空则使用主API Key'}"
-                            ToolTip="{ll:Str 'Embedding API Key, 留空则使用主API Key'}" Margin="15,5,0,5" Grid.ColumnSpan="2" />
+                            pu:TextBoxHelper.Watermark="{ll:Str '端点无密钥时留空'}"
+                            ToolTip="{ll:Str 'Embedding API Key, 端点无密钥时留空'}" Margin="15,5,0,5" Grid.ColumnSpan="2" />
                     <TextBox x:Name="tbEmbeddingModel" Grid.Row="11" Grid.Column="1"
                             Style="{DynamicResource StandardTextBoxStyle}" FontSize="16"
-                            pu:TextBoxHelper.Watermark="text-embedding-3-small"
-                            ToolTip="{ll:Str 'Embedding 模型, 默认 text-embedding-3-small'}" Margin="15,5,0,5"
+                            pu:TextBoxHelper.Watermark="Qwen/Qwen3-Embedding-0.6B"
+                            ToolTip="{ll:Str 'Embedding 模型, 默认 Qwen/Qwen3-Embedding-0.6B'}" Margin="15,5,0,5"
                             Grid.ColumnSpan="2" />
                     <pu:Switch x:Name="swShowToken" Grid.Row="13" Grid.Column="1" VerticalAlignment="Center"
                             Content="{ll:Str '在聊天记录中显示消耗的Token数量'}" Background="Transparent"
@@ -112,19 +112,32 @@
                             BorderBrush="{DynamicResource PrimaryDark}" BoxHeight="18" BoxWidth="35"
                             CheckedBackground="{DynamicResource Primary}" CheckedBorderBrush="{DynamicResource Primary}"
                             CheckedToggleBrush="{DynamicResource DARKPrimaryText}" Grid.ColumnSpan="2" Margin="15,0,0,0" />
-                    <pu:Switch x:Name="swSubmitLog" Grid.Row="12" Grid.Column="1" VerticalAlignment="Center"
-                            Margin="15,0,0,0" Background="Transparent" ToggleBrush="{DynamicResource PrimaryDark}"
-                            ToggleShadowColor="{x:Null}" ToggleSize="14" BorderBrush="{DynamicResource PrimaryDark}"
-                            BoxHeight="18" BoxWidth="35" CheckedBackground="{DynamicResource Primary}"
-                            CheckedBorderBrush="{DynamicResource Primary}"
-                            CheckedToggleBrush="{DynamicResource DARKPrimaryText}" Grid.ColumnSpan="2">
-                        <TextBlock TextWrapping="WrapWithOverflow">
-                        <Run Text="{ll:Str '提交聊天记录给 LBGAME 以改进ChatVPet Process'}" />                      
-                   <Hyperlink Click="Hyperlink_Click"><Run Text="{ll:Str '项目地址'}" /></Hyperlink>   
-                   <Hyperlink Click="Hyperlink_Click_1"><Run Text="{ll:Str '训练协议'}" /></Hyperlink>
-                        </TextBlock>
-                    </pu:Switch>
+
                 </Grid>
+            </TabItem>
+            <TabItem Header="操作与重排">
+                <ScrollViewer MaxHeight="560" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="操作 / 视觉 API (OpenAI 兼容基础地址)" />
+                        <TextBox x:Name="tbToolUrl" Margin="0,4" />
+                        <TextBlock Text="操作密钥" /><TextBox x:Name="tbToolKey" Margin="0,4" />
+                        <TextBlock Text="操作模型 (看图需要支持视觉)" /><TextBox x:Name="tbToolModel" Margin="0,4" />
+                        <CheckBox x:Name="cbRerank" Content="启用知识、记忆和工具重排" IsChecked="True" Margin="0,8" />
+                        <TextBlock Text="重排完整 URL (专用 /rerank 评分接口)" /><TextBox x:Name="tbRerankUrl" Margin="0,4" />
+                        <TextBlock Text="重排密钥" /><TextBox x:Name="tbRerankKey" Margin="0,4" />
+                        <TextBlock Text="重排模型" /><TextBox x:Name="tbRerankModel" Text="Qwen/Qwen3-Reranker-0.6B" Margin="0,4" />
+                        <TextBlock Text="检索超时 (秒)" /><TextBox x:Name="tbRetrievalTimeout" Text="20" Margin="0,4" />
+                        <TextBlock Text="向量模型版本 (服务更新后修改)" /><TextBox x:Name="tbEmbeddingVersion" Margin="0,4" />
+                        <TextBlock Text="重排模型版本 (服务更新后修改)" /><TextBox x:Name="tbRerankVersion" Margin="0,4" />
+                        <TextBlock Text="查询编码指令" /><TextBox x:Name="tbEmbeddingInstruction" Text="Given a conversation, retrieve relevant knowledge, memories and game tools." Margin="0,4" />
+                        <TextBlock Text="向量和重排端点会收到本轮查询，以及用于检索的知识、玩家聊天、日记或工具描述。仅使用你填写的端点。" TextWrapping="Wrap" Margin="0,8" />
+                        <Button Content="测试已保存的向量与重排配置" Click="TestRetrieval_Click" />
+                        <TextBlock x:Name="tbApiTestResult" TextWrapping="Wrap" Margin="0,4" />
+                        <CheckBox x:Name="cbScreenshot" Content="允许按聊天请求截图并发送给视觉 API" Margin="0,8" />
+                        <ComboBox x:Name="cbScreenScope" SelectedIndex="0"><ComboBoxItem Content="仅桌宠区域" /><ComboBoxItem Content="主屏幕" /></ComboBox>
+                        <CheckBox x:Name="cbQuit" Content="允许桌宠说完后保存并退出游戏" Margin="0,8" />
+                    </StackPanel>
+                </ScrollViewer>
             </TabItem>
             <TabItem Header="{ll:Str 其他设置}">
                 <Grid Margin="5">
@@ -236,13 +249,7 @@
                             pu:TextBoxHelper.InputLimit="Digit,Point" Margin="0,5,15,5"
                             ToolTip="{ll:Str '每次对话后对未被命中的日记条目施加的权重衰减率（0.03=衰减3%）'}" pu:TextBoxHelper.Watermark="0-1"
                             Grid.ColumnSpan="2" />
-                    <TextBlock Grid.Row="12" Text="{ll:Str 最大日记注入数}" VerticalAlignment="Center"
-                            ToolTip="{ll:Str '每次对话最多向系统提示注入的日记条目数'}" />
-                    <TextBox x:Name="tbMaxDiaryInContext" Grid.Row="12" Grid.Column="2"
-                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="10"
-                            pu:TextBoxHelper.InputLimit="Digit" Margin="0,5,15,5"
-                            ToolTip="{ll:Str '每次对话最多向系统提示注入的日记条目数'}" pu:TextBoxHelper.Watermark="5-20"
-                            Grid.ColumnSpan="2" />
+                    <TextBlock Grid.Row="12" Grid.ColumnSpan="5" Text="相关记忆: 普通聊天最多5条，补查最多20条 (历史与日记合计)。" TextWrapping="Wrap" />
                 </Grid>
             </TabItem>
             <TabItem Header="{ll:Str 知识库设置}">
@@ -293,6 +300,7 @@
                             <ListBox x:Name="lbHistory" MaxHeight="500" SelectionChanged="lb_SelectionChanged">
                                 <ListBox.ContextMenu>
                                     <ContextMenu>
+                                        <MenuItem Header="重试这一轮结果回复" Click="RetryHistory_Click" />
                                         <MenuItem Header="{ll:Str 删除}" Click="MenuItem_Click" />
                                     </ContextMenu>
                                 </ListBox.ContextMenu>

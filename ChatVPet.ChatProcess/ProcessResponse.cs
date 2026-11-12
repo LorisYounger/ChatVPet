@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
@@ -13,6 +13,12 @@ namespace ChatVPet.ChatProcess
     /// </summary>
     public class ProcessResponse
     {
+        public string SaveId { get; set; } = "";
+        public string TurnId { get; set; } = "";
+        public string? Expression { get; set; }
+        public string? DisplayedList { get; set; }
+        public bool SuppressSayAnimation { get; set; }
+        public bool QuitAfterSpeech { get; set; }
         /// <summary>
         /// 显示给用户的消息, 为空则不显示
         /// </summary>
@@ -50,6 +56,7 @@ namespace ChatVPet.ChatProcess
     /// </summary>
     public class ToolCallResult
     {
+        public string StepId { get; set; } = "";
         /// <summary>
         /// 调用工具方法
         /// </summary>

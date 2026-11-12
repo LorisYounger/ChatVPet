@@ -12,7 +12,7 @@ namespace VPet.Plugin.ChatVPet
     /// </summary>
     public partial class winDiary : Window
     {
-        private readonly CVPPlugin plugin;
+        private readonly VPetChatProcess process;
 
         /// <summary>
         /// ViewModel wrapping a DiaryEntry with display-friendly labels.
@@ -34,14 +34,15 @@ namespace VPet.Plugin.ChatVPet
         {
             InitializeComponent();
             Resources = Application.Current.Resources;
-            this.plugin = plugin;
-            LoadDiary();
+            process = plugin.VPetChatProcess;
+            Loaded += async (_, _) => await LoadDiary();
         }
 
-        private void LoadDiary()
+        private async System.Threading.Tasks.Task LoadDiary()
         {
+            var entries = (await System.Threading.Tasks.Task.Run(process.ReadMemories)).Diary;
             DiaryItems = new ObservableCollection<DiaryViewModel>(
-                plugin.VPetChatProcess.DiaryEntries
+                entries
                     .OrderByDescending(e => e.RecordedAt)
                     .Select(e => new DiaryViewModel(e)));
 
@@ -49,13 +50,12 @@ namespace VPet.Plugin.ChatVPet
             tbCount.Text = "共 {0} 条日记".Translate(DiaryItems.Count);
         }
 
-        private void MenuItem_Delete(object sender, RoutedEventArgs e)
+        private async void MenuItem_Delete(object sender, RoutedEventArgs e)
         {
             if (sender is MenuItem mi && mi.CommandParameter is DiaryViewModel vm)
             {
-                plugin.VPetChatProcess.DiaryEntries.Remove(vm.Entry);
-                plugin.Save();
-                LoadDiary();
+                await System.Threading.Tasks.Task.Run(() => process.DeleteMemory(vm.Entry));
+                await LoadDiary();
                 MessageBox.Show("删除成功".Translate());
             }
         }

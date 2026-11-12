@@ -68,6 +68,7 @@ namespace ChatVPet.ChatProcess
         /// </summary>
         public void GetQueryVector(IEnumerable<Iw2vSource> iw2vSource)
         {
+            if (CP.AIAPIEmbeddingFunction == null) return;
             var needUpdate = iw2vSource
                 .Where(x => x.EmbeddingVectors == null || x.EmbeddingVectors.Length == 0)
                 .ToList();
@@ -189,7 +190,7 @@ namespace ChatVPet.ChatProcess
         /// KeyWords 是程序员预先编辑的可能会碰撞的词语（如 <c>"钱"</c>、<c>"体力"</c>），
         /// 当查询词命中关键词时提高匹配程度。<br/>
         /// KeyWords 在各来源格式不统一：<br/>
-        /// - DynKDBStatic 等手动设置关键词的来源：<c>localization.WordSplit(...)</c>
+        /// - 手动设置关键词的来源：<c>localization.WordSplit(...)</c>
         ///   每个分词词语一个元素（如 <c>"钱"</c>、<c>"体力"</c>）<br/>
         /// - 知识和工具包含原始描述；<see cref="Dialogue"/> 包含空格拼接的分词文本。
         /// </para>
