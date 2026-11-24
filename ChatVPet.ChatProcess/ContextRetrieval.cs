@@ -7,6 +7,7 @@ namespace ChatVPet.ChatProcess;
 /// <summary>Per-process retrieval state. Only text-derived vectors and scores are cached.</summary>
 public class ContextRetrieval(VPetChatProcess process)
 {
+    public Action<object>? Trace { get; set; }
     public string EmbeddingIdentity { get; set; } = "";
     public string RerankIdentity { get; set; } = "";
     public string QueryInstruction { get; set; } = "Given a conversation, retrieve relevant knowledge, memories and game tools.";
@@ -52,6 +53,8 @@ public class ContextRetrieval(VPetChatProcess process)
         {
             var timer = Stopwatch.StartNew();
             long requestsBefore = EmbeddingRequests + RerankRequests;
+            long hitsBefore = CacheHits;
+            string error = "";
             ServiceUnavailable = false;
             string currentScope = process.SaveId + "|" + EmbeddingIdentity + "|" + RerankIdentity + "|" + QueryInstruction;
             if (scope != currentScope) { Clear(); scope = currentScope; }
@@ -108,6 +111,7 @@ public class ContextRetrieval(VPetChatProcess process)
             catch (Exception ex) when (ex is not OutOfMemoryException)
             {
                 ServiceUnavailable = true;
+                error = ex.Message;
                 queryVector = [];
                 process.LastRetrievalError = "向量服务不可用，使用关键词检索。";
             }
@@ -120,6 +124,7 @@ public class ContextRetrieval(VPetChatProcess process)
                 return (x.Item, x.Text, Score: x.Item.InCheck(query, similarity));
             }).Where(x => x.Score < IInCheck.IgnoreValue).OrderBy(x => x.Score).Take(CandidateCount).ToList();
             var selected = shortlist.Select(x => x.Item).Take(limit).ToList();
+            float[]? rankedScores = null;
             if (shortlist.Count > 0 && process.AIAPIRerankFunction != null)
             {
                 try
@@ -151,10 +156,12 @@ public class ContextRetrieval(VPetChatProcess process)
                     }
                     selected = shortlist.Select((x, i) => (x.Item, Score: pairScores[i])).Where(x => x.Score >= MinimumRerankScore)
                         .OrderByDescending(x => x.Score).Take(limit).Select(x => x.Item).ToList();
+                    rankedScores = pairScores;
                 }
                 catch (Exception ex) when (ex is not OutOfMemoryException)
                 {
                     ServiceUnavailable = true;
+                    error = ex.Message;
                     process.LastRetrievalError = "重排服务不可用，沿用混合召回顺序。";
                 }
             }
@@ -164,6 +171,12 @@ public class ContextRetrieval(VPetChatProcess process)
             var temperatureTimings = EmbeddingRequests + RerankRequests == requestsBefore ? hotTimings : coldTimings;
             temperatureTimings.Enqueue(LastMilliseconds);
             if (temperatureTimings.Count > 200) temperatureTimings.Dequeue();
+            Trace?.Invoke(new { kind = typeof(T).Name, query, limit, candidateCount = candidates.Count,
+                MinimumRerankScore, shortlistLimit = CandidateCount, milliseconds = LastMilliseconds, cacheHits = CacheHits - hitsBefore,
+                requests = EmbeddingRequests + RerankRequests - requestsBefore, ServiceUnavailable, error,
+                candidates = candidates.Select(x => new { text = x.Text, shortlisted = shortlist.Any(s => ReferenceEquals(s.Item, x.Item)) }),
+                ranked = shortlist.Select((x, i) => new { text = x.Text, recallScore = x.Score,
+                    rerankScore = rankedScores == null ? (float?)null : rankedScores[i], selected = selected.Contains(x.Item) }) });
             return selected;
         }
     }

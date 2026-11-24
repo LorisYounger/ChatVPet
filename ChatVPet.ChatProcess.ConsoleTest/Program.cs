@@ -29,9 +29,9 @@ internal static class Program
         using var embeddings = string.IsNullOrWhiteSpace(config.EmbeddingApiUrl) ? null : new ModelApiClient(config.EmbeddingApiUrl, config.EmbeddingModel, config.EmbeddingApiKey, config.RetrievalTimeoutSeconds, config.WebProxy);
         using var rerank = !config.RerankEnabled || string.IsNullOrWhiteSpace(config.RerankApiUrl) ? null : new ModelApiClient(config.RerankApiUrl, config.RerankModel, config.RerankApiKey, config.RetrievalTimeoutSeconds, config.WebProxy);
         var process = new VPetChatProcess { SystemDescription = ChatProtocol.RenderSystem(useChatVPetPrompt: config.UseChatVPetPrompt) };
-        process.AIAPIAskFunction = (system, history, input, tools) => chat.Chat(system, history, input, tools, config.Temperature, config.MaxTokens);
-        if (operations != null) process.ToolAPIAskFunction = (system, history, input, tools) => operations.Chat(system, history, input, tools, 0.2, config.MaxTokens);
-        if (operations != null) process.SummaryAPIAskFunction = (system, history, input, tools) => operations.Chat(system, history, input, tools, 0.2, OpenAIChatConfig.SummaryMaxTokens);
+        process.AIAPIAskFunction = (system, messages, tools) => chat.Chat(system, messages, tools, config.Temperature, config.MaxTokens);
+        if (operations != null) process.ToolAPIAskFunction = (system, messages, tools) => operations.Chat(system, messages, tools, 0.2, config.MaxTokens);
+        if (operations != null) process.SummaryAPIAskFunction = (system, messages, tools) => operations.Chat(system, messages, tools, 0.2, OpenAIChatConfig.SummaryMaxTokens);
         if (embeddings != null) process.AIAPIEmbeddingFunction = embeddings.Embed;
         if (rerank != null) process.AIAPIRerankFunction = rerank.Rerank;
         process.Retrieval.EmbeddingIdentity = config.EmbeddingApiUrl + "|" + config.EmbeddingModel + "|" + config.EmbeddingVersion;

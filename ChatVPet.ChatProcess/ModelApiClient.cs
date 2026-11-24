@@ -1,7 +1,8 @@
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Diagnostics;
 
 namespace ChatVPet.ChatProcess;
 
@@ -13,6 +14,7 @@ public sealed class ModelApiClient : IDisposable
     private readonly string model;
     public long Tokens { get; private set; }
     public long Requests { get; private set; }
+    public Action<ModelApiTrace>? Trace { get; set; }
 
     public ModelApiClient(string url, string model, string key, int timeoutSeconds = 60, string proxy = "")
     {
@@ -25,26 +27,37 @@ public sealed class ModelApiClient : IDisposable
 
     private JObject Post(string path, object body)
     {
-        using var content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
-        Requests++;
-        using var response = http.PostAsync(url + path, content).GetAwaiter().GetResult();
-        response.EnsureSuccessStatusCode();
-        var result = JObject.Parse(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
-        Tokens += (result["usage"] as JObject)?["total_tokens"]?.Value<long?>() ?? 0;
-        return result;
+        var trace = Trace == null ? null : new ModelApiTrace { Endpoint = url + path, Model = model, Request = JObject.FromObject(body) };
+        if (trace != null) Trace?.Invoke(trace);
+        var timer = trace == null ? null : Stopwatch.StartNew();
+        try
+        {
+            using var content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
+            Requests++;
+            using var response = http.PostAsync(url + path, content).GetAwaiter().GetResult();
+            string raw = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            if (trace != null) { trace.StatusCode = (int)response.StatusCode; trace.Response = raw; }
+            response.EnsureSuccessStatusCode();
+            var result = JObject.Parse(raw);
+            Tokens += (result["usage"] as JObject)?["total_tokens"]?.Value<long?>() ?? 0;
+            return result;
+        }
+        catch (Exception ex) { if (trace != null) trace.Error = ex.Message; throw; }
+        finally
+        {
+            if (trace != null)
+            {
+                trace.Finished = true; trace.Milliseconds = timer!.Elapsed.TotalMilliseconds;
+                Trace?.Invoke(trace);
+            }
+        }
     }
 
-    public VPetChatProcess.AIAPIAskResult Chat(string system, List<string[]> history, string input, List<ToolUse> tools,
+    public VPetChatProcess.AIAPIAskResult Chat(string system, IReadOnlyList<ChatMessage> messages, List<ToolUse> tools,
         double temperature = 1, int maxTokens = 2048)
     {
-        var messages = new List<object> { new { role = "system", content = system } };
-        foreach (var pair in history)
-        {
-            messages.Add(new { role = "user", content = pair[0] });
-            if (pair[1].Length > 0) messages.Add(new { role = "assistant", content = pair[1] });
-        }
-        messages.Add(new { role = "user", content = input });
-        var body = new JObject { ["model"] = model, ["messages"] = JArray.FromObject(messages), ["temperature"] = temperature, ["max_tokens"] = maxTokens };
+        var wire = messages.Prepend(new ChatMessage("system", system)).Select(m => new { role = m.Role, content = m.Content });
+        var body = new JObject { ["model"] = model, ["messages"] = JArray.FromObject(wire), ["temperature"] = temperature, ["max_tokens"] = maxTokens };
         if (tools.Count > 0)
             body["tools"] = JArray.FromObject(tools.Select(x => new { type = "function", function = new { name = x.Code, description = x.Descriptive, parameters = x.Parameters } }));
         var response = Post("/chat/completions", body);
@@ -131,8 +144,24 @@ public sealed class ModelApiClient : IDisposable
         });
         var choice = response["choices"]?[0];
         if (choice?["finish_reason"]?.Value<string>() != "stop") throw new InvalidDataException("Image observation was interrupted.");
-        return choice["message"]?["content"]?.Value<string>() ?? "未读到图中内容。";
+        string? observation = choice["message"]?["content"]?.Value<string>();
+        if (string.IsNullOrWhiteSpace(observation)) throw new InvalidDataException("视觉服务返回空观察。");
+        return observation;
     }
 
     public void Dispose() => http.Dispose();
+}
+
+/// <summary>Diagnostic HTTP payloads; authorization headers are never included.</summary>
+public sealed class ModelApiTrace
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string Endpoint { get; set; } = "";
+    public string Model { get; set; } = "";
+    public JObject Request { get; set; } = new();
+    public string Response { get; set; } = "";
+    public string Error { get; set; } = "";
+    public int StatusCode { get; set; }
+    public bool Finished { get; set; }
+    public double Milliseconds { get; set; }
 }

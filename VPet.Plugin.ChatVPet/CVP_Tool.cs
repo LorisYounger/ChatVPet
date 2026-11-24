@@ -11,6 +11,7 @@ public partial class CVPPlugin
     public long ChatTokens, ToolTokens, SummaryTokens;
     public long ChatPromptTokens, ChatCachedTokens;
     public bool HasChatCacheUsage;
+    public Action<string, ModelApiTrace>? TraceApi;
 
     public void ConfigureModels()
     {
@@ -20,18 +21,22 @@ public partial class CVPPlugin
         toolApi = string.IsNullOrWhiteSpace(config.ToolApiUrl) ? null : new ModelApiClient(config.ToolApiUrl, config.ToolModel, config.ToolApiKey, 60, config.WebProxy);
         embeddingApi = string.IsNullOrWhiteSpace(config.EmbeddingApiUrl) ? null : new ModelApiClient(config.EmbeddingApiUrl, config.EmbeddingModel, config.EmbeddingApiKey, config.RetrievalTimeoutSeconds, config.WebProxy);
         rerankApi = !config.RerankEnabled || string.IsNullOrWhiteSpace(config.RerankApiUrl) ? null : new ModelApiClient(config.RerankApiUrl, config.RerankModel, config.RerankApiKey, config.RetrievalTimeoutSeconds, config.WebProxy);
+        if (chatApi != null) chatApi.Trace = trace => TraceApi?.Invoke("chat", trace);
+        if (toolApi != null) toolApi.Trace = trace => TraceApi?.Invoke("operations", trace);
+        if (embeddingApi != null) embeddingApi.Trace = trace => TraceApi?.Invoke("embedding", trace);
+        if (rerankApi != null) rerankApi.Trace = trace => TraceApi?.Invoke("rerank", trace);
         var process = VPetChatProcess;
         process.SystemDescription = ChatProtocol.RenderSystem(MW.Core.Save!.Name, MW.Core.Save!.HostName, config.UseChatVPetPrompt);
         process.AIAPIAskFunction = OpenAIAsk;
-        process.ToolAPIAskFunction = toolApi == null ? null : (system, history, input, tools) =>
+        process.ToolAPIAskFunction = toolApi == null ? null : (system, messages, tools) =>
         {
-            var result = toolApi.Chat(system, history, input, tools, 0.2, config.MaxTokens);
+            var result = toolApi.Chat(system, messages, tools, 0.2, config.MaxTokens);
             ToolTokens += result.Tokens;
             return result;
         };
-        process.SummaryAPIAskFunction = toolApi == null ? null : (system, history, input, tools) =>
+        process.SummaryAPIAskFunction = toolApi == null ? null : (system, messages, tools) =>
         {
-            var result = toolApi.Chat(system, history, input, tools, 0.2, OpenAIChatConfig.SummaryMaxTokens);
+            var result = toolApi.Chat(system, messages, tools, 0.2, OpenAIChatConfig.SummaryMaxTokens);
             SummaryTokens += result.Tokens;
             return result;
         };
@@ -57,10 +62,10 @@ public partial class CVPPlugin
         process.RequestCharacterLimit = RequestCharacterLimit;
     }
 
-    public VPetChatProcess.AIAPIAskResult OpenAIAsk(string system, List<string[]> history, string input, List<ToolUse> tools)
+    public VPetChatProcess.AIAPIAskResult OpenAIAsk(string system, IReadOnlyList<ChatMessage> messages, List<ToolUse> tools)
     {
         if (chatApi == null) throw new InvalidOperationException("请先配置聊天 API。");
-        var result = chatApi.Chat(system, history, input, tools, OpenAIConfig!.Temperature, OpenAIConfig.MaxTokens);
+        var result = chatApi.Chat(system, messages, tools, OpenAIConfig!.Temperature, OpenAIConfig.MaxTokens);
         temptoken = (int)result.Tokens;
         ChatTokens += temptoken; TotalTokensUsage += temptoken; TokenCount = temptoken;
         if (result.CachedTokens.HasValue && result.PromptTokens.HasValue)

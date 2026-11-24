@@ -24,11 +24,10 @@ namespace ChatVPet.ChatProcess
         /// AIAPI 调用方法
         /// </summary>
         /// <param name="system">系统消息</param>
-        /// <param name="historys">历史消息对 [user, assistant]；assistant 为空时只发送背景 user 消息。</param>
-        /// <param name="input">当前消息</param>
+        /// <param name="messages">按发送顺序排列的聊天消息，含本次输入。</param>
         /// <param name="tools">当前可用工具</param>
         /// <returns>返回结果</returns>
-        public delegate AIAPIAskResult AIAPIAsk(string system, List<string[]> historys, string input, List<ToolUse> tools);
+        public delegate AIAPIAskResult AIAPIAsk(string system, IReadOnlyList<ChatMessage> messages, List<ToolUse> tools);
 
         /// <summary>
         /// AIAPI AI生成 调用方法

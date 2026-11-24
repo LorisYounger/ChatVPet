@@ -72,7 +72,7 @@ namespace VPet.Plugin.ChatVPet
             retryReply.Click += async (_, _) =>
             {
                 var turn = Plugin.VPetChatProcess.Dialogues.Select(x => x.Turn)
-                    .LastOrDefault(x => x != null && x.OperationsFinished && !x.QuitCompleted && x.PresentedRevision != x.ReceiptRevision);
+                    .LastOrDefault(x => x?.PendingReply == true);
                 if (turn != null) await RetryTurn(turn.TurnId);
             };
             IsVisibleChanged += async (_, _) =>
@@ -115,7 +115,7 @@ namespace VPet.Plugin.ChatVPet
             if (process != Plugin.VPetChatProcess) return;
             var turns = snapshot.History.Select(x => x.Turn).Where(x => x != null).ToList();
             displayedOptions.Text = turns.SelectMany(x => x!.Receipts).LastOrDefault(x => x.DisplayedItems.Count > 0)?.Facts ?? "";
-            retryReply.IsEnabled = turns.Any(x => x!.OperationsFinished && !x.QuitCompleted && x.PresentedRevision != x.ReceiptRevision);
+            retryReply.IsEnabled = turns.Any(x => x!.PendingReply);
         }
 
         private bool voicecontinue = false;
@@ -183,7 +183,7 @@ namespace VPet.Plugin.ChatVPet
             {
                 Plugin.MW.Main.LabelDisplayShow("ChatVPet: " + ex.Message);
                 var turn = Plugin.VPetChatProcess.Dialogues.LastOrDefault()?.Turn;
-                if (turn?.OperationsFinished == true && turn.PresentedRevision != turn.ReceiptRevision)
+                if (turn?.PendingReply == true)
                     Dispatcher.Invoke(() => retryReply.IsEnabled = true);
             }
             finally { Dispatcher.Invoke(() => IsEnabled = true); }

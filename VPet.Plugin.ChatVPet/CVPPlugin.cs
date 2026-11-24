@@ -28,15 +28,21 @@ public partial class CVPPlugin : MainPlugin
     public Task Ready { get; private set; } = Task.CompletedTask;
     private GameSave_v2? loadedSave;
     private readonly object saveGate = new();
-    private readonly string dataDirectory = Path.Combine(ExtensionValue.BaseDirectory, "ChatVPet");
-    public CVPPlugin(IMainWindow mainwin) : base(mainwin) { }
+    private readonly string dataDirectory;
+    private readonly string settingsPath;
+    public CVPPlugin(IMainWindow mainwin) : this(mainwin, ExtensionValue.BaseDirectory) { }
+    public CVPPlugin(IMainWindow mainwin, string storageDirectory) : base(mainwin)
+    {
+        dataDirectory = Path.Combine(storageDirectory, "ChatVPet");
+        settingsPath = Path.Combine(storageDirectory, "ChatVPetProcess.Settings.json");
+    }
     public override string PluginName => "ChatVPetProcess";
 
     public override void LoadPlugin()
     {
         Ready = Task.Run(() =>
         {
-            string path = Path.Combine(ExtensionValue.BaseDirectory, "ChatVPetProcess.Settings.json");
+            string path = settingsPath;
             OpenAIConfig = File.Exists(path) ? JsonConvert.DeserializeObject<OpenAIChatConfig>(File.ReadAllText(path))! : new OpenAIChatConfig();
             EnsureSave();
             ConfigureVoice();
@@ -73,7 +79,7 @@ public partial class CVPPlugin : MainPlugin
             }
             id = GetSaveId();
             var process = new VPetChatProcess { SaveId = id };
-            string path = Path.Combine(dataDirectory, id + ".json");
+            string path = Path.Combine(dataDirectory, id + ".turns.json");
             if (File.Exists(path))
             {
                 var data = JObject.Parse(File.ReadAllText(path));
@@ -128,7 +134,7 @@ public partial class CVPPlugin : MainPlugin
     private void SaveSession(VPetChatProcess process)
     {
         Directory.CreateDirectory(dataDirectory);
-        string path = Path.Combine(dataDirectory, process.SaveId + ".json");
+        string path = Path.Combine(dataDirectory, process.SaveId + ".turns.json");
         string json = JsonConvert.SerializeObject(new { dialogues = process.Dialogues, diaries = process.DiaryEntries, summaries = process.Summaries });
         using (var stream = new FileStream(path + ".tmp", FileMode.Create, FileAccess.Write, FileShare.None))
         {
@@ -136,13 +142,19 @@ public partial class CVPPlugin : MainPlugin
             stream.Write(bytes);
             stream.Flush(true);
         }
-        File.Move(path + ".tmp", path, true);
+        // File indexing on Windows can briefly deny replacement immediately after a checkpoint write.
+        for (int attempt = 0; ; attempt++)
+        {
+            try { File.Move(path + ".tmp", path, true); break; }
+            catch (Exception ex) when (attempt < 4 && ex is IOException or UnauthorizedAccessException)
+            { System.Threading.Thread.Sleep(25 * (attempt + 1)); }
+        }
     }
 
     public override void Save()
     {
         if (OpenAIConfig != null)
-            File.WriteAllText(Path.Combine(ExtensionValue.BaseDirectory, "ChatVPetProcess.Settings.json"), JsonConvert.SerializeObject(OpenAIConfig, Formatting.Indented), Encoding.UTF8);
+            File.WriteAllText(settingsPath, JsonConvert.SerializeObject(OpenAIConfig, Formatting.Indented), Encoding.UTF8);
 
     }
 

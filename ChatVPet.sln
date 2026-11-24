@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VPet.Plugin.ChatVPet", "VPe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatVPet.ChatProcess.ConsoleTest", "ChatVPet.ChatProcess.ConsoleTest\ChatVPet.ChatProcess.ConsoleTest.csproj", "{5ED4617B-76DA-4E0C-A5C4-75224FF84BBA}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatVPet.Workbench", "ChatVPet.Workbench\ChatVPet.Workbench.csproj", "{F3517277-9784-400E-AADE-C646D245A17F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{5ED4617B-76DA-4E0C-A5C4-75224FF84BBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5ED4617B-76DA-4E0C-A5C4-75224FF84BBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5ED4617B-76DA-4E0C-A5C4-75224FF84BBA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3517277-9784-400E-AADE-C646D245A17F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3517277-9784-400E-AADE-C646D245A17F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3517277-9784-400E-AADE-C646D245A17F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3517277-9784-400E-AADE-C646D245A17F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

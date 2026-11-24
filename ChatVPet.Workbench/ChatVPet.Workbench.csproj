@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../VPet.Plugin.ChatVPet/VPet.Plugin.ChatVPet.csproj" />
+    <None Update="Scenarios.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

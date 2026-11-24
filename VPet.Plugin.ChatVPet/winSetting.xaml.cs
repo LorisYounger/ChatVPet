@@ -180,7 +180,7 @@ namespace VPet.Plugin.ChatVPet
             plugin.AzureRegion = tbSpeachregion.Text;
             plugin.AzureRecognitionLanguage = tbSpeachRecognitionLanguage.Text;
             plugin.AzureVoiceEnable = swVoiceEnable.IsChecked ?? false;
-            plugin.TalkAPI!.btnvoice.Visibility = swVoiceEnable.IsChecked ?? false ? Visibility.Visible : Visibility.Collapsed;
+            if (plugin.TalkAPI != null) plugin.TalkAPI.btnvoice.Visibility = swVoiceEnable.IsChecked ?? false ? Visibility.Visible : Visibility.Collapsed;
             plugin.MaxHistoryCount = maxHistory;
             plugin.MaxKnowledgeCount = maxKnowledge;
             plugin.MaxToolCount = maxTools;
@@ -195,7 +195,7 @@ namespace VPet.Plugin.ChatVPet
 
             plugin.KnowledgeDataBase = tbKnow.Text;
             IsEnabled = false;
-            plugin.TalkAPI!.IsEnabled = false;
+            if (plugin.TalkAPI != null) plugin.TalkAPI.IsEnabled = false;
             try
             {
                 await Task.Run(() =>
@@ -208,7 +208,7 @@ namespace VPet.Plugin.ChatVPet
                 Close();
             }
             catch (Exception ex) { MessageBox.Show("设置未能全部应用: " + ex.Message); }
-            finally { IsEnabled = true; plugin.TalkAPI.IsEnabled = true; }
+            finally { IsEnabled = true; if (plugin.TalkAPI != null) plugin.TalkAPI.IsEnabled = true; }
         }
 
         private void TextBlock_MouseDown(object sender, MouseButtonEventArgs e)
