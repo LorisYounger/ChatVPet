@@ -18,9 +18,9 @@ internal static class Program
             CompletionChecks.Run();
             return;
         }
-        if (args.Length < 2 || args[0] is not ("--chat" or "--live-test"))
+        if (args.Length < 2 || args[0] is not ("--chat" or "--live-test" or "--context-test"))
         {
-            Console.WriteLine("离线验证: --self-test\n手动联调: --chat <配置.json>\n真实接口检查: --live-test <配置.json 或 -> <测试图片.png> [用例名]\n配置为 - 时从标准输入读取一行 JSON；所有游戏动作均为模拟。");
+            Console.WriteLine("离线验证: --self-test\n手动联调: --chat <配置.json>\n真实接口检查: --live-test <配置.json 或 -> <测试图片.png> [用例名]\n历史压缩对照: --context-test <配置.json> [light/heavy]\n摘要使用操作 API，输出预算 4096；聊天模型只负责聊天。\n配置为 - 时从标准输入读取一行 JSON；所有游戏动作均为模拟。");
             return;
         }
         var config = JsonConvert.DeserializeObject<OpenAIChatConfig>(args[1] == "-" ? Console.ReadLine()! : File.ReadAllText(args[1]))!;
@@ -28,9 +28,10 @@ internal static class Program
         using var operations = string.IsNullOrWhiteSpace(config.ToolApiUrl) ? null : new ModelApiClient(config.ToolApiUrl, config.ToolModel, config.ToolApiKey, 60, config.WebProxy);
         using var embeddings = string.IsNullOrWhiteSpace(config.EmbeddingApiUrl) ? null : new ModelApiClient(config.EmbeddingApiUrl, config.EmbeddingModel, config.EmbeddingApiKey, config.RetrievalTimeoutSeconds, config.WebProxy);
         using var rerank = !config.RerankEnabled || string.IsNullOrWhiteSpace(config.RerankApiUrl) ? null : new ModelApiClient(config.RerankApiUrl, config.RerankModel, config.RerankApiKey, config.RetrievalTimeoutSeconds, config.WebProxy);
-        var process = new VPetChatProcess();
+        var process = new VPetChatProcess { SystemDescription = ChatProtocol.RenderSystem(useChatVPetPrompt: config.UseChatVPetPrompt) };
         process.AIAPIAskFunction = (system, history, input, tools) => chat.Chat(system, history, input, tools, config.Temperature, config.MaxTokens);
         if (operations != null) process.ToolAPIAskFunction = (system, history, input, tools) => operations.Chat(system, history, input, tools, 0.2, config.MaxTokens);
+        if (operations != null) process.SummaryAPIAskFunction = (system, history, input, tools) => operations.Chat(system, history, input, tools, 0.2, 4096);
         if (embeddings != null) process.AIAPIEmbeddingFunction = embeddings.Embed;
         if (rerank != null) process.AIAPIRerankFunction = rerank.Rerank;
         process.Retrieval.EmbeddingIdentity = config.EmbeddingApiUrl + "|" + config.EmbeddingModel + "|" + config.EmbeddingVersion;
@@ -70,6 +71,20 @@ internal static class Program
         });
         process.AllowTool = (turn, tool) => (turn.Initial.Has("delegate") || turn.Initial.Unknown.Count > 0)
             && (tool.ReadOnly || turn.Actions.Any(x => x.Tool == tool.Code));
+        if (args[0] == "--context-test")
+        {
+            if (operations == null)
+            {
+                Console.Error.WriteLine("历史压缩测试需要配置操作 API，用于生成日记和摘要。");
+                Environment.ExitCode = 1;
+                return;
+            }
+            Environment.ExitCode = ContextLiveChecks.Run(process, chat, operations,
+                config.ToolModel, config,
+                args.Skip(2).FirstOrDefault(x => x is "light" or "heavy"),
+                () => { balance = 10; price = 8; inventory = 0; });
+            return;
+        }
         if (args[0] == "--live-test")
         {
             Environment.ExitCode = LiveChecks.Run(process, chat, operations, embeddings, rerank, config,

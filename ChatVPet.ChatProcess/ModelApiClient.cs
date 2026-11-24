@@ -30,7 +30,7 @@ public sealed class ModelApiClient : IDisposable
         using var response = http.PostAsync(url + path, content).GetAwaiter().GetResult();
         response.EnsureSuccessStatusCode();
         var result = JObject.Parse(response.Content.ReadAsStringAsync().GetAwaiter().GetResult());
-        Tokens += result["usage"]?["total_tokens"]?.Value<long>() ?? 0;
+        Tokens += (result["usage"] as JObject)?["total_tokens"]?.Value<long?>() ?? 0;
         return result;
     }
 
@@ -41,7 +41,7 @@ public sealed class ModelApiClient : IDisposable
         foreach (var pair in history)
         {
             messages.Add(new { role = "user", content = pair[0] });
-            messages.Add(new { role = "assistant", content = pair[1] });
+            if (pair[1].Length > 0) messages.Add(new { role = "assistant", content = pair[1] });
         }
         messages.Add(new { role = "user", content = input });
         var body = new JObject { ["model"] = model, ["messages"] = JArray.FromObject(messages), ["temperature"] = temperature, ["max_tokens"] = maxTokens };
@@ -49,11 +49,14 @@ public sealed class ModelApiClient : IDisposable
             body["tools"] = JArray.FromObject(tools.Select(x => new { type = "function", function = new { name = x.Code, description = x.Descriptive, parameters = x.Parameters } }));
         var response = Post("/chat/completions", body);
         var choice = response["choices"]?[0] ?? throw new InvalidDataException("Chat response has no choice.");
+        var usage = response["usage"] as JObject;
         var result = new VPetChatProcess.AIAPIAskResult
         {
             Reply = choice["message"]?["content"]?.Value<string>() ?? "",
             Completed = choice["finish_reason"]?.Value<string>() is "stop" or "tool_calls",
-            Tokens = response["usage"]?["total_tokens"]?.Value<long>() ?? 0
+            Tokens = usage?["total_tokens"]?.Value<long?>() ?? 0,
+            PromptTokens = usage?["prompt_tokens"]?.Value<long?>(),
+            CachedTokens = (usage?["prompt_tokens_details"] as JObject)?["cached_tokens"]?.Value<long?>()
         };
         foreach (var call in choice["message"]?["tool_calls"] ?? new JArray())
         {

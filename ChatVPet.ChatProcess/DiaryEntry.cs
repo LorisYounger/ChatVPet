@@ -6,6 +6,7 @@ namespace ChatVPet.ChatProcess
     public class DiaryEntry : Dialogue
     {
         public List<string> SourceTurns { get; set; } = [];
+        public List<string> SourceDialogueIds { get; set; } = [];
         /// <summary>衰减下限，防止权重归零</summary>
         public const float MinDecayFactor = 0.05f;
         /// <summary>每次命中时衰减因子的恢复量</summary>

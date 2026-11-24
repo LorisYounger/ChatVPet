@@ -79,6 +79,7 @@ public partial class CVPPlugin : MainPlugin
                 var data = JObject.Parse(File.ReadAllText(path));
                 process.Dialogues = data["dialogues"]!.ToObject<List<Dialogue>>()!;
                 process.DiaryEntries = data["diaries"]!.ToObject<List<DiaryEntry>>()!;
+                process.Summaries = data["summaries"]?.ToObject<List<ConversationSummary>>() ?? [];
                 if (process.DiaryEntries.Count > 0) DiaryEntry.EnsureCounterAbove(process.DiaryEntries.Max(x => x.Id));
             }
             VPetChatProcess = process;
@@ -128,7 +129,7 @@ public partial class CVPPlugin : MainPlugin
     {
         Directory.CreateDirectory(dataDirectory);
         string path = Path.Combine(dataDirectory, process.SaveId + ".json");
-        string json = JsonConvert.SerializeObject(new { dialogues = process.Dialogues, diaries = process.DiaryEntries });
+        string json = JsonConvert.SerializeObject(new { dialogues = process.Dialogues, diaries = process.DiaryEntries, summaries = process.Summaries });
         using (var stream = new FileStream(path + ".tmp", FileMode.Create, FileAccess.Write, FileShare.None))
         {
             var bytes = Encoding.UTF8.GetBytes(json);

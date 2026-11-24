@@ -1,0 +1,224 @@
+{
+  "model": "ChatVPet-qw35-9B-v1",
+  "date": "2026-11-24",
+  "groups": {
+    "hold": "选版盲题，发布时复用为回归",
+    "dev": "本轮开发",
+    "olddev": "上轮开发",
+    "oldhold": "上轮盲题",
+    "archives": "历史协议及路由"
+  },
+  "selection": {
+    "n": 48,
+    "step24": 29,
+    "P2": 33,
+    "real_diary_both": "18/18",
+    "strict_same_turn_name_before": "5/18",
+    "strict_same_turn_name_after": "7/18"
+  },
+  "generation": {
+    "temperature": 0,
+    "max_new_tokens": 150,
+    "system": "system_prompt.txt",
+    "records": 401
+  },
+  "host": {
+    "chat_quantization": "Q5_K_M",
+    "tests": 21,
+    "split_roles_passed": 21,
+    "one_model_passed": 9,
+    "environment": "C# 模拟游戏宿主，真实模型服务和内网检索"
+  },
+  "results": {
+    "HF-BF16": {
+      "hold": {
+        "passed": 33,
+        "n": 48
+      },
+      "dev": {
+        "passed": 30,
+        "n": 48
+      },
+      "olddev": {
+        "passed": 63,
+        "n": 84
+      },
+      "oldhold": {
+        "passed": 77,
+        "n": 84
+      },
+      "archives": {
+        "passed": 135,
+        "n": 137
+      }
+    },
+    "BF16 GGUF": {
+      "hold": {
+        "n": 48,
+        "passed": 32,
+        "improved": 0,
+        "broken": 1,
+        "same_text": 44,
+        "protocol": 48
+      },
+      "dev": {
+        "n": 48,
+        "passed": 30,
+        "improved": 0,
+        "broken": 0,
+        "same_text": 41,
+        "protocol": 48
+      },
+      "olddev": {
+        "n": 84,
+        "passed": 62,
+        "improved": 0,
+        "broken": 1,
+        "same_text": 73,
+        "protocol": 84
+      },
+      "oldhold": {
+        "n": 84,
+        "passed": 78,
+        "improved": 1,
+        "broken": 0,
+        "same_text": 79,
+        "protocol": 84
+      },
+      "archives": {
+        "n": 137,
+        "passed": 135,
+        "improved": 0,
+        "broken": 0,
+        "same_text": 117,
+        "protocol": 137
+      }
+    },
+    "Q6_K GGUF": {
+      "hold": {
+        "n": 48,
+        "passed": 34,
+        "improved": 1,
+        "broken": 0,
+        "same_text": 40,
+        "protocol": 48
+      },
+      "dev": {
+        "n": 48,
+        "passed": 31,
+        "improved": 1,
+        "broken": 0,
+        "same_text": 31,
+        "protocol": 48
+      },
+      "olddev": {
+        "n": 84,
+        "passed": 61,
+        "improved": 0,
+        "broken": 2,
+        "same_text": 66,
+        "protocol": 84
+      },
+      "oldhold": {
+        "n": 84,
+        "passed": 75,
+        "improved": 0,
+        "broken": 2,
+        "same_text": 59,
+        "protocol": 84
+      },
+      "archives": {
+        "n": 137,
+        "passed": 134,
+        "improved": 0,
+        "broken": 1,
+        "same_text": 89,
+        "protocol": 137
+      }
+    },
+    "Q5_K_M GGUF": {
+      "hold": {
+        "n": 48,
+        "passed": 33,
+        "improved": 1,
+        "broken": 1,
+        "same_text": 29,
+        "protocol": 48
+      },
+      "dev": {
+        "n": 48,
+        "passed": 31,
+        "improved": 1,
+        "broken": 0,
+        "same_text": 30,
+        "protocol": 48
+      },
+      "olddev": {
+        "n": 84,
+        "passed": 62,
+        "improved": 1,
+        "broken": 2,
+        "same_text": 48,
+        "protocol": 84
+      },
+      "oldhold": {
+        "n": 84,
+        "passed": 78,
+        "improved": 1,
+        "broken": 0,
+        "same_text": 48,
+        "protocol": 84
+      },
+      "archives": {
+        "n": 137,
+        "passed": 135,
+        "improved": 0,
+        "broken": 0,
+        "same_text": 69,
+        "protocol": 137
+      }
+    },
+    "Q4_K_M GGUF": {
+      "hold": {
+        "n": 48,
+        "passed": 30,
+        "improved": 0,
+        "broken": 3,
+        "same_text": 29,
+        "protocol": 48
+      },
+      "dev": {
+        "n": 48,
+        "passed": 30,
+        "improved": 1,
+        "broken": 1,
+        "same_text": 19,
+        "protocol": 48
+      },
+      "olddev": {
+        "n": 84,
+        "passed": 62,
+        "improved": 3,
+        "broken": 4,
+        "same_text": 39,
+        "protocol": 84
+      },
+      "oldhold": {
+        "n": 84,
+        "passed": 74,
+        "improved": 0,
+        "broken": 3,
+        "same_text": 35,
+        "protocol": 84
+      },
+      "archives": {
+        "n": 137,
+        "passed": 132,
+        "improved": 0,
+        "broken": 3,
+        "same_text": 49,
+        "protocol": 137
+      }
+    }
+  }
+}

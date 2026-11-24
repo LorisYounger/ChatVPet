@@ -78,14 +78,13 @@
                         <ComboBoxItem Content="gpt-4-turbo" />
                         <ComboBoxItem Content="gpt-4" />
                     </ComboBox>
-                    <TextBox x:Name="tbSystem" IsReadOnly="True" Grid.Row="5" Grid.Column="1"
-                            Style="{DynamicResource StandardTextBoxStyle}" FontSize="16"
-                            pu:TextBoxHelper.Watermark="{ll:Str '与训练共用的系统消息，姓名与称呼来自存档'}"
-                            ToolTip="{ll:Str '与训练共用的系统消息，姓名与称呼来自存档'}" AcceptsReturn="True"
-                            TextWrapping="WrapWithOverflow" Height="Auto" MaxHeight="100"
-                            VerticalScrollBarVisibility="Visible"
-                            Text="请使用口语化的、可爱的、女性化的、调皮的语言风格和我交流. &#13;你是一只桌宠, 你的名字叫{Name}, 你喜欢玩 虚拟主播模拟器. &#13;你需要尝试体会我与你对话中的感情、产生自己的情感并尽可能给出可爱的回答"
-                            Margin="15,5,0,5" Grid.ColumnSpan="2" />
+                    <StackPanel Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" Margin="15,5,0,5">
+                        <CheckBox x:Name="cbChatVPetPrompt" Content="使用 ChatVPet 专用提示词" Margin="0,0,0,4"
+                                  ToolTip="ChatVPet 模型启用此项；DeepSeek 等通用聊天模型使用完整兼容提示词。" />
+                        <TextBox x:Name="tbSystem" IsReadOnly="True" Style="{DynamicResource StandardTextBoxStyle}" FontSize="16"
+                                 ToolTip="实际发送的聊天系统消息，姓名与称呼来自存档"
+                                 AcceptsReturn="True" TextWrapping="WrapWithOverflow" MaxHeight="100" VerticalScrollBarVisibility="Auto" />
+                    </StackPanel>
                     <TextBox x:Name="tbTemp" Grid.Row="6" Grid.Column="1" Style="{DynamicResource StandardTextBoxStyle}"
                             FontSize="16" Text="0.6" pu:TextBoxHelper.InputLimit="Digit,Point"
                             pu:TextBoxHelper.Watermark="{ll:Str '0-2之间 0.2更稳定 0.8更随机'}"
@@ -118,10 +117,11 @@
             <TabItem Header="操作与重排">
                 <ScrollViewer MaxHeight="560" VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="10">
-                        <TextBlock Text="操作 / 视觉 API (OpenAI 兼容基础地址)" />
+                        <TextBlock Text="操作 / 视觉 / 摘要 API (OpenAI 兼容基础地址)" />
                         <TextBox x:Name="tbToolUrl" Margin="0,4" />
                         <TextBlock Text="操作密钥" /><TextBox x:Name="tbToolKey" Margin="0,4" />
                         <TextBlock Text="操作模型 (看图需要支持视觉)" /><TextBox x:Name="tbToolModel" Margin="0,4" />
+                        <TextBlock Text="日记和前情提要由此模型整理，摘要输出上限为 4096 token。聊天模型只负责对白。" TextWrapping="Wrap" Margin="0,4" />
                         <CheckBox x:Name="cbRerank" Content="启用知识、记忆和工具重排" IsChecked="True" Margin="0,8" />
                         <TextBlock Text="重排完整 URL (专用 /rerank 评分接口)" /><TextBox x:Name="tbRerankUrl" Margin="0,4" />
                         <TextBlock Text="重排密钥" /><TextBox x:Name="tbRerankKey" Margin="0,4" />
@@ -140,6 +140,7 @@
                 </ScrollViewer>
             </TabItem>
             <TabItem Header="{ll:Str 其他设置}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <Grid Margin="5">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -161,7 +162,7 @@
                         <RowDefinition Height="40" />
                         <RowDefinition Height="40" />
                         <RowDefinition Height="40" />
-                        <RowDefinition Height="40" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <TextBlock Text="{ll:Str 语音输入}" VerticalAlignment="Center" />
                     <TextBlock Grid.Row="1" Text="{ll:Str 语音密钥}" VerticalAlignment="Center" />
@@ -192,7 +193,7 @@
                     <TextBlock Grid.Row="3" Text="{ll:Str '查看支持语言列表'}" VerticalAlignment="Center" Grid.Column="4"
                             Foreground="{DynamicResource DARKPrimaryDarker}" TextDecorations="Underline"
                             MouseDown="TextBlock_MouseDown" />
-                    <TextBlock Grid.Row="4" Text="{ll:Str 最大聊天记录}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="4" Text="关闭压缩时保留轮数" VerticalAlignment="Center" />
                     <TextBlock Grid.Row="5" Text="{ll:Str 最大工具库}" VerticalAlignment="Center" />
                     <TextBlock Grid.Row="6" Text="{ll:Str 最大知识库}" VerticalAlignment="Center" />
                     <TextBlock Grid.Row="7" Text="{ll:Str 输出最大花费}" VerticalAlignment="Center" />
@@ -201,7 +202,7 @@
                             pu:TextBoxHelper.InputLimit="Digit" pu:TextBoxHelper.Watermark="200+"
                             ToolTip="{ll:Str '允许最大输出花费Token数量'}" Margin="0,5,15,5" Grid.ColumnSpan="2" />
                     <TextBlock Grid.Row="8" Text="{ll:Str 最大回合}" VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="7" Text="{ll:Str '可能的最大花费为 (最大知识库*100+最大工具库*200+最大聊天记录*200+输出最大花费) x 最大回合'}" VerticalAlignment="Top"
+                    <TextBlock Grid.Row="7" Text="Token 用量由实际输入、回复、工具调用与日记整理决定；字符预算不等同于 Token。" VerticalAlignment="Top"
                             Grid.Column="4" Grid.ColumnSpan="1" TextWrapping="WrapWithOverflow" Grid.RowSpan="2"
                             Margin="0,20,0,0" />
                     <TextBlock Grid.Row="6" Text="{ll:Str '知识库越多越消耗Token'}" VerticalAlignment="Center" Grid.Column="4"
@@ -222,9 +223,9 @@
                             TextWrapping="WrapWithOverflow" />
                     <TextBox x:Name="tbMaxHistory" Grid.Row="4" Grid.Column="2"
                             Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="20"
-                            pu:TextBoxHelper.InputLimit="Digit" ToolTip="{ll:Str '允许单次记忆最大聊天记录'}"
+                            pu:TextBoxHelper.InputLimit="Digit" ToolTip="关闭自动压缩时，发送最近多少轮对话"
                             VerticalAlignment="Center" pu:TextBoxHelper.Watermark="5-50" />
-                    <TextBlock Grid.Row="4" Text="{ll:Str 'ChatVPet会智能化整理为指定数量的高关联性和高重要性的记忆作为输入'}"
+                    <TextBlock Grid.Row="4" Text="启用压缩时固定带入前情提要，连续追加后续对话，仅在整理成功后缩短历史。"
                             VerticalAlignment="Top" Grid.Column="4" TextWrapping="WrapWithOverflow" />
                     <TextBlock Grid.Row="9" Text="{ll:Str 日记触发条数}" VerticalAlignment="Center"
                             ToolTip="{ll:Str '当聊天记录超过此数量时触发历史压缩生成日记，设为0禁用'}" />
@@ -233,14 +234,14 @@
                             pu:TextBoxHelper.InputLimit="Digit" Margin="0,5,15,5"
                             ToolTip="{ll:Str '当聊天记录超过此数量时触发历史压缩生成日记，设为0禁用'}" Grid.ColumnSpan="2" />
                     <TextBlock Grid.Row="9"
-                            Text="{ll:Str 'ChatVPet日记功能\&#13;将较早的对话历史记录压缩成生成的摘要,并通过衰减/命中逻辑更新日记权重\&#13;以节省 Token 并实现长期记忆。'}"
-                            VerticalAlignment="Center" Grid.Column="4" TextWrapping="WrapWithOverflow" Grid.RowSpan="4" />
+                            Text="超过轮数或字符阈值时，生成本段日记并更新累计前情提要。两次整理之间提要保持不变，便于复用缓存。设触发轮数为0关闭自动压缩。"
+                            VerticalAlignment="Center" Grid.Column="4" TextWrapping="WrapWithOverflow" Grid.RowSpan="3" />
                     <TextBlock Grid.Row="10" Text="{ll:Str 压缩保留最近数}" VerticalAlignment="Center"
-                            ToolTip="{ll:Str '压缩时保留最近的对话条数，这些消息不参与摘要'}" />
+                            ToolTip="按轮数整理时保留的完整对话；超过字符预算时可进一步缩短，至少保留最新一轮" />
                     <TextBox x:Name="tbDiaryKeepRecentCount" Grid.Row="10" Grid.Column="2"
                             Style="{DynamicResource StandardTextBoxStyle}" FontSize="16" Text="10"
                             pu:TextBoxHelper.InputLimit="Digit" Margin="0,5,15,5"
-                            ToolTip="{ll:Str '压缩时保留最近的对话条数，这些消息不参与摘要'}" pu:TextBoxHelper.Watermark="5-20"
+                            ToolTip="须小于触发轮数；字符超限时优先控制长度" pu:TextBoxHelper.Watermark="5-20"
                             Grid.ColumnSpan="2" />
                     <TextBlock Grid.Row="11" Text="{ll:Str 日记衰减率}" VerticalAlignment="Center"
                             ToolTip="{ll:Str '每次对话后对未被命中的日记条目施加的权重衰减率（0.03=衰减3%）'}" />
@@ -249,8 +250,22 @@
                             pu:TextBoxHelper.InputLimit="Digit,Point" Margin="0,5,15,5"
                             ToolTip="{ll:Str '每次对话后对未被命中的日记条目施加的权重衰减率（0.03=衰减3%）'}" pu:TextBoxHelper.Watermark="0-1"
                             Grid.ColumnSpan="2" />
-                    <TextBlock Grid.Row="12" Grid.ColumnSpan="5" Text="相关记忆: 普通聊天最多5条，补查最多20条 (历史与日记合计)。" TextWrapping="Wrap" />
+                    <StackPanel Grid.Row="12" Grid.ColumnSpan="5">
+                        <TextBlock Text="相关记忆: 普通聊天最多5条，补查最多20条（历史与日记合计）。前情提要不占名额。" TextWrapping="Wrap" />
+                        <WrapPanel Margin="0,8">
+                            <TextBlock Text="历史整理阈值（字符）" VerticalAlignment="Center" />
+                            <TextBox x:Name="tbHistoryBudget" Width="90" Margin="8,0,16,0" />
+                            <TextBlock Text="提要/日记各自上限（字符）" VerticalAlignment="Center" />
+                            <TextBox x:Name="tbSummaryLimit" Width="90" Margin="8,0,0,0" />
+                        </WrapPanel>
+                        <WrapPanel Margin="0,0,0,8">
+                            <TextBlock Text="单次请求上限（字符）" VerticalAlignment="Center" />
+                            <TextBox x:Name="tbRequestLimit" Width="90" Margin="8,0,0,0" />
+                        </WrapPanel>
+                        <TextBlock Text="整理失败保留原文；请求超限时提示重试，不会静默丢弃对话。请按模型上下文容量调整。" TextWrapping="Wrap" />
+                    </StackPanel>
                 </Grid>
+                </ScrollViewer>
             </TabItem>
             <TabItem Header="{ll:Str 知识库设置}">
                 <Grid Margin="5">

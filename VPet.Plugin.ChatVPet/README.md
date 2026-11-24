@@ -1,6 +1,6 @@
 # ChatVPet Process 重写版
 
-处理库面向 .NET 8，插件使用 .NET 8 Windows/WPF，依赖 `VPet-Simulator.Windows.Interface 1.1.0.72`。训练和运行时共用 `training/chatvpet/system-process-template.txt`。
+处理库面向 .NET 8，插件使用 .NET 8 Windows/WPF，依赖 `VPet-Simulator.Windows.Interface 1.1.0.72`。通用聊天模型使用 `training/chatvpet/system-process-template.txt`，ChatVPet 使用 `training/chatvpet/system-chatvpet-template.txt`；运行时直接嵌入这两份模板。
 
 ## 新配置与存档
 
@@ -17,16 +17,24 @@
 
 | 用途 | 地址格式 | 模型默认值 |
 |---|---|---|
-| 聊天与日记摘要 | 基础 URL，追加 `/chat/completions` | 玩家填写 |
-| 操作与视觉 | 独立基础 URL，追加 `/chat/completions` | 玩家填写，需支持工具调用；看图还需视觉能力 |
+| 聊天 | 基础 URL，追加 `/chat/completions` | 玩家填写，内测使用 ChatVPet |
+| 操作、视觉与日记摘要 | 独立基础 URL，追加 `/chat/completions` | 玩家填写，需支持工具调用；看图还需视觉能力 |
 | Embedding | 基础 URL，追加 `/embeddings` | `Qwen/Qwen3-Embedding-0.6B` |
 | Reranker | 完整评分 URL，例如部署服务的 `/rerank` | `Qwen/Qwen3-Reranker-0.6B` |
 
-四个端点的地址和密钥需分别填写，不会自动继承或切换服务。重排默认启用，截图和自主退出默认关闭。设置页会说明发送哪些内容；接口测试需手动点击按钮，填写设置时不会自动触发。
+摘要复用操作模型，内测使用 DeepSeek，输出预算为 4096 token；ChatVPet 只负责聊天。未配置操作 API 时不生成摘要，原始历史保留。四个端点的地址和密钥需分别填写，不会自动继承或切换服务。重排默认启用，截图和自主退出默认关闭。设置页会说明发送哪些内容；接口测试需手动点击按钮，填写设置时不会自动触发。
 
 Embedding 从 `data[].index/embedding` 读取结果，向量维数以返回值为准。重排请求包含 `model/query/documents/top_n/return_documents`，响应中的 `results[].index/relevance_score` 须覆盖全部候选。分数范围为 0–1，越大表示越相关。
 
-近期历史默认为 6 轮，知识和工具候选各 4 条，初筛候选 24 条。相关历史与日记合计：普通模式最多 5 条，recall 最多 20 条；参考内容预算为 12,000 字符。
+启用自动压缩时，每次聊天依次带入固定角色设定、当前前情提要、提要之后的连续对话，以及本轮参考、状态和输入。两次整理之间提要保持不变，历史逐轮追加。关闭自动压缩时才使用最近历史轮数，插件默认 6 轮。知识和工具候选各 4 条，初筛候选 24 条。相关历史与日记合计：普通模式最多 5 条，recall 最多 20 条；参考内容预算为 12,000 字符，前情提要不占检索名额。
+
+日记整理默认在未压缩历史超过 24 轮或 16,000 字符时触发，按轮数整理保留最近 10 轮；字符过长时会进一步缩短，至少保留最新一轮。每次整理同时生成本段日记和累计前情提要，两者各最多 2,400 字符。单次聊天/整理请求的文本上限默认 48,000 字符。这些字符值不等同于模型 Token，可在“其他设置”中调整。整理失败时保留原文；超出请求上限时停止发送并提示，不静默裁掉中间对话。
+
+前情提要及覆盖边界随会话保存，可在“桌宠日记”窗口展开查看。已有的 Process 会话文件无需手工转换：没有提要时从保留的原始对话分批建立，包括旧日记流程归档的原文。生成提要不会清除检索向量缓存。删除已被提要覆盖的原对话，会使累计提要失效，后续重新整理剩余原文。
+
+精简历史保留原话、回复、图片观察、初答和必要执行回执，不重复携带旧参考资料、状态和旧提要。最新一轮转成精简历史时会改变该段输入，较早的历史前缀保持一致。每次压缩也会改变提要后的前缀，实际缓存命中取决于服务商。Token 显示增加聊天缓存命中/输入量，仅统计返回完整缓存用量的请求；未返回缓存字段时显示“缓存未报告”。
+
+自定义 `AIAPIAskFunction` 的历史参数仍是 `[user, assistant]` 消息对；前情提要使用空 assistant 的背景消息，适配器应只发送 user 部分。`SummaryAPIAskFunction` 现在须按提示返回 `{"diary":"本段日记","summary":"累计前情提要"}`，不再只返回日记纯文本。未完成、格式错误或超长结果均不会推进覆盖边界。
 
 向量、查询和相关性缓存容量分别为 4096、128、2048，查询和分数缓存的过期时间为 10 分钟。余额、价格和执行结果不写入缓存。聊天、操作、检索的超时时间分别为 90、60、20 秒。
 
@@ -53,12 +61,19 @@ Embedding 从 `data[].index/embedding` 读取结果，向量维数以返回值�
 ```powershell
 dotnet build ChatVPet.sln --no-restore -c Release -m:1 -p:UseSharedCompilation=false
 dotnet run --project ChatVPet.ChatProcess.ConsoleTest --no-build -c Release -- --self-test
+dotnet run --project tests/ChatVPet.ContextChecks -c Release
 ```
 
 离线检查使用本地委托和固定 API 响应，不连接模型服务。2026-11-13 构建通过，0 警告、0 错误，111 项离线检查全部通过。发布目录中的旧 DLL 保持不变。
+
+2026-11-24 的 Release 构建通过，0 警告、0 错误；原有 111 项离线检查和新增 51 项上下文检查全部通过。上下文专项检查覆盖连续历史与提要边界、稳定前缀、旧存档与重启、删除失效、后台并发、预算和失败保留，以及本地回环 HTTP 的消息顺序与缓存字段解析；不调用真实模型。真实服务商缓存收益与提要内容质量仍需模型联调确认。
 
 手动联调模型可使用控制台参数 `--chat <配置.json>`；运行真实接口用例可使用 `--live-test <配置.json>`。配置路径为 `-` 时，从标准输入读取一行 JSON，无需将密钥写入文件。示例配置见 `../ChatVPet.ChatProcess.ConsoleTest/LiveTest.Settings.example.json`，其中密钥为空。
 
 2026-11-13 的真实接口测试使用 DeepSeek `deepseek-flash` 作为聊天、操作与视觉模型，并连接 `172.23.120.96:8081` 的 Qwen3 Embedding/Reranker。最终完整回归 21/21 通过，详见 [真实接口测试记录](../ChatVPet.ChatProcess.ConsoleTest/LIVE_TEST_REPORT.md)。
 
 该测试的聊天沿用已有兼容 system，图片使用固定合成图，背包与金额使用模拟数据。真实宿主中的背包、存档切换、语音气泡、截图采集、MOD 动画及正常退出仍待实机验收。
+
+## 聊天提示词选择
+
+设置页勾选“使用 ChatVPet 专用提示词”时使用正式 v1 专用模板，否则使用完整兼容模板。控制台对应配置为 `UseChatVPetPrompt`，默认 `false`；本地 ChatVPet 配置已设为 `true`，DeepSeek 配置为 `false`。该选项只影响聊天，摘要、工具和视觉仍使用各自任务提示词。预览和实际请求使用同一模板，身份来自当前存档。

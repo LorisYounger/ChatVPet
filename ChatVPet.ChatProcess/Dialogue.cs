@@ -12,6 +12,7 @@ namespace ChatVPet.ChatProcess
     /// </summary>
     public class Dialogue : Iw2vSource, IInCheck
     {
+        public string DialogueId { get; set; } = Guid.NewGuid().ToString("N");
         public string SaveId { get; set; } = "default";
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public bool IsActive { get; set; } = true;
@@ -34,7 +35,17 @@ namespace ChatVPet.ChatProcess
         /// </summary>
         public string[] ToMessages()
         {
-            return [Turn == null ? Question : (Turn.ResultInput.Length > 0 ? Turn.ResultInput : Turn.InitialInput), Answer];
+            // Reconstruct only conversation facts. Old references, state snapshots and summaries
+            // must not be recursively carried into each later request.
+            if (Turn == null) return [Question, Answer];
+            string answer = Answer;
+            if (Turn.ResultInput.Length > 0 && Turn.Initial.Raw != Answer)
+                answer = Turn.Initial.Raw + "\n" + Answer;
+            string receipts = string.Join("; ", Turn.Receipts
+                .Where(x => x.Tool is not ("历史补查" or "操作判断"))
+                .Select(x => x.ToContext()));
+            if (receipts.Length > 0) answer += "\n[历史回执:" + ChatProtocol.Field(receipts) + "]";
+            return [ChatProtocol.UserMessage(Question, observation: Turn.Observation), answer];
         }
 
         public float InCheck(string message, float similarity) => IInCheck.InCheck(message, similarity, this);

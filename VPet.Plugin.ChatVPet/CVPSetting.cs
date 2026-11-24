@@ -126,6 +126,24 @@ namespace VPet.Plugin.ChatVPet
             set => MW.Set["ChatVPetProcess"][(gint)"DiaryKeepRecentCount"] = value;
         }
 
+        public int HistoryCharacterBudget
+        {
+            get => MW.Set["ChatVPetProcess"].GetInt("HistoryCharacterBudget", 16000);
+            set => MW.Set["ChatVPetProcess"][(gint)"HistoryCharacterBudget"] = value;
+        }
+
+        public int SummaryCharacterLimit
+        {
+            get => MW.Set["ChatVPetProcess"].GetInt("SummaryCharacterLimit", 2400);
+            set => MW.Set["ChatVPetProcess"][(gint)"SummaryCharacterLimit"] = value;
+        }
+
+        public int RequestCharacterLimit
+        {
+            get => MW.Set["ChatVPetProcess"].GetInt("RequestCharacterLimit", 48000);
+            set => MW.Set["ChatVPetProcess"][(gint)"RequestCharacterLimit"] = value;
+        }
+
         /// <summary>
         /// 每次对话后对未被命中的日记条目施加的权重衰减率
         /// </summary>

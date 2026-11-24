@@ -9,6 +9,8 @@ public partial class CVPPlugin
 {
     private ModelApiClient? chatApi, toolApi, embeddingApi, rerankApi;
     public long ChatTokens, ToolTokens, SummaryTokens;
+    public long ChatPromptTokens, ChatCachedTokens;
+    public bool HasChatCacheUsage;
 
     public void ConfigureModels()
     {
@@ -19,7 +21,7 @@ public partial class CVPPlugin
         embeddingApi = string.IsNullOrWhiteSpace(config.EmbeddingApiUrl) ? null : new ModelApiClient(config.EmbeddingApiUrl, config.EmbeddingModel, config.EmbeddingApiKey, config.RetrievalTimeoutSeconds, config.WebProxy);
         rerankApi = !config.RerankEnabled || string.IsNullOrWhiteSpace(config.RerankApiUrl) ? null : new ModelApiClient(config.RerankApiUrl, config.RerankModel, config.RerankApiKey, config.RetrievalTimeoutSeconds, config.WebProxy);
         var process = VPetChatProcess;
-        process.SystemDescription = ChatProtocol.RenderSystem(MW.Core.Save!.Name, MW.Core.Save!.HostName);
+        process.SystemDescription = ChatProtocol.RenderSystem(MW.Core.Save!.Name, MW.Core.Save!.HostName, config.UseChatVPetPrompt);
         process.AIAPIAskFunction = OpenAIAsk;
         process.ToolAPIAskFunction = toolApi == null ? null : (system, history, input, tools) =>
         {
@@ -27,9 +29,9 @@ public partial class CVPPlugin
             ToolTokens += result.Tokens;
             return result;
         };
-        process.SummaryAPIAskFunction = chatApi == null ? null : (system, history, input, tools) =>
+        process.SummaryAPIAskFunction = toolApi == null ? null : (system, history, input, tools) =>
         {
-            var result = chatApi.Chat(system, history, input, tools, 0.2, config.MaxTokens);
+            var result = toolApi.Chat(system, history, input, tools, 0.2, 4096);
             SummaryTokens += result.Tokens;
             return result;
         };
@@ -50,6 +52,9 @@ public partial class CVPPlugin
         process.MaxHistoryBeforeCompress = MaxHistoryBeforeCompress;
         process.DiaryKeepRecentCount = DiaryKeepRecentCount;
         process.DiaryDecayRate = DiaryDecayRate;
+        process.HistoryCharacterBudget = HistoryCharacterBudget;
+        process.SummaryCharacterLimit = SummaryCharacterLimit;
+        process.RequestCharacterLimit = RequestCharacterLimit;
     }
 
     public VPetChatProcess.AIAPIAskResult OpenAIAsk(string system, List<string[]> history, string input, List<ToolUse> tools)
@@ -58,6 +63,12 @@ public partial class CVPPlugin
         var result = chatApi.Chat(system, history, input, tools, OpenAIConfig!.Temperature, OpenAIConfig.MaxTokens);
         temptoken = (int)result.Tokens;
         ChatTokens += temptoken; TotalTokensUsage += temptoken; TokenCount = temptoken;
+        if (result.CachedTokens.HasValue && result.PromptTokens.HasValue)
+        {
+            HasChatCacheUsage = true;
+            ChatPromptTokens += result.PromptTokens.Value;
+            ChatCachedTokens += result.CachedTokens.Value;
+        }
         return result;
     }
 

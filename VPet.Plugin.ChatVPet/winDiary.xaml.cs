@@ -41,6 +41,8 @@ namespace VPet.Plugin.ChatVPet
         private async System.Threading.Tasks.Task LoadDiary()
         {
             var entries = (await System.Threading.Tasks.Task.Run(process.ReadMemories)).Diary;
+            string summary = await System.Threading.Tasks.Task.Run(process.ReadSummary);
+            tbSummary.Text = summary.Length > 0 ? summary : "尚未生成前情提要。达到整理阈值后自动生成。";
             DiaryItems = new ObservableCollection<DiaryViewModel>(
                 entries
                     .OrderByDescending(e => e.RecordedAt)

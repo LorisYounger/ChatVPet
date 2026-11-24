@@ -168,14 +168,14 @@ namespace VPet.Plugin.ChatVPet
                 if (!ReferenceEquals(previousProcess, process)) Dispatcher.Invoke(() => displayedOptions.Text = "");
                 Dispatcher.Invoke(() => retryReply.IsEnabled = false);
                 process.HostState = Plugin.SampleState();
-                process.SystemDescription = ChatProtocol.RenderSystem(Plugin.MW.Core.Save!.Name, Plugin.MW.Core.Save!.HostName);
+                process.SystemDescription = ChatProtocol.RenderSystem(Plugin.MW.Core.Save!.Name, Plugin.MW.Core.Save!.HostName, Plugin.OpenAIConfig!.UseChatVPetPrompt);
                 string observation = "";
                 if (image != null)
                     observation = Plugin.ObserveAttachedImage(content, image);
                 process.Ask(content, observation, Present, new ProcessControl());
                 _ = Task.Run(() =>
                 {
-                    try { process.CompressHistory(); }
+                    try { process.CompressHistory(); Plugin.SideMessage = process.LastSummaryError; }
                     catch (Exception) { Plugin.SideMessage = "日记整理未完成，原聊天记录已保留。"; }
                 });
             }
@@ -208,7 +208,8 @@ namespace VPet.Plugin.ChatVPet
             }
             var marker = Dispatcher.Invoke(() =>
             {
-                var text = new TextBlock { Text = Plugin.ShowToken ? $"聊天 {Plugin.ChatTokens}, 操作 {Plugin.ToolTokens}, 日记 {Plugin.SummaryTokens} Token" : "", FontSize = 20 };
+                string cache = Plugin.HasChatCacheUsage ? $", 缓存 {Plugin.ChatCachedTokens}/{Plugin.ChatPromptTokens} 输入Token" : ", 缓存未报告";
+                var text = new TextBlock { Text = Plugin.ShowToken ? $"聊天 {Plugin.ChatTokens}, 操作 {Plugin.ToolTokens}, 日记 {Plugin.SummaryTokens} Token" + cache : "", FontSize = 20 };
                 text.Loaded += OnLoaded; text.Unloaded += OnUnloaded;
                 return text;
             });

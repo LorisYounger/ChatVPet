@@ -1,0 +1,80 @@
+{
+  "dataset": "release-v21 dev, 128 fixed examples with their original system messages",
+  "source_subset_sha256": "d3615518c5f0db4d6eb2193b25b4f68c1bdbbdd4e208d57e018f689be8a515e7",
+  "packed_input_sha256": "da12f589bb29a13628383b8aa33ed7bd5666479edcee4bd9ff986cf8c00c2ff0",
+  "input_tokens": 128644,
+  "assistant_target_tokens": 42603,
+  "cutoff": 4980,
+  "max_observed_length": 2049,
+  "template": "qwen3_5_nothink",
+  "llama_cpp_commit": "b81c99b479d4c24e5eeca10de99032ebd343ef8f",
+  "models": {
+    "HF-BF16": {
+      "loss_per_assistant_token": 1.7982410453920132,
+      "perplexity": 6.039015762210648,
+      "delta_loss_from_bf16_gguf": 0.00045873028329270805,
+      "mean_per_dialogue_loss": 1.9545124960985767,
+      "paired_bootstrap_delta_95pct": [
+        5.50045351405982e-05,
+        0.0008735198362519503
+      ],
+      "source": "LorisYounger/ChatVPet-qw35-9B-v1"
+    },
+    "BF16": {
+      "loss_per_assistant_token": 1.7977823151087207,
+      "perplexity": 6.036246118107623,
+      "delta_loss_from_bf16_gguf": 0.0,
+      "mean_per_dialogue_loss": 1.953720849041861,
+      "paired_bootstrap_delta_95pct": [
+        0.0,
+        0.0
+      ],
+      "role": "unquantized GGUF conversion control"
+    },
+    "Q6_K": {
+      "loss_per_assistant_token": 1.7977475188054448,
+      "perplexity": 6.0360360827112975,
+      "delta_loss_from_bf16_gguf": -3.479630327592494e-05,
+      "mean_per_dialogue_loss": 1.954735746523681,
+      "paired_bootstrap_delta_95pct": [
+        -0.0020271323152111194,
+        0.001993541171751031
+      ],
+      "file": "ChatVPet-qw35-9B-v1-Q6_K.gguf",
+      "bytes": 7558900864
+    },
+    "Q5_K_M": {
+      "loss_per_assistant_token": 1.810728955896287,
+      "perplexity": 6.11490330278453,
+      "delta_loss_from_bf16_gguf": 0.012946640787566464,
+      "mean_per_dialogue_loss": 1.969725452919357,
+      "paired_bootstrap_delta_95pct": [
+        0.008640477138481274,
+        0.017215873657487755
+      ],
+      "file": "ChatVPet-qw35-9B-v1-Q5_K_M.gguf",
+      "bytes": 6642543744
+    },
+    "Q4_K_M": {
+      "loss_per_assistant_token": 1.8176036526145836,
+      "perplexity": 6.157086239766653,
+      "delta_loss_from_bf16_gguf": 0.01982133750586264,
+      "mean_per_dialogue_loss": 1.9570286899535967,
+      "paired_bootstrap_delta_95pct": [
+        0.013692863289393136,
+        0.025850213250127582
+      ],
+      "file": "ChatVPet-qw35-9B-v1-Q4_K_M.gguf",
+      "bytes": 5780089984
+    }
+  },
+  "vision_projector": {
+    "file": "mmproj-ChatVPet-qw35-9B-v1-F16.gguf",
+    "bytes": 918165440,
+    "shared_by": [
+      "ChatVPet-qw35-9B-v1-Q6_K.gguf",
+      "ChatVPet-qw35-9B-v1-Q5_K_M.gguf",
+      "ChatVPet-qw35-9B-v1-Q4_K_M.gguf"
+    ]
+  }
+}

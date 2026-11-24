@@ -6,6 +6,7 @@ public partial class ChatTurn
     public string TurnId { get; set; } = Guid.NewGuid().ToString("N");
     public string Original { get; set; } = "";
     public string System { get; set; } = "";
+    public string Summary { get; set; } = "";
     public string State { get; set; } = "";
     public string Reference { get; set; } = "";
     public string Observation { get; set; } = "";

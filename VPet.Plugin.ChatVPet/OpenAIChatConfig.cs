@@ -24,6 +24,7 @@ namespace VPet.Plugin.ChatVPet
 
         public string WebProxy { get; set; } = "";
         public string Model { get; set; } = "";
+        public bool UseChatVPetPrompt { get; set; }
         public double Temperature { get; set; } = 1;
         public int MaxTokens { get; set; } = 2048;
     }

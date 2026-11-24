@@ -26,14 +26,19 @@ public partial class VPetChatProcess
 
     public void Ask(string message, string observation, Action<ProcessResponse> respond, ProcessControl control)
     {
+        if (control.ForceToStop) return;
+        CompressHistory();
         lock (turnGate)
         {
             if (control.ForceToStop) return;
-            var active = Dialogues.Where(x => x.IsActive && x.SaveId == SaveId).ToList();
-            var recent = active.TakeLast(Math.Max(0, MaxHistoryCount)).ToList();
+            var summary = GetSummary();
+            var recent = GetUncompressedHistory(summary);
+            if (MaxHistoryBeforeCompress <= 0)
+                recent = recent.TakeLast(Math.Max(0, MaxHistoryCount)).ToList();
             var turn = new ChatTurn
             {
                 SaveId = SaveId, Original = message, System = SystemDescription, State = HostState, Observation = observation,
+                Summary = summary?.Text ?? "",
                 History = recent.Select(x => x.ToMessages()).ToList(),
                 DisplayedItems = Dialogues.LastOrDefault(x => x.SaveId == SaveId)?.Turn?.DisplayedItems.ToList() ?? [],
                 OriginalDisplayedItems = Dialogues.LastOrDefault(x => x.SaveId == SaveId)?.Turn?.DisplayedItems.ToList() ?? []
@@ -110,9 +115,12 @@ public partial class VPetChatProcess
         for (int attempt = 0; attempt < 2; attempt++)
         {
             var history = new List<string[]>(turn.History);
+            if (turn.Summary.Length > 0) history.Insert(0, [SummaryMessage(turn.Summary), ""]);
             // Keep the actual user input and fixed system identical on retry.
             if (attempt == 1) history.Add(["(宿主格式提示) 请重新生成。首行按协议写抬头，次行写非空对白。" +
                 (continuation ? "结果续答只允许 expression。" : ""), "明白。"]);
+            if (RequestCharacterLimit > 0 && turn.System.Length + history.Sum(x => (long)x[0].Length + x[1].Length) + input.Length > RequestCharacterLimit)
+                throw new InvalidOperationException("聊天上下文超过字符上限，原记录已保留。请完成日记整理或调整上下文预算后重试。" + LastSummaryError);
             var result = AIAPIAskFunction!(turn.System, history, input, []);
             if (result.Completed && result.ToolCalls.Count == 0 && ChatProtocol.TryParse(result.Reply, continuation, out var header))
                 return header;
@@ -127,14 +135,17 @@ public partial class VPetChatProcess
 
     private List<Dialogue> SelectMemories(ChatTurn turn, string query, int limit, List<Dialogue> recent)
     {
+        if (limit <= 0) return [];
         var candidates = Dialogues.Where(x => x.SaveId == turn.SaveId && x.Turn?.TurnId != turn.TurnId && !recent.Contains(x))
             .Concat(DiaryEntries.Where(x => x.SaveId == turn.SaveId && x.IsActive))
             .GroupBy(x => x.Question + "\0" + x.Answer).Select(x => x.First());
         var selected = new List<Dialogue>();
         foreach (var entry in Retrieval.Select(query, candidates, Math.Max(limit, Retrieval.CandidateCount)))
         {
-            if (entry is DiaryEntry diary && recent.Concat(selected).Any(x => x.Turn != null && diary.SourceTurns.Contains(x.Turn.TurnId))) continue;
-            if (entry.Turn != null) selected.RemoveAll(x => x is DiaryEntry summary && summary.SourceTurns.Contains(entry.Turn.TurnId));
+            if (entry is DiaryEntry diary && recent.Concat(selected).Any(x => diary.SourceDialogueIds.Contains(x.DialogueId)
+                || x.Turn != null && diary.SourceTurns.Contains(x.Turn.TurnId))) continue;
+            selected.RemoveAll(x => x is DiaryEntry summary && (summary.SourceDialogueIds.Contains(entry.DialogueId)
+                || entry.Turn != null && summary.SourceTurns.Contains(entry.Turn.TurnId)));
             selected.Add(entry);
             if (selected.Count >= limit) break;
         }
@@ -180,7 +191,7 @@ public partial class VPetChatProcess
             string input = JsonConvert.SerializeObject(new
             {
                 player = turn.Original, assistant = turn.Initial.Raw, body = turn.Initial.Body, unknownHeaders = turn.Initial.Unknown,
-                requests = turn.Actions, history = turn.History, originalDisplayedItems = turn.OriginalDisplayedItems, queriedItems = turn.DisplayedItems, hostResults = turn.Receipts.Select(x => x.ToContext()),
+                requests = turn.Actions, summary = turn.Summary, history = turn.History, originalDisplayedItems = turn.OriginalDisplayedItems, queriedItems = turn.DisplayedItems, hostResults = turn.Receipts.Select(x => x.ToContext()),
                 allowedTools = selected.Select(x => x.Code)
             });
             AIAPIAskResult decision;
@@ -324,46 +335,6 @@ public partial class VPetChatProcess
     private static void End(ChatTurn turn, Action<ProcessResponse> respond) => respond(new ProcessResponse
     { SaveId = turn.SaveId, TurnId = turn.TurnId, IsEnd = true, ListPosition = 2 });
 
-    private int summaryRunning;
-
-    public void CompressHistory()
-    {
-        if (Interlocked.Exchange(ref summaryRunning, 1) != 0) return;
-        try
-        {
-            List<Dialogue> entries;
-            string input;
-            string saveId;
-            AIAPIAsk? summarize;
-            lock (turnGate)
-            {
-                summarize = SummaryAPIAskFunction;
-                var active = Dialogues.Where(x => x.SaveId == SaveId && x.IsActive && (x.Turn == null ||
-                    x.Turn.OperationsFinished && x.Turn.PresentedRevision == x.Turn.ReceiptRevision && x.Turn.Receipts.All(r => r.IsTerminal))).ToList();
-                if (summarize == null || MaxHistoryBeforeCompress <= 0 || active.Count <= MaxHistoryBeforeCompress) return;
-                entries = active.Take(Math.Max(0, active.Count - DiaryKeepRecentCount)).ToList();
-                if (entries.Count == 0) return;
-                saveId = SaveId;
-                input = JsonConvert.SerializeObject(entries.Select(x => new { x.CreatedAt, x.Question, x.Answer, Receipts = x.Turn?.Receipts.Select(r => r.ToContext()) }));
-            }
-            // Network latency must not hold the conversation gate or delay the next player turn.
-            var result = summarize(Localization.DiaryCompressionSystemPrompt, [],
-                string.Format(Localization.DiaryCompressionUserPrompt, input), []);
-            if (!result.Completed || result.ToolCalls.Count > 0 || string.IsNullOrWhiteSpace(result.Reply)) return;
-            lock (turnGate)
-            {
-                // Deletion, editing or a late receipt while summarizing invalidates the derived memory.
-                if (SaveId != saveId || entries.Any(x => !Dialogues.Contains(x) || !x.IsActive)
-                    || input != JsonConvert.SerializeObject(entries.Select(x => new { x.CreatedAt, x.Question, x.Answer, Receipts = x.Turn?.Receipts.Select(r => r.ToContext()) }))) return;
-                DiaryEntries.Add(new DiaryEntry(result.Reply, Localization) { SaveId = saveId,
-                    SourceTurns = entries.Where(x => x.Turn != null).Select(x => x.Turn!.TurnId).ToList() });
-                foreach (var entry in entries) entry.IsActive = false;
-                Checkpoint?.Invoke();
-            }
-        }
-        finally { Volatile.Write(ref summaryRunning, 0); }
-    }
-
     public void DeleteMemory(Dialogue entry)
     {
         lock (turnGate)
@@ -371,8 +342,17 @@ public partial class VPetChatProcess
             if (entry is DiaryEntry diary) DiaryEntries.Remove(diary);
             else
             {
+                var summary = Summaries.Find(x => x.SaveId == entry.SaveId);
+                int index = Dialogues.IndexOf(entry);
+                if (summary != null && index >= 0 && index <= Dialogues.FindIndex(x => x.SaveId == entry.SaveId && x.DialogueId == summary.ThroughDialogueId))
+                {
+                    Summaries.Remove(summary);
+                    foreach (var item in Dialogues.Where(x => x.SaveId == entry.SaveId)) item.IsActive = true;
+                    foreach (var item in Dialogues.Where(x => x.SaveId == entry.SaveId && x.Turn != null)) item.Turn!.Summary = "";
+                }
                 Dialogues.Remove(entry);
-                if (entry.Turn != null) DiaryEntries.RemoveAll(x => x.SourceTurns.Contains(entry.Turn.TurnId));
+                DiaryEntries.RemoveAll(x => x.SourceDialogueIds.Contains(entry.DialogueId)
+                    || entry.Turn != null && x.SourceTurns.Contains(entry.Turn.TurnId));
             }
             Retrieval.Clear();
             Checkpoint?.Invoke();

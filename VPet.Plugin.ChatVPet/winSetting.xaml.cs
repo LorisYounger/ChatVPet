@@ -52,7 +52,7 @@ namespace VPet.Plugin.ChatVPet
                 tbAPIURL.Text = plugin.OpenAIConfig.ApiUrl;
                 tbWebProxy.Text = plugin.OpenAIConfig.WebProxy;
                 tbMaxToken.Text = plugin.OpenAIConfig.MaxTokens.ToString();
-                tbSystem.Text = ChatProtocol.RenderSystem(plugin.MW.Core.Save!.Name, plugin.MW.Core.Save!.HostName);
+                cbChatVPetPrompt.IsChecked = plugin.OpenAIConfig.UseChatVPetPrompt;
                 tbTemp.Text = plugin.OpenAIConfig.Temperature.ToString();
                 cbModel.Text = plugin.OpenAIConfig.Model;
                 tbEmbeddingAPIURL.Text = plugin.OpenAIConfig.EmbeddingApiUrl;
@@ -75,8 +75,9 @@ namespace VPet.Plugin.ChatVPet
                 lbSpend.Content = plugin.TotalTokensUsage.ToString() + " Token";
                 totalused = plugin.TotalTokensUsage;
             }
-            else
-                tbSystem.Text = ChatProtocol.RenderSystem(plugin.MW.Core.Save!.Name, plugin.MW.Core.Save!.HostName);
+            tbSystem.Text = ChatProtocol.RenderSystem(plugin.MW.Core.Save!.Name, plugin.MW.Core.Save!.HostName, cbChatVPetPrompt.IsChecked == true);
+            cbChatVPetPrompt.Checked += PromptChanged;
+            cbChatVPetPrompt.Unchecked += PromptChanged;
             swShowToken.IsChecked = plugin.ShowToken;
 
 
@@ -91,6 +92,9 @@ namespace VPet.Plugin.ChatVPet
 
             tbMaxHistoryBeforeCompress.Text = plugin.MaxHistoryBeforeCompress.ToString();
             tbDiaryKeepRecentCount.Text = plugin.DiaryKeepRecentCount.ToString();
+            tbHistoryBudget.Text = plugin.HistoryCharacterBudget.ToString();
+            tbSummaryLimit.Text = plugin.SummaryCharacterLimit.ToString();
+            tbRequestLimit.Text = plugin.RequestCharacterLimit.ToString();
             tbDiaryDecayRate.Text = plugin.DiaryDecayRate.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
 
@@ -102,6 +106,11 @@ namespace VPet.Plugin.ChatVPet
             lbKnow.ItemsSource = Knowledges;
             lbTool.ItemsSource = Tools;
         }
+        private void PromptChanged(object sender, RoutedEventArgs e)
+        {
+            tbSystem.Text = ChatProtocol.RenderSystem(plugin.MW.Core.Save!.Name, plugin.MW.Core.Save!.HostName, cbChatVPetPrompt.IsChecked == true);
+        }
+
         private async Task LoadDialogue()
         {
             history = (await Task.Run(process.ReadMemories)).History;
@@ -134,9 +143,13 @@ namespace VPet.Plugin.ChatVPet
                 || !int.TryParse(tbMaxRound.Text, out int maxRounds) || maxRounds <= 0
                 || !int.TryParse(tbMaxHistoryBeforeCompress.Text, out int compressAt) || compressAt < 0
                 || !int.TryParse(tbDiaryKeepRecentCount.Text, out int keepRecent) || keepRecent < 0
+                || compressAt > 0 && keepRecent >= compressAt
+                || !int.TryParse(tbHistoryBudget.Text, out int historyBudget) || historyBudget <= 0
+                || !int.TryParse(tbSummaryLimit.Text, out int summaryLimit) || summaryLimit <= 0 || summaryLimit >= historyBudget
+                || !int.TryParse(tbRequestLimit.Text, out int requestLimit) || requestLimit <= historyBudget + summaryLimit
                 || !float.TryParse(tbDiaryDecayRate.Text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float decay) || !float.IsFinite(decay) || decay < 0 || decay > 1)
             {
-                MessageBox.Show("请检查数量、温度、超时和衰减率的格式。超时、输出 Token 和操作回合数需大于0，衰减率为0到1。");
+                MessageBox.Show("请检查数量、温度、超时和衰减率。压缩保留轮数须小于触发轮数；字符限制须满足：0 < 提要上限 < 整理阈值，且请求上限大于两者之和。衰减率为0到1。");
                 return;
             }
             plugin.OpenAIConfig = new OpenAIChatConfig
@@ -145,6 +158,7 @@ namespace VPet.Plugin.ChatVPet
                 ApiUrl = embeddingBaseUrl,
                 WebProxy = tbWebProxy.Text,
                 Model = cbModel.Text,
+                UseChatVPetPrompt = cbChatVPetPrompt.IsChecked == true,
                 MaxTokens = maxTokens,
                 Temperature = temperature,
                 EmbeddingApiUrl = tbEmbeddingAPIURL.Text.TrimEnd('/'),
@@ -174,6 +188,9 @@ namespace VPet.Plugin.ChatVPet
 
             plugin.MaxHistoryBeforeCompress = compressAt;
             plugin.DiaryKeepRecentCount = keepRecent;
+            plugin.HistoryCharacterBudget = historyBudget;
+            plugin.SummaryCharacterLimit = summaryLimit;
+            plugin.RequestCharacterLimit = requestLimit;
             plugin.DiaryDecayRate = decay;
 
             plugin.KnowledgeDataBase = tbKnow.Text;

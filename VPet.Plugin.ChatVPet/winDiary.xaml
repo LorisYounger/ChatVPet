@@ -12,6 +12,7 @@
     <Grid Margin="5">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -21,8 +22,14 @@
             <TextBlock x:Name="tbCount" VerticalAlignment="Center" Margin="0,0,10,0" />
         </StackPanel>
 
+        <Expander Grid.Row="1" Header="前情提要（每轮自动带入）" Margin="0,0,0,5">
+            <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
+                <TextBlock x:Name="tbSummary" TextWrapping="Wrap" Margin="5" />
+            </ScrollViewer>
+        </Expander>
+
         <!-- Diary list -->
-        <ListBox x:Name="lbDiary" Grid.Row="1"
+        <ListBox x:Name="lbDiary" Grid.Row="2"
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                  VirtualizingPanel.IsVirtualizing="True">
             <ListBox.ItemTemplate>
@@ -58,7 +65,7 @@
         </ListBox>
 
         <!-- Bottom button bar -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,0,0">
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,0,0">
             <Button pu:ButtonHelper.CornerRadius="4" Content="{ll:Str 关闭}" Margin="5,0,0,0"
                     Background="{DynamicResource SecondaryLight}" Padding="10,4" Click="btnClose_Click" />
         </StackPanel>

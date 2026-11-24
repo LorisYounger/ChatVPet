@@ -9,6 +9,7 @@
 !/training/chatvpet/
 /training/chatvpet/*
 !/training/chatvpet/system-process-template.txt
+!/training/chatvpet/system-chatvpet-template.txt
 
 # User-specific files
 /Local/

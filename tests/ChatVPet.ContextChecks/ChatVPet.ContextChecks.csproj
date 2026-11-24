@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../ChatVPet.ChatProcess/ChatVPet.ChatProcess.csproj" />
+    <None Include="../../training/chatvpet/system-process-template.txt" Link="Prompts/system-process-template.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../training/chatvpet/system-chatvpet-template.txt" Link="Prompts/system-chatvpet-template.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../ChatVPet对话协议.md" Link="Prompts/protocol.md" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

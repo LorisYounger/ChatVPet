@@ -20,16 +20,17 @@ public static class ChatProtocol
     private static readonly string[] Order = ["delegate", "mood", "affinity", "expression", "recall", "screenshot", "animation", "quit"];
     private static readonly string[] Expressions = ["affectionate", "angry", "cheerful", "conscientious", "disgruntled", "embarrassed", "fearful", "gentle", "sad", "serious"];
     private static readonly Regex HeaderToken = new(@"\G\[([a-z][a-z0-9_]*)(?::([a-z]+))?\]", RegexOptions.Compiled);
-    private static readonly string Template = ReadTemplate();
+    private static readonly string Template = ReadTemplate("ChatVPet.SystemTemplate");
+    private static readonly string ChatVPetTemplate = ReadTemplate("ChatVPet.ChatVPetSystemTemplate");
 
-    private static string ReadTemplate()
+    private static string ReadTemplate(string resource)
     {
-        using var stream = typeof(ChatProtocol).Assembly.GetManifestResourceStream("ChatVPet.SystemTemplate")!;
+        using var stream = typeof(ChatProtocol).Assembly.GetManifestResourceStream(resource)!;
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd();
     }
 
-    public static string RenderSystem(string? name = null, string? hostName = null) => Template
+    public static string RenderSystem(string? name = null, string? hostName = null, bool useChatVPetPrompt = false) => (useChatVPetPrompt ? ChatVPetTemplate : Template)
         .Replace("{name}", string.IsNullOrWhiteSpace(name) ? "萝莉斯" : name)
         .Replace("{hostname}", string.IsNullOrWhiteSpace(hostName) ? "主人" : hostName);
 

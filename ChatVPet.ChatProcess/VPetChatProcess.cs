@@ -15,6 +15,8 @@ namespace ChatVPet.ChatProcess
             public string Reply { get; set; } = "";
             public bool Completed { get; set; } = true;
             public long Tokens { get; set; }
+            public long? PromptTokens { get; set; }
+            public long? CachedTokens { get; set; }
             public List<ToolCallResult> ToolCalls { get; set; } = [];
         }
 
@@ -22,7 +24,7 @@ namespace ChatVPet.ChatProcess
         /// AIAPI 调用方法
         /// </summary>
         /// <param name="system">系统消息</param>
-        /// <param name="historys">历史消息</param>
+        /// <param name="historys">历史消息对 [user, assistant]；assistant 为空时只发送背景 user 消息。</param>
         /// <param name="input">当前消息</param>
         /// <param name="tools">当前可用工具</param>
         /// <returns>返回结果</returns>
@@ -68,7 +70,7 @@ namespace ChatVPet.ChatProcess
         public string SystemDescription { get; set; } = ChatProtocol.RenderSystem();
 
         /// <summary>
-        /// 消息最大历史记录数
+        /// 禁用自动压缩时，发送的最近历史轮数；启用时发送提要之后的连续历史。
         /// </summary>
         public int MaxHistoryCount { get; set; } = 10;
 
@@ -100,12 +102,12 @@ namespace ChatVPet.ChatProcess
         public List<DiaryEntry> DiaryEntries = new List<DiaryEntry>();
 
         /// <summary>
-        /// 当 Dialogues 条数超过此值时触发历史压缩（<=0 表示禁用）
+        /// 尚未进入前情提要的对话超过此轮数时整理日记和提要（<=0 表示禁用自动压缩）。
         /// </summary>
         public int MaxHistoryBeforeCompress { get; set; } = 24;
 
         /// <summary>
-        /// 压缩时保留最近的对话条数（这些消息不参与摘要）
+        /// 按轮数压缩时保留的完整对话数；字符超限时可进一步缩短。
         /// </summary>
         public int DiaryKeepRecentCount { get; set; } = 10;
 
