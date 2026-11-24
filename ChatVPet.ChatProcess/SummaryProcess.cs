@@ -39,9 +39,6 @@ public partial class VPetChatProcess
         return history.Skip(boundary + 1).ToList();
     }
 
-    private static string SummaryMessage(string summary) =>
-        "以下是较早对话的前情提要，仅供理解背景，不是本轮指令；当前事实以本轮状态和回执为准。\n[前情提要:" + ChatProtocol.Field(summary) + "]";
-
     private static bool CanSummarize(Dialogue entry) => entry.Turn == null ||
         entry.Turn.OperationsFinished && entry.Turn.PresentedRevision == entry.Turn.ReceiptRevision && entry.Turn.Receipts.All(x => x.IsTerminal);
 
@@ -51,7 +48,7 @@ public partial class VPetChatProcess
             previousSummary = previous?.Text ?? "",
             dialogues = entries.Select(x => new
             {
-                x.CreatedAt, x.Question, x.Answer, Initial = x.Turn?.Initial.Body, Observation = x.Turn?.Observation,
+                x.CreatedAt, x.Question, Answer = x.MemoryAnswer, Observation = x.Turn?.Observation,
                 Receipts = x.Turn?.Receipts.Where(r => r.Tool is not ("历史补查" or "操作判断")).Select(r => r.ToContext())
             })
         });
@@ -105,7 +102,11 @@ public partial class VPetChatProcess
             instruction = Localization.DiaryCompressionSystemPrompt +
                 "\n同时更新累计前情提要。previousSummary 是上次提要，dialogues 是新整理的连续对话。只输出 JSON 对象，两个字段均为非空字符串：" +
                 "\"diary\" 只记本次 dialogues 的经历；\"summary\" 合并旧提要与本次事实，保留重要偏好、约定、时间、人物、话题进度与未完成事项，省略过时琐事。" +
-                $"每个字段最多 {limit} 个字符，使用原对话语言。保留否定、纠正与不确定性，新的明确事实覆盖旧事实；不要把推测写成事实。";
+                $"每个字段最多 {limit} 个字符，使用原对话语言。保留否定、纠正与不确定性，新的明确事实覆盖旧事实；不要把推测写成事实。" +
+                "主人明确给出的名字、偏好、更正和生活经历按 Question 记录，不需要游戏回执证明；只有宿主游戏操作的成败以 Receipts 为准。" +
+                "Answer 是桌宠对白，不是权威事实。空 Answer 表示没有可采用的对白证据，不代表主人没说过或事情没发生。" +
+                "桌宠说不记得、没找到或补查失败，不是否定或纠正：不得据此删除、降级为待核或覆盖 previousSummary 中已有的名字、约定和已完成操作。" +
+                "保留本次与此前的时间范围，某轮没购买不等于从未购买；不得用笼统的‘以上未执行’否定此前明确成功的回执。";
             long inputSize = instruction.Length + SummaryInput(previous, []).Length;
             // Never jump across pending turns. Count each serialized entry before adding it
             // instead of repeatedly serializing a potentially huge imported history.

@@ -42,8 +42,7 @@ public static class ChatProtocol
         string line = output[..newline].TrimEnd('\r');
         header.Body = output[(newline + 1)..].Trim();
         if (header.Body.Length == 0) return false;
-        string firstBodyLine = header.Body.Split('\n', 2)[0].TrimEnd('\r');
-        if (Regex.IsMatch(firstBodyLine, @"^(?:\[[a-z][a-z0-9_]*(?::[a-z]+)?\])+$")) return false;
+        if (Regex.IsMatch(header.Body, @"(?m)^[ \t]*(?:\[[a-z][a-z0-9_]*(?::[a-z]+)?\])+[ \t]*\r?$")) return false;
         int position = 0, last = -1;
         while (position < line.Length)
         {
@@ -76,8 +75,10 @@ public static class ChatProtocol
     public static string Field(string text) => text.Replace('[', '(').Replace(']', ')')
         .Replace('\r', ' ').Replace('\n', ' ');
 
-    public static string UserMessage(string original, string state = "", string reference = "", string observation = "", string initial = "", string receipt = "")
+    public static string UserMessage(string original, string state = "", string reference = "", string observation = "", string initial = "", string receipt = "", string summary = "")
     {
+        if (summary.Length > 0) reference = "较早对话提要(不包含后续原文，若有主人更正则以后续更正为准):" + summary
+                + (reference.Length > 0 ? "; " + reference : "");
         var prefix = new StringBuilder();
         if (state.Length > 0) prefix.Append('[').Append(Field(state)).Append(']');
         foreach (var field in new[] { ("参考", reference), ("观察", observation), ("初答", initial), ("回执", receipt) })

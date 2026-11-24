@@ -26,6 +26,11 @@ namespace ChatVPet.ChatProcess
         /// </summary>
         public string Answer { get; set; } = "";
 
+        // A failed lookup is not a correction to the player's facts or completed host actions.
+        // Keep the original reply for display/history, but do not recycle it as memory evidence.
+        [JsonIgnore]
+        public string MemoryAnswer => Turn?.Receipts.Any(x => x.Tool == "历史补查" && x.Status != "observed") == true ? "" : Answer;
+
         public float ImportanceWeight_Muti { get; set; } = 2;
         public float ImportanceWeight_Plus { get; set; } = 0;
 
@@ -73,7 +78,7 @@ namespace ChatVPet.ChatProcess
         /// 嵌入向量的原始文本列表（问题与回答），每项独立生成一个向量
         /// </summary>
         [JsonIgnore]
-        public virtual IEnumerable<string> EmbeddingTexts => [Question, Answer];
+        public virtual IEnumerable<string> EmbeddingTexts => [Question, MemoryAnswer];
 
         /// <summary>
         /// 向量

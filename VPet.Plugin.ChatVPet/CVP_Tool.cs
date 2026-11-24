@@ -31,7 +31,7 @@ public partial class CVPPlugin
         };
         process.SummaryAPIAskFunction = toolApi == null ? null : (system, history, input, tools) =>
         {
-            var result = toolApi.Chat(system, history, input, tools, 0.2, 4096);
+            var result = toolApi.Chat(system, history, input, tools, 0.2, OpenAIChatConfig.SummaryMaxTokens);
             SummaryTokens += result.Tokens;
             return result;
         };

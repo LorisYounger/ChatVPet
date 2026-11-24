@@ -50,7 +50,7 @@ public partial class VPetChatProcess
             turn.Reference = FitReferences(references);
             var used = memory.OfType<DiaryEntry>().Where(x => turn.Reference.Contains(MemoryText(x))).ToHashSet();
             turn.UsedDiaryIds = used.Select(x => x.Id).ToList();
-            turn.InitialInput = ChatProtocol.UserMessage(message, turn.State, turn.Reference, observation);
+            turn.InitialInput = ChatProtocol.UserMessage(message, turn.State, turn.Reference, observation, summary: turn.Summary);
             var initial = GenerateReply(turn, turn.InitialInput, false);
             if (control.ForceToStop) return;
             turn.Initial = initial;
@@ -90,7 +90,7 @@ public partial class VPetChatProcess
                             if (used.Add(entry)) { entry.OnHit(); turn.UsedDiaryIds.Add(entry.Id); }
                         return new HostReceipt
                         {
-                            Status = found.Count > 0 ? "observed" : Retrieval.ServiceUnavailable ? "failed" : "observed",
+                            Status = found.Count > 0 ? (recalledText.Length > 0 ? "observed" : "skipped") : Retrieval.ServiceUnavailable ? "failed" : "not_found",
                             Facts = found.Count > 0 ? (recalledText.Length > 0 ? recalledText : "相关记录超过本轮上下文预算，未提供原文。")
                                 : Retrieval.ServiceUnavailable ? "历史检索服务不可用。" : "没有找到相关历史或日记。"
                         };
@@ -115,10 +115,9 @@ public partial class VPetChatProcess
         for (int attempt = 0; attempt < 2; attempt++)
         {
             var history = new List<string[]>(turn.History);
-            if (turn.Summary.Length > 0) history.Insert(0, [SummaryMessage(turn.Summary), ""]);
             // Keep the actual user input and fixed system identical on retry.
-            if (attempt == 1) history.Add(["(宿主格式提示) 请重新生成。首行按协议写抬头，次行写非空对白。" +
-                (continuation ? "结果续答只允许 expression。" : ""), "明白。"]);
+            if (attempt == 1) history.Add(["(宿主格式提示) 请重新生成一条回复。首行按协议写抬头，次行写非空对白；正文不得再另起抬头或模拟下一轮回复。recall 是独立标签，不是表情名。" +
+                (continuation ? "结果续答只允许 expression，按现有回执报告结果。" : "请求操作或补查时只说准备做什么，尚未执行，不得编造结果。"), "明白。"]);
             if (RequestCharacterLimit > 0 && turn.System.Length + history.Sum(x => (long)x[0].Length + x[1].Length) + input.Length > RequestCharacterLimit)
                 throw new InvalidOperationException("聊天上下文超过字符上限，原记录已保留。请完成日记整理或调整上下文预算后重试。" + LastSummaryError);
             var result = AIAPIAskFunction!(turn.System, history, input, []);
@@ -152,8 +151,16 @@ public partial class VPetChatProcess
         return selected;
     }
 
-    private static string MemoryText(Dialogue entry) => entry is DiaryEntry diary ? diary.ToContextLine()
-        : $"{entry.CreatedAt:yyyy-MM-dd HH:mm} 玩家: {entry.Question}; 桌宠: {entry.Answer}";
+    private static string MemoryText(Dialogue entry)
+    {
+        if (entry is DiaryEntry diary) return diary.ToContextLine();
+        string text = $"{entry.CreatedAt:yyyy-MM-dd HH:mm} 玩家: {entry.Question}";
+        if (entry.MemoryAnswer.Length > 0) text += "; 桌宠: " + entry.MemoryAnswer;
+        string receipts = string.Join("; ", entry.Turn?.Receipts.Where(x => x.Tool is not ("历史补查" or "操作判断"))
+            .Select(x => x.ToContext()) ?? []);
+        if (receipts.Length > 0) text += "; 宿主记录: " + receipts;
+        return text;
+    }
 
     private string FitReferences(IEnumerable<string> entries, int? budget = null)
     {
@@ -312,7 +319,7 @@ public partial class VPetChatProcess
         if (turn.ReplyRevision != turn.ReceiptRevision)
         {
             string resultInput = ChatProtocol.UserMessage(turn.Original, turn.State, turn.Reference, turn.Observation, turn.Initial.Body,
-                string.Join("; ", turn.Receipts.Select(x => x.ToContext())));
+                string.Join("; ", turn.Receipts.Select(x => x.ToContext())), turn.Summary);
             reply = GenerateReply(turn, resultInput, true);
             turn.ResultInput = resultInput;
             dialogue.Answer = reply.Raw;

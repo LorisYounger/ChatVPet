@@ -2,6 +2,7 @@ namespace VPet.Plugin.ChatVPet
 {
     public class OpenAIChatConfig
     {
+        public const int SummaryMaxTokens = 8192;
         public string ApiKey { get; set; } = "";
         public string ApiUrl { get; set; } = "";
         public string EmbeddingApiUrl { get; set; } = "";

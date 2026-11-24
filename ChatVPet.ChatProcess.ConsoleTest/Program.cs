@@ -20,7 +20,7 @@ internal static class Program
         }
         if (args.Length < 2 || args[0] is not ("--chat" or "--live-test" or "--context-test"))
         {
-            Console.WriteLine("离线验证: --self-test\n手动联调: --chat <配置.json>\n真实接口检查: --live-test <配置.json 或 -> <测试图片.png> [用例名]\n历史压缩对照: --context-test <配置.json> [light/heavy]\n摘要使用操作 API，输出预算 4096；聊天模型只负责聊天。\n配置为 - 时从标准输入读取一行 JSON；所有游戏动作均为模拟。");
+            Console.WriteLine("离线验证: --self-test\n手动联调: --chat <配置.json>\n真实接口检查: --live-test <配置.json 或 -> <测试图片.png> [用例名]\n历史压缩对照: --context-test <配置.json> [light/heavy]\n摘要使用操作 API，输出预算 8192；聊天模型只负责聊天。\n配置为 - 时从标准输入读取一行 JSON；所有游戏动作均为模拟。");
             return;
         }
         var config = JsonConvert.DeserializeObject<OpenAIChatConfig>(args[1] == "-" ? Console.ReadLine()! : File.ReadAllText(args[1]))!;
@@ -31,7 +31,7 @@ internal static class Program
         var process = new VPetChatProcess { SystemDescription = ChatProtocol.RenderSystem(useChatVPetPrompt: config.UseChatVPetPrompt) };
         process.AIAPIAskFunction = (system, history, input, tools) => chat.Chat(system, history, input, tools, config.Temperature, config.MaxTokens);
         if (operations != null) process.ToolAPIAskFunction = (system, history, input, tools) => operations.Chat(system, history, input, tools, 0.2, config.MaxTokens);
-        if (operations != null) process.SummaryAPIAskFunction = (system, history, input, tools) => operations.Chat(system, history, input, tools, 0.2, 4096);
+        if (operations != null) process.SummaryAPIAskFunction = (system, history, input, tools) => operations.Chat(system, history, input, tools, 0.2, OpenAIChatConfig.SummaryMaxTokens);
         if (embeddings != null) process.AIAPIEmbeddingFunction = embeddings.Embed;
         if (rerank != null) process.AIAPIRerankFunction = rerank.Rerank;
         process.Retrieval.EmbeddingIdentity = config.EmbeddingApiUrl + "|" + config.EmbeddingModel + "|" + config.EmbeddingVersion;

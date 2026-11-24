@@ -121,7 +121,7 @@
                         <TextBox x:Name="tbToolUrl" Margin="0,4" />
                         <TextBlock Text="操作密钥" /><TextBox x:Name="tbToolKey" Margin="0,4" />
                         <TextBlock Text="操作模型 (看图需要支持视觉)" /><TextBox x:Name="tbToolModel" Margin="0,4" />
-                        <TextBlock Text="日记和前情提要由此模型整理，摘要输出上限为 4096 token。聊天模型只负责对白。" TextWrapping="Wrap" Margin="0,4" />
+                        <TextBlock Text="日记和前情提要由此模型整理，摘要输出上限为 8192 token。聊天模型只负责对白。" TextWrapping="Wrap" Margin="0,4" />
                         <CheckBox x:Name="cbRerank" Content="启用知识、记忆和工具重排" IsChecked="True" Margin="0,8" />
                         <TextBlock Text="重排完整 URL (专用 /rerank 评分接口)" /><TextBox x:Name="tbRerankUrl" Margin="0,4" />
                         <TextBlock Text="重排密钥" /><TextBox x:Name="tbRerankKey" Margin="0,4" />

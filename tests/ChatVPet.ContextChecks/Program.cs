@@ -52,15 +52,15 @@ Check(requests.All(x => x.System == "fixed instructions"), "Dynamic state never 
 Check(!JsonConvert.SerializeObject(requests[3].History).Contains("changing state"), "Past state snapshots are not repeated in history");
 Ask(p, "question 5");
 Check(p.Summaries.Count == 1 && p.DiaryEntries.Count == 1, "One compression publishes both recap and diary");
-Check(requests[4].History.Count == 2 && requests[4].History[0][0].Contains("recap 1") && requests[4].History[1][0] == "question 4", "Recap and raw tail meet at exactly the compression boundary");
-Check(requests[4].History[0][1] == "" && !requests[4].Input.Contains("recap 1"), "Recap is a single background message before the history, not a repeated reference");
+Check(requests[4].History.Count == 1 && requests[4].History[0][0] == "question 4", "Raw tail starts exactly after the summary boundary");
+Check(requests[4].Input.Contains("[参考:较早对话提要") && requests[4].Input.Contains("recap 1]") && !JsonConvert.SerializeObject(requests[4].History).Contains("recap 1"), "Summary is injected once in the current reference, never as historical dialogue");
 Check(p.Dialogues.Count == 5 && p.Dialogues.Take(3).All(x => !x.IsActive), "Compression keeps source records for recall");
 Ask(p, "question 6");
-Check(summaryInputs.Count == 1 && requests[4].History.SelectMany(x => x).SequenceEqual(requests[5].History.Take(2).SelectMany(x => x)), "Between compressions the recap and preceding history form an unchanged prefix");
+Check(summaryInputs.Count == 1 && requests[4].History.SelectMany(x => x).SequenceEqual(requests[5].History.Take(1).SelectMany(x => x)), "Between compressions raw history stays stable while current reference carries the summary");
 Ask(p, "question 7"); Ask(p, "question 8");
 Check(summaryInputs.Count == 2 && JObject.Parse(summaryInputs[1])["previousSummary"]!.Value<string>() == "recap 1", "Next compression receives the previous cumulative recap");
 Check(JObject.Parse(summaryInputs[1])["dialogues"]!.Count() == 3 && !summaryInputs[1].Contains("question 1"), "Each compression only summarizes the new consecutive batch");
-Check(requests[^1].History[1][0] == "question 7", "Second compression advances the boundary without a gap");
+Check(requests[^1].History[0][0] == "question 7", "Second compression advances the boundary without a gap");
 
 // Persist exactly the fields stored by the plugin, then reconstruct the process.
 string saved = JsonConvert.SerializeObject(new { dialogues = p.Dialogues, diaries = p.DiaryEntries, summaries = p.Summaries });
@@ -197,6 +197,67 @@ rich.Turn = new()
 var pair = rich.ToMessages();
 Check(pair[0].Contains("a blue cup") && pair[1].Contains("1: milk; 2: bread") && pair[1].Contains("not enough money") && pair[1].Contains("I will check"), "Compact history retains observations, displayed order, initial reply and actual execution results");
 Check(!string.Join("", pair).Contains("old reference") && !string.Join("", pair).Contains("old recap") && !string.Join("", pair).Contains("irrelevant old diary"), "Compact history excludes previously injected references and recaps");
+
+Check(ChatProtocol.UserMessage("薄荷现在叫什么？", summary: "薄荷旧名小青").Contains("若有主人更正则以后续更正为准"), "Current reference identifies the recap as older than subsequent corrections");
+
+Check(!ChatProtocol.TryParse("[expression:gentle]\nFirst paragraph\n  [delegate][expression:gentle]  \r\nSecond paragraph", false, out _), "Body header rejection covers later lines and whitespace");
+Check(ChatProtocol.TryParse("[expression:gentle]\nYou quoted [回执:买好了] as text.", false, out _), "Inline quoted brackets remain valid");
+p = NewProcess();
+int purchases = 0, resultAttempts = 0;
+p.Tools.Add(new ToolUse("buy", "buy bread", ["buy", "bread"], [], [], p.Localization)
+{ Execute = (_, _) => { purchases++; return new() { Status = "applied", Facts = "bought bread for 8" }; } });
+p.ToolAPIAskFunction = (_, _, _, _) => new() { ToolCalls = [new() { Code = "buy" }, new() { Code = "finish" }] };
+p.AIAPIAskFunction = (_, _, input, _) =>
+{
+    if (!input.Contains("[回执:")) return new() { Reply = "[delegate][expression:conscientious]\nI will buy bread." };
+    resultAttempts++;
+    return new() { Reply = resultAttempts <= 2 ? "[expression:gentle]\nBought it.\n[expression:gentle]\nBought it again." : "[expression:gentle]\nBought one bread." };
+};
+try { Ask(p, "buy bread"); } catch (InvalidDataException) { }
+Check(purchases == 1 && resultAttempts == 2, "Invalid later header retries only the reply, never the completed purchase");
+p.RetryReply(p.Dialogues[^1].Turn!.TurnId, _ => { });
+Check(purchases == 1 && resultAttempts == 3, "Explicit recovery after malformed continuation reuses the committed receipt");
+
+// Memory evidence keeps player corrections and host outcomes, not a failed lookup answer.
+p = NewProcess();
+p.MaxHistoryBeforeCompress = 0; p.MaxHistoryCount = 0; p.MemoryLimit = 5;
+p.AIAPIEmbeddingFunction = inputs => inputs.Select(_ => new float[] { 1, 0 }).ToArray();
+p.AIAPIRerankFunction = (_, docs) => docs.Select(_ => .9f).ToArray();
+var failedLookup = new Dialogue("薄荷不叫小青，现在叫云芽。面包买到了吗？", "错误答案标记：没找到，所以没买。", p.Localization)
+{
+    SaveId = p.SaveId,
+    Turn = new() { OperationsFinished = true, Receipts = [
+        new() { Tool = "历史补查", Status = "not_found", Facts = "没有找到相关历史或日记。" },
+        new() { Tool = "buy_item", Status = "applied", Facts = "已购买1个，实付8，未食用。" }] }
+};
+p.Dialogues.Add(failedLookup);
+string memoryInput = "";
+p.AIAPIAskFunction = (_, _, input, _) => { memoryInput = input; return new() { Reply = "[expression:gentle]\n知道了。" }; };
+Ask(p, "薄荷和面包");
+Check(memoryInput.Contains("薄荷不叫小青，现在叫云芽") && memoryInput.Contains("已购买1个，实付8") && !memoryInput.Contains("错误答案标记"), "Memory keeps player negation/correction and host purchase facts without failed lookup chatter");
+Check(failedLookup.Answer.Contains("错误答案标记") && !string.Join("", failedLookup.EmbeddingTexts).Contains("错误答案标记"), "Failed lookup original remains saved but is excluded from retrieval scoring text");
+failedLookup.Turn.Receipts[0].Status = "observed";
+Check(failedLookup.MemoryAnswer == failedLookup.Answer, "Successful lookup is not discarded based on negative words");
+failedLookup.Turn.Receipts[0].Status = "not_found";
+p.MaxHistoryBeforeCompress = 1; p.DiaryKeepRecentCount = 0;
+string evidenceInput = "";
+p.SummaryAPIAskFunction = (_, _, input, _) => { evidenceInput = input; return Summary("云芽，买了1个面包。"); };
+p.CompressHistory();
+Check(evidenceInput.Contains("薄荷不叫小青，现在叫云芽") && evidenceInput.Contains("已购买1个，实付8") && !evidenceInput.Contains("错误答案标记"), "Summary receives player and host evidence without failed lookup answer");
+
+p = NewProcess(); p.RecallMemoryLimit = 0;
+string continuationInput = "";
+p.AIAPIAskFunction = (_, _, input, _) =>
+{
+    if (!input.Contains("[回执:")) return new() { Reply = "[expression:conscientious][recall]\n我翻翻。" };
+    continuationInput = input;
+    return new() { Reply = "[expression:gentle]\n这次没有找到新资料。" };
+};
+p.Dialogues.Add(Entry(p, "known source"));
+p.Summaries.Add(new() { SaveId = p.SaveId, ThroughDialogueId = p.Dialogues[0].DialogueId, Text = "手铃叫浅滩" });
+Ask(p, "手铃叫什么？");
+Check(p.Dialogues[^1].Turn!.Receipts[0].Status == "not_found" && continuationInput.Contains("历史补查: 未找到;") && !continuationInput.Contains("历史补查: 已查到"), "Empty recall has an explicit not-found receipt");
+Check(continuationInput.Contains("手铃叫浅滩]") && p.Dialogues[^1].Turn!.InitialInput.Contains("手铃叫浅滩]"), "Both initial and continuation retain the same known summary even after an empty recall");
 
 // Exercise the real HTTP adapter against a local fake, without using credentials or an external model.
 foreach (bool reportsCache in new[] { true, false })
