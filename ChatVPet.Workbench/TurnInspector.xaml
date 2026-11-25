@@ -1,0 +1,54 @@
+<UserControl x:Class="ChatVPet.Workbench.TurnInspector"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Foreground="#E6EAF2">
+ <UserControl.Resources>
+  <Style x:Key="Heading" TargetType="TextBlock"><Setter Property="Foreground" Value="#ABB6C6"/><Setter Property="FontSize" Value="12"/><Setter Property="Margin" Value="0,18,0,7"/></Style>
+  <Style x:Key="Card" TargetType="Border"><Setter Property="Background" Value="#283039"/><Setter Property="CornerRadius" Value="8"/><Setter Property="Padding" Value="12"/></Style>
+ </UserControl.Resources>
+ <DockPanel Margin="14,0,14,14">
+  <ComboBox DockPanel.Dock="Top" x:Name="RoundPicker" Margin="0,4,0,14" MinHeight="32" DisplayMemberPath="Label" SelectedValuePath="Number" SelectionChanged="RoundChanged" AutomationProperties.Name="测试轮次"/>
+  <TabControl x:Name="Pages">
+   <TabItem Header="测试结果">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12,4,12,12">
+     <StackPanel>
+      <Border x:Name="StatusCard" Style="{StaticResource Card}" Margin="0,10,0,0">
+       <DockPanel><TextBlock x:Name="StatusIcon" FontSize="20" Foreground="#A9C6ED" Margin="0,0,10,0" VerticalAlignment="Center"/>
+        <TextBlock x:Name="Outcome" Text="等待测试消息" FontWeight="SemiBold" FontSize="16" VerticalAlignment="Center" TextWrapping="Wrap"/></DockPanel>
+      </Border>
+      <StackPanel x:Name="ExpectSection" Visibility="Collapsed"><TextBlock Text="测试预期" Style="{StaticResource Heading}"/>
+       <TextBlock x:Name="Expected" TextWrapping="Wrap"/></StackPanel>
+      <StackPanel x:Name="ChangeSection" Visibility="Collapsed"><TextBlock Text="存档变化" Style="{StaticResource Heading}"/>
+       <ItemsControl x:Name="Changes"><ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate><DataTemplate><Border Style="{StaticResource Card}" Margin="0,0,5,5"><StackPanel>
+         <TextBlock Text="{Binding Name}" Foreground="#A3AEBC" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/>
+         <WrapPanel Margin="0,6,0,0"><TextBlock Text="{Binding Before}" Foreground="#AFB7C5" FontSize="16"/>
+          <TextBlock Text=" → " Foreground="#7E8DA1" FontSize="16"/><TextBlock Text="{Binding After}" Foreground="#A6E1CC" FontWeight="SemiBold" FontSize="17"/></WrapPanel>
+        </StackPanel></Border></DataTemplate></ItemsControl.ItemTemplate>
+       </ItemsControl></StackPanel>
+      <StackPanel x:Name="ActionSection" Visibility="Collapsed"><TextBlock Text="执行记录" Style="{StaticResource Heading}"/>
+       <ItemsControl x:Name="Actions"><ItemsControl.ItemTemplate><DataTemplate>
+        <Border BorderBrush="#353F4C" BorderThickness="0,0,0,1" Padding="2,8"><Expander Foreground="#DDE3EC" HorizontalContentAlignment="Stretch">
+         <Expander.Header><DockPanel LastChildFill="True"><Border DockPanel.Dock="Right" Background="#293341" CornerRadius="4" Padding="6,1" Margin="8,0,0,0">
+          <TextBlock Text="{Binding State}" Foreground="{Binding Color}" FontSize="11"/></Border><TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/></DockPanel></Expander.Header>
+         <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" Foreground="#B9C5D3" Margin="22,8,4,3"/>
+        </Expander></Border>
+       </DataTemplate></ItemsControl.ItemTemplate></ItemsControl></StackPanel>
+     </StackPanel>
+    </ScrollViewer>
+   </TabItem>
+   <TabItem Header="模型收发">
+    <DockPanel Margin="12">
+     <ComboBox x:Name="Calls" DockPanel.Dock="Top" DisplayMemberPath="Label" SelectionChanged="CallChanged" MinHeight="32" AutomationProperties.Name="本轮调用"/>
+     <TextBlock x:Name="NoCalls" Text="本轮尚无对话模型或操作模型记录。" Margin="0,12" DockPanel.Dock="Top" TextWrapping="Wrap" Foreground="#A5AFBE"/>
+     <TabControl x:Name="WireTabs" Margin="0,12,0,0">
+      <TabItem Header="模型输入"><DockPanel Margin="8">
+       <ComboBox x:Name="Messages" DockPanel.Dock="Top" Margin="0,4,0,8" MinHeight="32" DisplayMemberPath="Label" SelectionChanged="MessageChanged" AutomationProperties.Name="输入消息"/>
+       <TextBox x:Name="InputBody" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" IsReadOnly="True"/>
+      </DockPanel></TabItem>
+      <TabItem Header="模型返回"><Grid Margin="8"><TextBox x:Name="OutputBody" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/></Grid></TabItem>
+     </TabControl>
+    </DockPanel>
+   </TabItem>
+  </TabControl>
+ </DockPanel>
+</UserControl>

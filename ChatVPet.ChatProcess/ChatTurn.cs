@@ -66,5 +66,7 @@ public class HostReceipt
     public string Facts { get; set; } = "";
     public List<string> DisplayedItems { get; set; } = [];
     public bool IsTerminal => Status != "unknown";
-    public string ToContext() => $"{Tool}: {Status switch { "observed" => "已查到", "applied" => "已完成", "skipped" => "未执行", "failed" => "失败", "not_found" => "未找到", _ => "尚未确认" }}; {Facts}";
+    public string ToContext() => Tool == "plan_action" && Status == "observed"
+        ? "行动条件已登记，登记时尚未执行。"
+        : $"{Tool}: {Status switch { "observed" => "已查到", "applied" => "已完成", "skipped" => "未执行", "failed" => "失败", "not_found" => "未找到", _ => "尚未确认" }}; {Facts}";
 }

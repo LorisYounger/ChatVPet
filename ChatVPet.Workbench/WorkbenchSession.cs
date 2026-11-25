@@ -11,7 +11,9 @@ namespace ChatVPet.Workbench;
 public sealed class SessionOptions
 {
     public string Title { get; set; } = "新测试会话";
-    public string Config { get; set; } = "ChatVPetProcess.Qw35-v1.Settings.json";
+    public string? Config { get; set; }
+    public string? ModDirectory { get; set; }
+    public string? SaveFile { get; set; }
     public string Compression { get; set; } = "light";
     public bool Rag { get; set; } = true;
     public bool Rerank { get; set; } = true;
@@ -104,8 +106,9 @@ public sealed class WorkbenchSession : IDisposable
             Process.ToolAPIAskFunction = null; Process.SummaryAPIAskFunction = null;
             Process.AIAPIAskFunction = (system, messages, tools) =>
             {
-                Add("offline", "离线界面检查 (未调用模型)", new { system, messages });
-                return new() { Reply = "[expression:cheerful]\n已收到这条测试消息。这是离线演示回复。" };
+                const string reply = "[expression:cheerful]\n已收到这条测试消息。这是离线演示回复。";
+                Add("offline", "离线演示 · 模拟收发", new { system, messages, reply });
+                return new() { Reply = reply };
             };
         }
     }
@@ -136,13 +139,13 @@ public sealed class WorkbenchSession : IDisposable
         var data = JObject.FromObject(trace);
         if (kind == "chat" && chatMessages.Value is { } messages)
             data["Sources"] = JArray.FromObject(messages.Select(m => m.FromHost ? "宿主" : m.Role == "user" ? "玩家" : "ChatVPet").Prepend("系统"));
-        if (kind == "embedding" && trace.Response.Length > 0 && trace.StatusCode == 200)
+        if (kind == "embedding" && trace.Finished && trace.StatusCode == 200 && trace.Error.Length == 0)
         {
             var response = JObject.Parse(trace.Response);
             data["Response"] = JObject.FromObject(new { count = response["data"]?.Count(),
                 dimensions = response["data"]?.First?["embedding"]?.Count(), usage = response["usage"] }).ToString();
         }
-        if (kind == "chat" && trace.Finished && trace.StatusCode == 200)
+        if (kind == "chat" && trace.Finished && trace.StatusCode == 200 && trace.Error.Length == 0)
         {
             var response = JObject.Parse(trace.Response);
             string reply = response["choices"]?[0]?["message"]?.Value<string>("content") ?? "";
@@ -276,11 +279,11 @@ public sealed class WorkbenchSession : IDisposable
                         Process.MaxKnowledgeCount = step.Rag.Value ? 4 : 0;
                     }
                     if (step.Money.HasValue) Host.Save.GameSave.Money = step.Money.Value;
-                    if (step.Price.HasValue) Host.Foods[0].Price = step.Price.Value;
+                    if (step.Price.HasValue) Host.TestBread().Price = step.Price.Value;
                     if (step.Inventory.HasValue)
                     {
                         Host.Items.Clear();
-                        if (step.Inventory.Value > 0) { var item = Host.Foods[0].Clone(); item.Count = step.Inventory.Value; Host.Items.Add(item); }
+                        if (step.Inventory.Value > 0) { var item = Host.TestBread().Clone(); item.Count = step.Inventory.Value; Host.Items.Add(item); }
                     }
                     Add("user", step.Text, new { text = step.Text, expected = step.Expected, before = Host.Snapshot() });
                     string observation = step.Observation;
@@ -388,7 +391,7 @@ public sealed class WorkbenchSession : IDisposable
         void Check(string name, bool passed) { checks.Add(new { name, passed }); }
         try
         {
-            Host.Save.GameSave.Money = 10; Host.Foods[0].Price = 8; Host.Items.Clear();
+            Host.Save.GameSave.Money = 10; Host.TestBread().Price = 8; Host.Items.Clear();
             ChatProtocol.TryParse("[delegate][expression:cheerful]\n我先查一下，再按预算买。", false, out var header);
             var turn = new ChatTurn { SaveId = Process.SaveId, Original = "帮我买一个面包，最多花8块，不要吃。", Initial = header };
             HostReceipt Execute(string code, Dictionary<string, string> arguments)

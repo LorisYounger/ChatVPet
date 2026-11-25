@@ -31,6 +31,17 @@ namespace ChatVPet.ChatProcess
         [JsonIgnore]
         public string MemoryAnswer => Turn?.Receipts.Any(x => x.Tool == "历史补查" && x.Status != "observed") == true ? "" : Answer;
 
+        internal IEnumerable<string> HostEvidence
+        {
+            get
+            {
+                if (Turn == null) yield break;
+                if (Turn.Observation.Length > 0 && !Turn.Receipts.Any(x => x.Tool == "已有图片观察" && x.Status == "observed" && x.Facts == Turn.Observation))
+                    yield return "图片观察: " + Turn.Observation;
+                foreach (var receipt in Turn.Receipts.Where(x => x.Tool is not ("历史补查" or "操作判断")))
+                    yield return receipt.ToContext();
+            }
+        }
         public float ImportanceWeight_Muti { get; set; } = 2;
         public float ImportanceWeight_Plus { get; set; } = 0;
 
@@ -69,11 +80,13 @@ namespace ChatVPet.ChatProcess
         /// 关键字组（经分词处理，用于 BM25 关键词匹配）
         /// </summary>
         public IEnumerable<string> KeyWords { get; set; }
+        // Stored keywords can still contain the initial reply from before an unsuccessful lookup.
+        IEnumerable<string> Iw2vSource.KeyWords => MemoryAnswer.Length > 0 ? KeyWords : [Question];
         /// <summary>
-        /// 嵌入向量的原始文本列表（问题与回答），每项独立生成一个向量
+        /// 记忆检索文本包括玩家原话、可采用的回答和历史宿主记录。
         /// </summary>
         [JsonIgnore]
-        public virtual IEnumerable<string> EmbeddingTexts => [Question, MemoryAnswer];
+        public virtual IEnumerable<string> EmbeddingTexts => [Question, MemoryAnswer, .. HostEvidence];
 
         /// <summary>
         /// 向量

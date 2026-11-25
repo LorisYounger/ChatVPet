@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using ChatVPet.ChatProcess;
 using LinePutScript;
+using LinePutScript.Converter;
 using Newtonsoft.Json.Linq;
 using VPet.Plugin.ChatVPet;
 using VPet_Simulator.Core;
@@ -15,25 +16,43 @@ namespace ChatVPet.Workbench;
 public sealed class PluginHost : IDisposable
 {
     public CVPPlugin Plugin { get; }
-    public GameSave_v2 Save { get; } = new("萝莉斯");
+    public GameSave_v2 Save { get; }
     public List<Item> Items { get; } = [];
-    public List<Food> Foods { get; } = [new() { Name = "面包", Price = 8, StrengthFood = 10 }];
+    public List<Food> Foods { get; } = [];
     public LpsDocument Settings { get; } = new();
     public Main Pet { get; }
     public int SaveCalls { get; private set; }
     public int EatCalls { get; private set; }
     public Action<string, object>? Trace;
-    private readonly string directory;
+    private readonly IMainWindow host;
 
     public PluginHost(string directory, string id, OpenAIChatConfig config)
     {
-        this.directory = directory;
         Directory.CreateDirectory(directory);
         string settingsPath = Path.Combine(directory, "host-settings.lps");
         if (File.Exists(settingsPath)) Settings.Load(File.ReadAllText(settingsPath));
+        string catalog = Path.Combine(directory, "catalog.lps");
+        if (File.Exists(catalog))
+            foreach (var line in new LpsDocument(File.ReadAllText(catalog)).FindAllLine("food"))
+            {
+                var food = LPSConvert.DeserializeObject<Food>(line)!;
+                Foods.RemoveAll(item => item.Name == food.Name);
+                Foods.Add(food);
+            }
+        else TestBread();
+        string petFile = Path.Combine(directory, "pet.lps");
+        var petConfig = File.Exists(petFile) ? new LpsDocument(File.ReadAllText(petFile)) : new LpsDocument();
+        string saveFile = Path.Combine(directory, "imported-save.lps");
+        if (File.Exists(saveFile))
+            Save = new GameSave_v2(new LpsDocument(File.ReadAllText(saveFile)));
+        else
+        {
+            Save = new GameSave_v2(petConfig.FindLine("pet")?.GetString("petname") ?? "萝莉斯");
+            Save.GameSave.Money = 10;
+            Save.GameSave.HostName = "测试员";
+        }
         Save.Data["chatvpet_process"][(gstr)"id"] = id;
-        Save.GameSave.Money = 10;
-        Save.GameSave.HostName = "测试员";
+        Save.Data["chatvpet_process"].Remove("last_receipt");
         var controller = DispatchProxy.Create<IController, SandboxProxy>();
         ((SandboxProxy)(object)controller).Call = (method, _) => method.Name switch
         {
@@ -42,7 +61,7 @@ public sealed class PluginHost : IDisposable
             _ => throw new NotSupportedException("测试宿主未实现控制器: " + method.Name)
         };
         var core = new GameCore { Save = Save.GameSave, Controller = controller,
-            Graph = new GraphCore(500, Application.Current.Dispatcher, new GraphCore.Config(new LpsDocument())) };
+            Graph = new GraphCore(500, Application.Current.Dispatcher, new GraphCore.Config(petConfig)) };
         Pet = new Main(core);
         Pet.EventTimer.Stop();
         var setting = DispatchProxy.Create<ISetting, SandboxProxy>();
@@ -54,7 +73,7 @@ public sealed class PluginHost : IDisposable
             "get_ZoomLevel" => 1.0,
             _ => throw new NotSupportedException("测试宿主未实现设置: " + method.Name)
         };
-        var host = DispatchProxy.Create<IMainWindow, SandboxProxy>();
+        host = DispatchProxy.Create<IMainWindow, SandboxProxy>();
         var petGrid = new Grid { Width = 500, Height = 500 };
         ((SandboxProxy)(object)host).Call = (method, args) =>
         {
@@ -96,25 +115,47 @@ public sealed class PluginHost : IDisposable
                 default: throw new NotSupportedException("测试宿主未实现: " + method.Name);
             }
         };
+        foreach (var line in Save.Data.Assemblage.Where(pair => pair.Key.StartsWith("item", StringComparison.Ordinal)))
+            if (Item.CreateItem(host, line.Value) is { } item) host.ItemsAdd(item);
         Plugin = new CVPPlugin(host, directory) { OpenAIConfig = config };
         // Initialize the plugin's actual configuration, knowledge, tools and save lifecycle.
         // LoadPlugin also installs the game's toolbar/TalkBox, which this workbench does not impersonate.
         Plugin.EnsureSave();
     }
 
+    internal Food TestBread()
+    {
+        var bread = Foods.Find(x => x.Name == "面包");
+        if (bread != null) return bread;
+        bread = new Food { Name = "面包", Price = 8, StrengthFood = 10 };
+        Foods.Add(bread);
+        return bread;
+    }
+
     public JObject Snapshot() => JObject.FromObject(new { money = Save.GameSave.Money,
-        price = Foods[0].Price, inventory = Items.Select(x => new { x.Name, x.Count }),
+        petName = Save.GameSave.Name, ownerName = Save.GameSave.HostName, catalogCount = Foods.Count,
+        workCount = Pet.Core.Graph!.GraphConfig.Works.Count,
+        price = Foods.Find(x => x.Name == "面包")?.Price, inventory = Items.Select(x => new { x.Name, x.Count,
+            definition = LPSConvert.SerializeObjectToLine<Line>(x, "item").ToString() }),
         feeling = Save.GameSave.Feeling, affinity = Save.GameSave.Likability, food = Save.GameSave.StrengthFood,
         SaveCalls, EatCalls, receipt = Save.Data["chatvpet_process"][(gstr)"last_receipt"] ?? "" });
 
     public void Restore(JObject data)
     {
         Save.GameSave.Money = data.Value<double?>("money") ?? 10;
-        Foods[0].Price = data.Value<double?>("price") ?? 8;
+        if (data.Value<double?>("price") is double price) TestBread().Price = price;
+        else if (data.ContainsKey("price")) Foods.RemoveAll(x => x.Name == "面包");
         Items.Clear();
         foreach (var row in data["inventory"] ?? new JArray())
         {
-            var item = Foods[0].Clone(); item.Name = row.Value<string>("Name")!; item.Count = row.Value<int>("Count"); Items.Add(item);
+            if (row.Value<string>("definition") is { } definition)
+                Items.Add(Item.CreateItem(host, new LpsDocument(definition).First()!)!);
+            else
+            {
+                string name = row.Value<string>("Name")!;
+                var item = Foods.Find(x => x.Name == name)?.Clone() ?? new Food { Name = name };
+                item.Count = row.Value<int>("Count"); Items.Add(item);
+            }
         }
         SaveCalls = data.Value<int?>("SaveCalls") ?? 0;
         EatCalls = data.Value<int?>("EatCalls") ?? 0;

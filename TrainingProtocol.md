@@ -1,111 +1,77 @@
 # ChatVPet 训练协议
 
-[English](https://github.com/LorisYounger/ChatVPet/blob/main/TrainingProtocol.md#chatvpet-training-protocol)
+[English](#chatvpet-training-protocol)
 
-只有您同意协议以后, LBGAME 才会使用这些数据进行训练
+只有开启设置中的「参与训练数据收集」开关并同意本协议，LBGAME 才会将相关对话与反馈用于模型训练。关闭该开关不影响正常聊天。
 
-启用后将获得一半的创意工坊Token减免
+插件升级时沿用您原有的训练选择。更新通知会介绍新版功能，您可随时在设置中查看或更改授权。
 
-### 以下数据可能会被 LBGame 收集
+## 参与方式
 
-* SteamID
-* 聊天内容
-* 回答内容
-* 桌宠名字
-* 桌宠当前状态 e.g.: `[当前状态: 开心, 好感度:陌生(2)]`
+开启「参与训练数据收集」后，您可以通过以下方式帮助改进桌宠：
 
-### 以下数据可能会被 LBGame 披露以用作训练数据
+- **点赞或点踩**：一键评价桌宠的回复。
+- **修改建议**：用一句话指出改进方向，例如「查一下价格就好」。
+- **详细改进**：主动展开详细编辑界面，具体修改桌宠应该做什么、做到哪一步，以及怎样回答。
 
-* 聊天内容
-* 回答内容
-* 桌宠名字
-* 桌宠当前状态 e.g.: `[当前状态: 开心, 好感度:陌生(2)]`
+以上三种入口均可在设置中单独选择是否显示。只有参与训练的玩家可以对已授权的回复发起纠错，每条原回复最多免费换答 5 次。关闭「参与训练数据收集」时，反馈和纠错入口均隐藏，您仍可正常发送新消息或恢复中断的回复。
 
-### 提交协议
+## 收集与使用范围
 
-请遵守 **提交训练内容规范**
+### 用于训练的数据
 
-提交训练内容应该有**一个**完整明确的问题，且不能过长过短。
-正面例子: `吃完饭了吗?` /`现在心情如何?` /`喜欢猫还是喜欢狗?` 等问点明确的问题
+仅当开启收集，且您对某条回复主动给出评价、修改建议或改写时，该轮相关的以下内容可能纳入训练数据：
 
-其次回答要有肯定的答复及其理由，且不能过长过短。
-正面例子:
-```
-对啊主人，人家吃过饭了，吃的是主人给的神户牛排呢~最喜欢主人了\~
-喜欢猫猫，因为我就是一只可爱的猫娘~喵喵喵~~
-不是很好，刚刚手游抽卡歪了！
-```
+- 相关聊天原文
+- 桌宠回答及候选版本
+- 理解该轮所需的上下文，如桌宠名字与当前状态（例如 `[当前状态: 开心, 好感度:陌生(2)]`）
+- 该回复用到的 TOOLCALL AI 返回结果（TOOLCALL AI 负责替桌宠查看信息或执行操作；例如您问「下载完成了吗？」，工具返回「进度为 80%」，训练样本可包含这句结果及桌宠据此作出的回答）
+- 您实际给出的评价、修改建议或改写内容
 
-问题长度需要超过 5 Token (具体看句意约3-6个字左右)
-回答长度需要超过 25 Token (具体看句意约15-20个字左右)
-整体长度不能超过 1000 Token (具体看句意约300-600字左右)
+### 不纳入训练的数据
 
-内容上要符合桌宠的设定，不能引战，攻击，讽刺他人，不能有血腥暴力，政治立场，色情赌博，烂梗，地狱笑话，无意义，地域/性别/种族歧视等不合适桌宠的内容出现，违者可能会被取消聊天训练资格。
+- 关闭「参与训练数据收集」期间的聊天、桌宠回答、工具结果和反馈。日后重新开启，也不会将关闭期间的记录补入训练集。
+- TOOLCALL AI 为执行任务读取的原始资料，包括桌面截图、当时打开的软件或窗口清单，以及工具读取的原始窗口内容。
 
-### 审核协议
+### 常规服务记录
 
-请遵守 **桌宠小法庭规范**
-
-核审别人对话时，应该秉承公平公正的态度，平等对待全部人的提交，可以因为讨厌某话题或者回答不和你心意等反对, 但是建议如果并非非常讨厌,可以选择跳过。不能抄袭别人的投稿。违者可能会被取消聊天训练资格.
-
-#### 提交训练内容不通过的常见例子 
-
-**问：**好
-（错误：无意义问题/问题过短）
-
- 
-
-**问：**你喜欢吃什么水果啊啊，我喜欢吃苹果，但是苹果太酸了，你怎么看呢，其实也没必要，苹果本来就是酸的，不酸的苹果反而不好吃，但是西瓜就不会吧?你喜欢吃西瓜吗?
-（错误：问点过多/逻辑混乱）
-
- 
-
-**问：**哼哼啊啊啊啊啊啊
-（错误：玩烂梗/重复字符）
-
-
-
-**问：**吃完饭了吗？
-**答：**不是很饿又有那么一点想吃
-（错误：没有回答,逻辑混乱）
-
- 
-
-**问：**吃完饭了吗？
-**答：**喜欢猫猫，因为我就是一只可爱的猫娘\~喵喵喵~~
-（错误：答非所问）
-
- 
-
-**问：**吃完饭了吗？
-**答：**哦
-（错误：回答过短，没有理由）
-
- 
-
-**问：**吃完饭了吗？
-**答：**老娘吃了，你也想吃老娘吗!?
-（错误：OOC/血腥暴力）
-
-
+无论是否开启「参与训练数据收集」，LBGAME 都会保存您的聊天正文和桌宠回答，用于显示聊天历史、建立索引和检索先前的消息。这些消息不会与任何无关三方分享或在未允许的情况下进入训练集.
 
 # ChatVPet Training Protocol
 
-LBGAME will only use these data for training after you agree to the agreement
+[简体中文](#chatvpet-训练协议)
 
-After enabling, you will receive a reduction of half of the Creative Workshop Token
+LBGAME uses your conversations and feedback for model training only after you agree to this protocol and enable the "Participate in training data collection" setting. You can use chat normally with this setting turned off.
 
-### The following data may be collected by LBGame
+Updating the plugin preserves your existing training preference. The update notice introduces the new features, and you can review or change your choice in Settings at any time.
 
-* SteamID
-* Chat content
-* Response content
-* Pet's name
-* Current status of the VPet eg: `[Current status: Happy, Affection: Stranger(2)]`
+## How to Participate
 
-### The following data may be disclosed by LBGame for use as training data
+When "Participate in training data collection" is enabled, you can help improve the pet in three ways:
 
-* Chat content
-* Response content
-* Pet's name
-* Current status of the Pet e.g.: `[Current status: Happy, Affection: Stranger(2)]`
+- **Thumbs-up or thumbs-down**: Rate a reply with a single click.
+- **Short suggestion**: Write a brief note on what to change, such as "just check the price."
+- **Detailed edit**: Open the detailed editor to specify what the pet should do, where it should stop, and how it should reply.
+
+Settings let you choose which of these three controls to show. Only players who participate in training can request corrections to eligible replies, with up to five free alternatives per original reply. Turning collection off hides feedback and correction controls. You can still send new messages or resume an interrupted reply.
+
+## Data Scope
+
+### Data Used for Training
+
+Only when collection is enabled and you actively rate, suggest changes to, or edit a reply may the following data from that turn be included in training data:
+
+- The relevant chat messages
+- The pet's replies and alternative replies
+- The context needed to understand the turn, such as the pet's name and current status (e.g. `[Current status: Happy, Affection: Stranger(2)]`)
+- The TOOLCALL AI result used for that reply (TOOLCALL AI looks up information or performs actions for the pet; for example, if you ask whether a download is finished and the tool returns "80% complete," the training sample may include that result and the pet's reply)
+- The rating, suggestion, or edit you provided
+
+### Data Excluded from Training
+
+- Messages, replies, tool results, and feedback from periods when "Participate in training data collection" is off. Turning the setting on later does not add earlier conversations to the training set.
+- Raw material read by TOOLCALL AI to complete a task, including desktop screenshots, lists of open applications or windows, and raw window contents. Even if a tool copies a full window list into its result, those raw details are excluded.
+
+### Standard Service Records
+
+Regardless of the training setting, LBGAME stores your chat messages and the pet's replies to display chat history and to index and retrieve earlier messages. These messages will not be shared with any third parties or entered into the training set without permission.

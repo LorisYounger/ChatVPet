@@ -2,6 +2,7 @@
 import json
 import base64
 import pathlib
+import tempfile
 import time
 import sys
 from workbench import call
@@ -30,7 +31,8 @@ def wait(identifier):
 
 info = api('info')
 check('test suites available', 'compression' in info['suites'])
-identifier = api('sessions', {'Title': '自动验收 · 离线与实际插件', 'Offline': True, 'Rag': False})['id']
+identifier = api('sessions', {'Title': '自动验收 · 离线与实际插件', 'Offline': True, 'Rag': False,
+                              'ModDirectory': '', 'SaveFile': ''})['id']
 prefix = 'sessions/' + identifier
 for check_result in api(prefix + '/plugin-check', {}):
     check('plugin: ' + check_result['name'], check_result['passed'])
@@ -65,4 +67,23 @@ api(prefix + '/steps', {'steps': [{'Text': '停止检查 ' + str(i)} for i in ra
 api(prefix + '/stop', {})
 state = wait(identifier)
 check('stop finishes current step and ends batch', state['status'] == '已停止' and len(state['checkpoint']['dialogues']) < 103)
+with tempfile.TemporaryDirectory() as tmp:
+    mod = pathlib.Path(tmp) / 'sample-mod'
+    (mod / 'food').mkdir(parents=True)
+    (mod / 'food' / 'sample.lps').write_text('food:|name#面包:|price#24:|strengthfood#45:|', encoding='utf-8')
+    save = pathlib.Path(tmp) / 'Save_1.lps'
+    source = 'vpet:|name#样本桌宠:|hostname#样本玩家:|money#42000000000:|\nitem0:|itemtype#Tool:|name#样本道具:|count#3:|'
+    save.write_text(source, encoding='utf-8')
+    parent = api('sessions', {'Title': '导入数据验收', 'Offline': True, 'ModDirectory': str(mod), 'SaveFile': str(save)})['id']
+    prefix = 'sessions/' + parent
+    host = api(prefix)['checkpoint']['host']
+    check('MOD price and save identity', host['price'] == 24 and host['money'] == 42 and host['petName'] == '样本桌宠')
+    check('saved item type and count', host['inventory'][0]['Count'] == 3 and 'Tool' in host['inventory'][0]['definition'])
+    check('plugin check with imported state', all(row['passed'] for row in api(prefix + '/plugin-check', {})))
+    check('source save remains intact', source == save.read_text(encoding='utf-8'))
+# Branch creation has to work after both sources have gone away.
+branch = api(prefix + '/compare', {'text': '你好', 'variants': ['baseline']})['ids'][0]
+child = wait(branch)
+check('branch retains imported state', child['status'] == '已完成' and
+      all(child['checkpoint']['host'][key] == host[key] for key in ('price', 'money', 'ownerName', 'inventory')))
 print(json.dumps({'id': identifier, 'passed': len(checks), 'checks': checks}, ensure_ascii=True, indent=2))

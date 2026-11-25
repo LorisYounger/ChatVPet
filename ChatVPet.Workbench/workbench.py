@@ -29,7 +29,9 @@ def main():
     sub.add_parser('list')
     new = sub.add_parser('new')
     new.add_argument('--title', default='自动化测试')
-    new.add_argument('--config', default='ChatVPetProcess.Qw35-v1.Settings.json')
+    new.add_argument('--config')
+    new.add_argument('--mod', help='VPet MOD 目录，省略时使用全局设置')
+    new.add_argument('--save', help='VPet .lps 存档文件，省略时使用全局设置')
     new.add_argument('--compression', choices=['light', 'heavy', 'off'], default='light')
     new.add_argument('--offline', action='store_true')
     new.add_argument('--no-rag', action='store_true')
@@ -44,7 +46,7 @@ def main():
     batch.add_argument('file', help='UTF-8 JSON array of TestStep objects')
     suite = sub.add_parser('suite')
     suite.add_argument('name', choices=['baseline', 'compression'])
-    suite.add_argument('--config', default='ChatVPetProcess.Qw35-v1.Settings.json')
+    suite.add_argument('--config')
     compare = sub.add_parser('compare')
     compare.add_argument('id')
     compare.add_argument('text')
@@ -63,6 +65,7 @@ def main():
     elif command == 'list': result = api('sessions')
     elif command == 'new':
         result = api('sessions', {'Title': args.title, 'Config': args.config, 'Compression': args.compression,
+                                 'ModDirectory': args.mod, 'SaveFile': args.save,
                                  'Offline': args.offline, 'Rag': not args.no_rag, 'Rerank': not args.no_rerank})
     elif command == 'send':
         body = {'Text': args.text, 'Expected': args.expected}

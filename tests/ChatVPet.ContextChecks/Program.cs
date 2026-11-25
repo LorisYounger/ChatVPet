@@ -237,6 +237,7 @@ p.AIAPIAskFunction = (_, messages, _) => new() { Reply = messages[^1].FromHost
     : messages[^1].Content.Contains("[观察:") ? "[expression:gentle]\n图片上写着731。" : "[expression:conscientious][screenshot]\n我看看。" };
 p.Ask("看附图", "图上写着731", _ => { }, new());
 Check(captures == 0 && p.Dialogues[^1].ToMessages().Count() == 2, "Attached observation answers directly without a screenshot");
+Check(p.Dialogues[^1].EmbeddingTexts.Contains("图片观察: 图上写着731"), "An attached observation is searchable even without a separate screenshot receipt");
 Ask(p, "现在看看");
 var shot = p.Dialogues[^1];
 var beforeLate = shot.ToMessages().ToArray();
@@ -289,6 +290,7 @@ var failedLookup = new Dialogue("薄荷不叫小青，现在叫云芽。面包�
     SaveId = p.SaveId,
     Turn = new() { OperationsFinished = true, Receipts = [
         new() { Tool = "历史补查", Status = "not_found", Facts = "没有找到相关历史或日记。" },
+        new() { Tool = "plan_action", Status = "observed", Facts = "已登记: {\"Id\":\"private-plan-id\",\"max_total\":8}" },
         new() { Tool = "buy_item", Status = "applied", Facts = "已购买1个，实付8，未食用。" }] }
 };
 p.Dialogues.Add(failedLookup);
@@ -296,7 +298,11 @@ string memoryInput = "";
 p.AIAPIAskFunction = (_, messages, _) => { memoryInput = messages[^1].Content; return new() { Reply = "[expression:gentle]\n知道了。" }; };
 Ask(p, "薄荷和面包");
 Check(memoryInput.Contains("薄荷不叫小青，现在叫云芽") && memoryInput.Contains("已购买1个，实付8") && !memoryInput.Contains("错误答案标记"), "Memory keeps player negation/correction and host purchase facts without failed lookup chatter");
+Check(memoryInput.Contains("行动条件已登记") && !memoryInput.Contains("private-plan-id")
+    && failedLookup.Turn.Receipts[1].Facts.Contains("private-plan-id"), "Memory separates registration from settlement while the saved receipt retains its internal details");
 Check(failedLookup.Answer.Contains("错误答案标记") && !string.Join("", failedLookup.EmbeddingTexts).Contains("错误答案标记"), "Failed lookup original remains saved but is excluded from retrieval scoring text");
+Check(!string.Join("", ((Iw2vSource)failedLookup).KeyWords).Contains("错误答案标记")
+    && failedLookup.EmbeddingTexts.Any(x => x.Contains("已购买1个，实付8")), "Keyword fallback excludes failed answers and rankers see the actual purchase receipt");
 failedLookup.Turn.Receipts[0].Status = "observed";
 Check(failedLookup.MemoryAnswer == failedLookup.Answer, "Successful lookup is not discarded based on negative words");
 failedLookup.Turn.Receipts[0].Status = "not_found";
@@ -305,6 +311,37 @@ string evidenceInput = "";
 p.SummaryAPIAskFunction = (_, messages, _) => { evidenceInput = messages[^1].Content; return Summary("云芽，买了1个面包。"); };
 p.CompressHistory();
 Check(evidenceInput.Contains("薄荷不叫小青，现在叫云芽") && evidenceInput.Contains("已购买1个，实付8") && !evidenceInput.Contains("错误答案标记"), "Summary receives player and host evidence without failed lookup answer");
+
+p = NewProcess();
+p.MaxHistoryBeforeCompress = 0;
+p.MaxHistoryCount = 1;
+p.MemoryLimit = 5;
+const string repeatedQuestion = "之前我给手铃起的名字是什么？";
+var emptyLookup = Entry(p, repeatedQuestion);
+emptyLookup.Turn = new() { OperationsFinished = true, Receipts = [new() { Tool = "历史补查", Status = "not_found" }] };
+p.Dialogues.Add(emptyLookup);
+foreach (string price in new[] { "实付八元", "实付七元" })
+{
+    var purchase = Entry(p, repeatedQuestion);
+    purchase.Turn = new() { OperationsFinished = true, Receipts = [new() { Tool = "buy_item", Status = "applied", Facts = price }] };
+    p.Dialogues.Add(purchase);
+}
+var noisyTail = Entry(p, "另一件事");
+noisyTail.Turn = new() { OperationsFinished = true, InitialInput = "[参考:旧提要和旧回执]\n另一件事",
+    Initial = new() { Raw = "[expression:gentle]\n好的。" } };
+p.Dialogues.Add(noisyTail);
+p.AIAPIEmbeddingFunction = inputs => inputs.Select(_ => new float[] { 1, 0 }).ToArray();
+var traces = new List<JObject>();
+p.Retrieval.Trace = trace => traces.Add(JObject.FromObject(trace));
+p.AIAPIAskFunction = (_, messages, _) => new() { Reply = messages[^1].FromHost
+    ? "[expression:gentle]\n查好了。" : "[expression:conscientious][recall]\n我找找。" };
+Ask(p, repeatedQuestion);
+var lookedUp = p.Dialogues[^1].Turn!;
+Check(traces.Count == 2 && traces.All(t => (string?)t["query"] == repeatedQuestion)
+    && lookedUp.History[0].Content == noisyTail.Turn.InitialInput, "Initial and explicit memory searches use the player's question while chat replays the original history");
+Check(traces.All(t => (int?)t["candidateCount"] == 2)
+    && lookedUp.Receipts.Single().Facts.Contains("实付八元") && lookedUp.Receipts.Single().Facts.Contains("实付七元"),
+    "A repeated unanswered question supplies no new evidence and identical dialogue with distinct receipts retains both purchases");
 
 p = NewProcess(); p.RecallMemoryLimit = 0;
 string continuationInput = "";
@@ -318,8 +355,33 @@ p.AIAPIAskFunction = (_, messages, _) =>
 p.Dialogues.Add(Entry(p, "known source"));
 p.Summaries.Add(new() { SaveId = p.SaveId, ThroughDialogueId = p.Dialogues[0].DialogueId, Text = "手铃叫浅滩" });
 Ask(p, "手铃叫什么？");
-Check(p.Dialogues[^1].Turn!.Receipts[0].Status == "not_found" && continuationInput.Contains("历史补查: 未找到;") && !continuationInput.Contains("历史补查: 已查到"), "Empty recall has an explicit not-found receipt");
+Check(p.Dialogues[^1].Turn!.Receipts[0].Status == "skipped" && continuationInput.Contains("本轮未启用额外检索") && !continuationInput.Contains("未找到"),
+    "Disabled recall reports no search, even when an existing recap answers the question");
 Check(!continuationInput.Contains("手铃叫浅滩]") && p.Dialogues[^1].Turn!.InitialInput.Contains("手铃叫浅滩]"), "The original summary stays in U0 without being duplicated into an empty recall receipt");
+p.RecallMemoryLimit = 20;
+p.Dialogues.Clear();
+Ask(p, "有别的记录吗？");
+Check(p.Dialogues[^1].Turn!.Receipts[0].Status == "not_found" && continuationInput.Contains("没有检索到额外的相关记录"),
+    "An enabled search with no matching memory reports an empty result");
+
+p = NewProcess();
+p.AIAPIAskFunction = (_, messages, _) => new() { Reply = messages[^1].FromHost ? "[expression:gentle]\nOK" : "[delegate][expression:gentle]\nChecking." };
+p.AIAPIRerankFunction = (_, docs) => docs.Select(_ => 0f).ToArray();
+foreach (string code in new[] { "list_items", "read_state", "buy_item" })
+    p.Tools.Add(new ToolUse(code, "lookup", ["lookup"], [], [], p.Localization) { ReadOnly = code != "buy_item" });
+string[] offered = [];
+p.ToolAPIAskFunction = (_, _, tools) =>
+{
+    offered = tools.Select(x => x.Code).ToArray();
+    return new() { ToolCalls = [new() { Code = "finish" }] };
+};
+Ask(p, "lookup");
+Check(offered.ToHashSet().SetEquals(["list_items", "read_state", "finish"]) && offered.Length == 3,
+    "A delegated lookup retains permitted catalog and state readers below the rerank threshold");
+p.Tools.Single(x => x.Code == "list_items").Enabled = false;
+p.AllowTool = (_, tool) => tool.Code != "read_state";
+Ask(p, "lookup");
+Check(offered.SequenceEqual(["finish"]), "Disabled or host-denied readers stay out of the operation request");
 
 // Exercise the real HTTP adapter against a local fake, without using credentials or an external model.
 foreach (bool reportsCache in new[] { true, false })

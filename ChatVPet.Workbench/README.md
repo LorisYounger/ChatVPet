@@ -16,17 +16,26 @@ dotnet run --project ChatVPet.Workbench -c Release
 
 ## 窗口里怎么测试
 
-- **新建测试会话**：选择 `Local/*Settings.json`，选择压缩方式、提示词和检索开关。高级参数可设置检索阈值和字符预算。
+- **全局设置 · API 与桌宠数据** 可以选择已有 API 配置，或展开编辑区填写各模型的地址、名称和密钥。编辑后的通用 API 保存到 `Local/ChatVPetProcess.Workbench.Settings.json`。
+- **新建测试会话** 会带入全局 API、MOD 目录和存档，可单独替换任意一项。清空 MOD 使用内置测试商品，清空存档使用测试员和 10 元余额。高级参数可设置检索阈值和字符预算。
 - **发送消息**：Ctrl+Enter 发送；Enter 换行。可附上 PNG/JPEG，交给配置的操作/视觉 API 观察。模型不支持图片时能看到 HTTP 错误与插件返回的观察结果。
-- **过程**：按模型、RAG、摘要、插件或错误过滤。阅读视图按角色展开消息；原始视图保留 JSON。Embedding 记录输入、条数、维度和用量，不展开全部向量。
-- **上下文**：看当前提要、原始 InitialInput 和各次 Results、历史、回执、宿主余额和背包。检索入选项还会经过去重和字符预算，以最终输入为准。
-- **对照**：在输入框写一个问题，从相同的已保存存档建立基线和变体。可关闭知识/记忆 RAG、关闭重排、以完整历史替代摘要、切换兼容提示词。各分支从冷缓存开始，不修改源会话。
-- **插件**：打开真实设置/日记窗口，或执行不需要模型的购买自检。
+- **查看本轮** 打开该轮的测试结果。余额、背包和养成数值有变化时显示前后两格数值。执行记录列出查询、购买等操作，点开一行查看回执。测试预期由用例提供，留给测试员核对。
+- **模型收发** 只列所选轮次的对话、操作、摘要和图片调用。选一次调用，在「模型输入」选择一条消息，默认选中末条；切到「模型返回」看同一次调用的回复或工具调用。离线演示单独标记。
+- **更多** 可打开完整事件、上下文、对照与笔记、插件窗口和数据来源，也可导出完整记录。向量、重排、HTTP 状态和原始 JSON 可在完整事件中查询。
+- **对照与笔记** 可从相同的存档建立基线和变体，比较知识与记忆检索、重排、历史摘要和提示词。
 - **停止**：当前 HTTP 请求结束后停止后续步骤。不会终止服务端已经开始的生成。
 - **续答重试**：调用 Process.RetryReply，已有购买不会再次执行。初答协议错误应重新发送消息。
 - **人工分析**：保存预期、观察和修复建议。预设用例不会把关键词命中当成语义通过。
 
 新建会话使用 API 配置的独立副本。插件设置窗口只修改当前会话副本，不覆盖 `Local` 中的原配置。设置、图片和全部测试存档保存在 Git 忽略的 `Local/Workbench/<会话ID>/`。导出的诊断 JSON 不包含配置密钥和认证头，包含测试对话与模型返回。`checkpoint.messages` 按时间导出有效消息，每条包含 `turnId`、`role`、`source`、`content`。回调的 role 为 `user`，来源为“宿主”。旧协议会话支持只读查看、导出。
+
+### 用本体数据测试
+
+1. 打开左侧「全局设置」，在「MOD 目录」选择具体的 MOD，例如 VPet 工程里的 `VPet-Simulator.Windows/mod/0000_core`。工作台读取 `food/*.lps` 商品和 `pet/*.lps` 桌宠配置。一个 MOD 内有多个角色时优先选 vup，其次按文件名选首个角色。
+2. 在「VPet 存档」选择游戏 `Saves` 或 `Saves_BKP` 目录中的 `Save*.lps`。新会话通过本体的 `GameSave_v2` 和 `Item.CreateItem` 读取称呼、养成数值及背包物品。
+3. 新建普通会话，在「更多 → 插件与数据来源」核对源路径、商品数与活动数，在「更多 → 完整上下文」核对当前余额和背包。例如发送“面包现在多少钱？只查价”，再到「模型收发」查看对话模型、操作模型与宿主回传的消息。基础协议测试集会为其测试题重设面包价格、余额和背包。
+
+导入时保存数据副本，测试中的购买和食用写入独立会话。重开和对照分支使用会话内的副本。要测试源文件的新版本，可重新建会话导入。图像、动画、声音和额外 MOD 插件仍由完整游戏宿主提供。
 
 ## 测试集
 
@@ -55,6 +64,7 @@ Python 客户端只依赖标准库，程序需先启动：
 ```powershell
 python ChatVPet.Workbench/workbench.py info
 python ChatVPet.Workbench/workbench.py new --title "购买排查"
+python ChatVPet.Workbench/workbench.py new --mod "D:/VPet/mod/0000_core" --save "D:/VPet/Saves/Save_1.lps"
 python ChatVPet.Workbench/workbench.py send <ID> "帮我买一个面包，最多花8块，不要吃。"
 python ChatVPet.Workbench/workbench.py wait <ID> --seconds 30
 python ChatVPet.Workbench/workbench.py events <ID> --after 0

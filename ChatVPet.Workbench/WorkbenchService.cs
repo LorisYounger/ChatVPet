@@ -15,12 +15,17 @@ public sealed class WorkbenchService : IDisposable
     private readonly Dictionary<string, JObject> saved = [];
     private readonly object gate = new();
     public JObject Scenarios { get; }
+    public WorkbenchDefaults Defaults { get; private set; }
 
     public WorkbenchService(string root)
     {
         Root = Path.GetFullPath(root);
         DataDirectory = Path.Combine(Root, "Local", "Workbench");
         Directory.CreateDirectory(DataDirectory);
+        string defaultsPath = Path.Combine(DataDirectory, "defaults.json");
+        Defaults = File.Exists(defaultsPath) ? JsonConvert.DeserializeObject<WorkbenchDefaults>(File.ReadAllText(defaultsPath))! : new();
+        if (!File.Exists(defaultsPath))
+            Defaults.Config = Configurations().FirstOrDefault(x => x.Contains("Qw35")) ?? Configurations().FirstOrDefault() ?? Defaults.Config;
         Scenarios = JObject.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Scenarios.json")));
         foreach (string path in Directory.EnumerateFiles(DataDirectory, "session.json", SearchOption.AllDirectories))
         {
@@ -29,6 +34,28 @@ public sealed class WorkbenchService : IDisposable
         }
     }
     public string[] Configurations() => Directory.GetFiles(Path.Combine(Root, "Local"), "*Settings.json").Select(Path.GetFileName).Cast<string>().ToArray();
+    public OpenAIChatConfig ReadConfig(string name)
+    {
+        if (!Configurations().Contains(name, StringComparer.OrdinalIgnoreCase))
+            throw new ArgumentException("请选择 Local 目录中存在的 API 配置。");
+        return JsonConvert.DeserializeObject<OpenAIChatConfig>(File.ReadAllText(Path.Combine(Root, "Local", name)))
+            ?? throw new InvalidDataException("API 配置为空。");
+    }
+    public void SaveDefaults(WorkbenchDefaults value, OpenAIChatConfig? edited)
+    {
+        if (edited != null)
+        {
+            value.Config = "ChatVPetProcess.Workbench.Settings.json";
+            WriteSettings(Path.Combine(Root, "Local", value.Config), edited);
+        }
+        WriteSettings(Path.Combine(DataDirectory, "defaults.json"), value);
+        Defaults = value;
+    }
+    private static void WriteSettings(string path, object value)
+    {
+        File.WriteAllText(path + ".tmp", JsonConvert.SerializeObject(value, Formatting.Indented));
+        File.Move(path + ".tmp", path, true);
+    }
     public JArray List()
     {
         lock (gate) return JArray.FromObject(saved.Select(pair => sessions.TryGetValue(pair.Key, out var session) ? session.Overview()
@@ -72,21 +99,36 @@ public sealed class WorkbenchService : IDisposable
             return session;
         }
     }
-    public WorkbenchSession Create(SessionOptions options, JObject? checkpoint = null, OpenAIChatConfig? sourceConfig = null, string? hostSettings = null)
+    public WorkbenchSession Create(SessionOptions options, JObject? checkpoint = null, OpenAIChatConfig? sourceConfig = null, string? hostSettings = null, string? branchSource = null)
     {
-        if (!Application.Current.Dispatcher.CheckAccess()) return Application.Current.Dispatcher.Invoke(() => Create(options, checkpoint, sourceConfig, hostSettings));
+        if (!Application.Current.Dispatcher.CheckAccess()) return Application.Current.Dispatcher.Invoke(() => Create(options, checkpoint, sourceConfig, hostSettings, branchSource));
+        options.Config ??= Defaults.Config;
+        options.ModDirectory ??= branchSource == null ? Defaults.ModDirectory : "";
+        options.SaveFile ??= branchSource == null ? Defaults.SaveFile : "";
         if (Path.GetFileName(options.Config) != options.Config) throw new ArgumentException("配置需为 Local 目录中的文件名。");
         if (options.Compression is not ("light" or "heavy" or "off" or "custom")) throw new ArgumentException("压缩模式无效。");
         var config = sourceConfig ?? (options.Offline ? new OpenAIChatConfig { UseChatVPetPrompt = true }
-            : JsonConvert.DeserializeObject<OpenAIChatConfig>(File.ReadAllText(Path.Combine(Root, "Local", options.Config)))!);
+            : ReadConfig(options.Config));
         if (options.DedicatedPrompt.HasValue) config.UseChatVPetPrompt = options.DedicatedPrompt.Value;
         string id = Guid.NewGuid().ToString("N");
         string directory = Path.Combine(DataDirectory, id);
         Directory.CreateDirectory(directory);
-        if (hostSettings != null) File.WriteAllText(Path.Combine(directory, "host-settings.lps"), hostSettings);
-        var host = new PluginHost(directory, id, config);
-        var session = new WorkbenchSession(id, options, directory, host, null);
-        if (checkpoint != null) { session.RestoreCheckpoint(checkpoint); session.SaveBranch(); }
+        PluginHost? host = null;
+        WorkbenchSession session;
+        try
+        {
+            WorkbenchData.Import(directory, options, branchSource);
+            if (hostSettings != null) File.WriteAllText(Path.Combine(directory, "host-settings.lps"), hostSettings);
+            host = new PluginHost(directory, id, config);
+            session = new WorkbenchSession(id, options, directory, host, null);
+            if (checkpoint != null) { session.RestoreCheckpoint(checkpoint); session.SaveBranch(); }
+        }
+        catch
+        {
+            host?.Dispose();
+            Directory.Delete(directory, recursive: true);
+            throw;
+        }
         session.Changed = () => Changed?.Invoke(id);
         lock (gate) { sessions.Add(id, session); saved.Add(id, new()); }
         Changed?.Invoke(id);
@@ -134,7 +176,7 @@ public sealed class WorkbenchService : IDisposable
             var checkpoint = (JObject)state["checkpoint"]!.DeepClone();
             if (variant == "no-summary") checkpoint["summaries"] = new JArray();
             var config = JsonConvert.DeserializeObject<OpenAIChatConfig>(File.ReadAllText(Path.Combine(source.DirectoryPath, "ChatVPetProcess.Settings.json")))!;
-            var branch = Create(options, checkpoint, config, source.Host.Settings.ToString());
+            var branch = Create(options, checkpoint, config, source.Host.Settings.ToString(), source.DirectoryPath);
             branch.Add("comparison", "相同存档起点 · " + variant, new { group, source = id, variant, prompt,
                 note = "各分支均从冷缓存开始。关闭 RAG 只关闭知识/记忆注入，工具候选仍按配置召回。关闭摘要恢复完整原文，会改变上下文长度。结果差异是线索，不是因果证明。" });
             branch.Start([new() { Text = prompt }]); ids.Add(branch.Id);

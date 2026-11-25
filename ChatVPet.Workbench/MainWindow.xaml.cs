@@ -22,12 +22,21 @@ public partial class MainWindow : Window
     private bool refreshing;
     private bool raw;
     private readonly ObservableCollection<ChatRow> chat = [];
+    private readonly ObservableCollection<EventRow> visibleEvents = [];
     private JObject? snapshot;
     public MainWindow(WorkbenchService service, int port)
     {
         InitializeComponent(); this.service = service;
-        ApiAddress.Text = $"API  127.0.0.1:{port}";
+        MoreButton.ToolTip = $"本机 API · 127.0.0.1:{port}";
+        MoreButton.IsEnabled = SendButton.IsEnabled = false;
         ChatItems.ItemsSource = chat;
+        Inspector.RoundSelected += turn =>
+        {
+            var row = chat.FirstOrDefault(c => c.Turn == turn && c.Kind == "user");
+            if (row != null && ChatItems.ItemContainerGenerator.ContainerFromItem(row) is FrameworkElement bubble)
+                ChatScroll.ScrollToVerticalOffset(ChatScroll.VerticalOffset + bubble.TranslatePoint(new Point(), ChatScroll).Y);
+        };
+        EventsList.ItemsSource = visibleEvents;
         service.Changed += OnChanged;
         Refresh();
         Closing += OnClosing;
@@ -48,47 +57,92 @@ public partial class MainWindow : Window
         snapshot = service.Snapshot(selected);
         bool busy = snapshot.Value<bool>("busy");
         SessionTitle.Text = snapshot["options"]!.Value<string>("Title");
-        SessionStatus.Text = $"{snapshot.Value<string>("status")}  ·  {snapshot["configuration"]!.Value<string>("Model")}  ·  {snapshot["options"]!.Value<string>("Compression")}  ·  {snapshot.Value<int>("turnNumber")} 轮";
-        SendButton.IsEnabled = !busy && !snapshot.Value<bool>("readOnly"); StopButton.IsEnabled = busy;
+        SessionStatus.Text = string.Join("  ·  ", new[] { (string?)snapshot["status"], (string?)snapshot["configuration"]?["Model"],
+            $"{snapshot.Value<int>("turnNumber")} 轮" }.Where(x => !string.IsNullOrWhiteSpace(x)));
+        Composer.Visibility = snapshot.Value<bool>("readOnly") ? Visibility.Collapsed : Visibility.Visible;
+        SendButton.IsEnabled = !busy && !snapshot.Value<bool>("readOnly"); StopButton.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
+        MoreButton.IsEnabled = true;
         Welcome.Visibility = Visibility.Collapsed;
         bool follow = ChatScroll.ScrollableHeight - ChatScroll.VerticalOffset < 80;
+        int oldChatCount = chat.Count;
+        int previousSequence = shownSequence;
         foreach (var entry in snapshot["events"]!.Where(x => x.Value<int>("seq") > shownSequence))
         {
             string kind = entry.Value<string>("kind")!;
             if (kind is "user" or "assistant" or "display" or "error" or "note")
-                chat.Add(new() { Kind = kind, Label = $"第 {entry.Value<int>("turn")} 轮 · {kind switch { "user" => "你", "assistant" => "ChatVPet", "display" => "宿主展示", "note" => "人工分析", _ => "运行错误" }}",
+                chat.Add(new() { Kind = kind, Turn = entry.Value<int>("turn"), Label = $"第 {entry.Value<int>("turn")} 轮 · {kind switch { "user" => "你", "assistant" => "ChatVPet", "display" => "宿主展示", "note" => "人工分析", _ => "运行错误" }}",
                     Text = kind == "note" ? entry["data"]!.Value<string>("text")! : kind == "error" ? entry["data"]!.Value<string>("message")! : entry.Value<string>("title")! });
         }
         shownSequence = snapshot["events"]!.Last?.Value<int>("seq") ?? 0;
-        if (follow) ChatScroll.ScrollToEnd();
-        RenderEvents();
-        var state = (JObject)snapshot["checkpoint"]!;
-        ContextDetail.Text = new JObject { ["summary"] = state["summaries"]?.DeepClone(), ["latestTurn"] = state["dialogues"]?.Last?["Turn"]?.DeepClone(),
-            ["host"] = state["host"]?.DeepClone(), ["settings"] = state["settings"]?.DeepClone(), ["retrieval"] = state["retrieval"]?.DeepClone(),
-            ["LastSummaryError"] = state["LastSummaryError"]?.DeepClone(), ["LastRetrievalError"] = state["LastRetrievalError"]?.DeepClone() }.ToString();
-        ConfigDetail.Text = snapshot["configuration"]!.ToString();
+        if (follow && chat.Count != oldChatCount) ChatScroll.ScrollToEnd();
+        if (shownSequence != previousSequence || previousSequence == 0)
+        {
+            Inspector.Update(snapshot);
+        }
+        if (Advanced.IsVisible) RenderAdvanced();
     }
-    private void RenderEvents()
+    private static void SetText(TextBox box, string value)
+    {
+        if (box.Text != value) box.Text = value;
+    }
+    private void Menu_Click(object sender, RoutedEventArgs e)
+    {
+        var button = (Button)sender;
+        button.ContextMenu.PlacementTarget = button;
+        button.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        button.ContextMenu.IsOpen = true;
+    }
+    private void Advanced_Click(object sender, RoutedEventArgs e)
+    {
+        Advanced.SelectedIndex = int.Parse((string)((MenuItem)sender).Tag);
+        Inspector.Visibility = Visibility.Collapsed;
+        Advanced.Visibility = BackButton.Visibility = Visibility.Visible;
+        InspectorTitle.Text = "会话工具";
+        RenderAdvanced();
+    }
+    private void RenderAdvanced()
+    {
+        if (snapshot == null) return;
+        int after = visibleEvents.LastOrDefault()?.Seq ?? 0;
+        RenderEvents(after);
+        SetText(ContextDetail, DiagnosticText.Context(snapshot));
+        SetText(ConfigDetail, DiagnosticText.Config(snapshot));
+    }
+    private void Back_Click(object sender, RoutedEventArgs e) => ShowInspector();
+    private void ShowInspector()
+    {
+        Inspector.Visibility = Visibility.Visible;
+        Advanced.Visibility = BackButton.Visibility = Visibility.Collapsed;
+        InspectorTitle.Text = "本轮测试";
+    }
+    private void Inspect_Click(object sender, RoutedEventArgs e)
+    {
+        ShowInspector();
+        Inspector.SelectTurn((int)((Button)sender).Tag);
+    }
+    private void RenderEvents(int after = 0)
     {
         if (snapshot == null) return;
         int? seq = (EventsList.SelectedItem as EventRow)?.Seq;
-        var rows = snapshot["events"]!.Where(x => Filter.SelectedIndex switch
+        if (after == 0) visibleEvents.Clear();
+        var rows = snapshot["events"]!.Where(x => x.Value<int>("seq") > after).Where(x => Filter.SelectedIndex switch
         {
-            1 => x.Value<string>("kind") is "chat" or "tool" or "vision",
+            1 => x.Value<string>("kind") is "chat" or "tool" or "vision" or "summary" or "offline",
             2 => x.Value<string>("kind") is "retrieval" or "embedding" or "rerank",
             3 => x.Value<string>("kind") == "summary",
             4 => x.Value<string>("kind") is "host" or "turn" or "plugin-check",
             5 => x.Value<string>("kind") is "error" or "review" or "note", _ => true
         }).Select(x => new EventRow { Seq = x.Value<int>("seq"), Label = $"{x.Value<int>("seq"):D3} · 第{x.Value<int>("turn")}轮  {x.Value<string>("title")}", Data = (JObject)x }).ToArray();
-        EventsList.ItemsSource = rows;
-        EventsList.SelectedItem = rows.FirstOrDefault(x => x.Seq == seq) ?? rows.LastOrDefault();
+        foreach (var row in rows) visibleEvents.Add(row);
+        if (EventsList.SelectedItem == null)
+            EventsList.SelectedItem = visibleEvents.FirstOrDefault(x => x.Seq == seq) ?? visibleEvents.LastOrDefault();
     }
     private void Session_Selected(object sender, SelectionChangedEventArgs e)
     {
         if (refreshing || SessionsList.SelectedItem is not SessionRow row) return;
         Run(() => Select(row.Id));
     }
-    private void Select(string id) { selected = id; shownSequence = 0; chat.Clear(); snapshot = null; Detail.Clear(); Refresh(); }
+    private void Select(string id) { selected = id; shownSequence = 0; chat.Clear(); snapshot = null; ShowInspector(); visibleEvents.Clear(); Detail.Clear(); Refresh(); }
     private void Event_Selected(object sender, SelectionChangedEventArgs e)
     {
         RenderDetail();
@@ -96,53 +150,25 @@ public partial class MainWindow : Window
     private void Raw_Click(object sender, RoutedEventArgs e) { raw = !raw; RenderDetail(); }
     private void RenderDetail()
     {
-        if (EventsList.SelectedItem is not EventRow row) return;
-        var data = row.Data["data"];
-        if (!raw && data is JObject obj && obj["Request"] is JObject request)
-        {
-            var text = new System.Text.StringBuilder();
-            text.AppendLine(row.Label).AppendLine(obj.Value<string>("Endpoint"));
-            text.AppendLine($"模型: {obj.Value<string>("Model")}  HTTP: {obj.Value<int>("StatusCode")}  耗时: {obj.Value<double>("Milliseconds"):F0} ms");
-            text.AppendLine($"temperature: {request["temperature"]}  max_tokens: {request["max_tokens"]}");
-            int index = 0;
-            foreach (var message in request["messages"] ?? new JArray())
-            {
-                string? source = obj["Sources"]?[index++]?.Value<string>();
-                text.AppendLine().AppendLine($"━━ {message["role"]}{(source == null ? "" : " · " + source)} ━━").AppendLine(message["content"]?.ToString());
-            }
-            if (request["messages"] == null) text.AppendLine(request.ToString());
-            if (request["tools"] != null) text.AppendLine().AppendLine("━━ 可用工具 ━━").AppendLine(request["tools"]!.ToString());
-            text.AppendLine().AppendLine("━━ 模型原始返回 ━━").AppendLine(obj.Value<string>("Response"));
-            string response = obj.Value<string>("Response") ?? "";
-            try
-            {
-                var result = JObject.Parse(response);
-                string? content = result["choices"]?[0]?["message"]?.Value<string>("content");
-                if (content != null) text.AppendLine().AppendLine("━━ 回复正文 ━━").AppendLine(content);
-            }
-            catch (Newtonsoft.Json.JsonException) { }
-            if (obj.Value<string>("Error")?.Length > 0) text.AppendLine("错误: " + obj.Value<string>("Error"));
-            Detail.TextWrapping = TextWrapping.Wrap; Detail.Text = text.ToString();
-        }
-        else if (!raw && row.Data.Value<string>("kind") == "retrieval")
-        {
-            var text = new System.Text.StringBuilder();
-            text.AppendLine($"{data!["kind"]} · {data["candidateCount"]} 个候选 · 返回上限 {data["limit"]}");
-            text.AppendLine($"缓存命中 {data["cacheHits"]} · 服务异常 {data["ServiceUnavailable"]}");
-            text.AppendLine(data.Value<string>("error"));
-            text.AppendLine("召回分数越低越相关；重排分数越高越相关。\n入选后还会经过去重与上下文预算，最终内容见本轮上下文。");
-            foreach (var item in data["ranked"] ?? new JArray())
-                text.AppendLine($"{(item.Value<bool>("selected") ? "✓ 入选" : "· 未选")}  召回 {item["recallScore"]}  重排 {item["rerankScore"]}").AppendLine(item.Value<string>("text")).AppendLine();
-            Detail.TextWrapping = TextWrapping.Wrap; Detail.Text = text.ToString();
-        }
-        else { Detail.TextWrapping = TextWrapping.NoWrap; Detail.Text = row.Data.ToString(); }
+        if (EventsList.SelectedItem is not EventRow row) { if (EventsList.Items.Count == 0) Detail.Clear(); return; }
+        RawButton.Content = raw ? "阅读视图" : "查看 JSON";
+        Detail.TextWrapping = raw ? TextWrapping.NoWrap : TextWrapping.Wrap;
+        SetText(Detail, raw ? row.Data.ToString() : DiagnosticText.Event(row.Data));
     }
+    private void Bubble_Wheel(object sender, MouseWheelEventArgs e)
+    {
+        // Read-only chat bubbles grow with the text. The outer conversation owns scrolling.
+        e.Handled = true;
+        ChatScroll.RaiseEvent(new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+            { RoutedEvent = Mouse.MouseWheelEvent, Source = ChatScroll });
+    }
+    private void Defaults_Click(object sender, RoutedEventArgs e) => Run(() => new DefaultsWindow(service, this).ShowDialog());
     private void Filter_Changed(object sender, SelectionChangedEventArgs e) { if (IsLoaded) RenderEvents(); }
     private void Run(Action action) { try { action(); } catch (Exception ex) { MessageBox.Show(this, ex.Message, "ChatVPet Lab"); } }
     private WorkbenchSession Current => selected != null ? service.Get(selected) : throw new InvalidOperationException("请先新建或选择会话。");
     private SessionOptions? AskOptions()
     {
-        var dialog = new NewSessionWindow(service.Configurations()) { Owner = this, Resources = Resources };
+        var dialog = new NewSessionWindow(service) { Owner = this, Resources = Resources };
         return dialog.ShowDialog() == true ? dialog.Options : null;
     }
     private void New_Click(object sender, RoutedEventArgs e) => Run(() => { var options = AskOptions(); if (options != null) Select(service.Create(options).Id); });
@@ -188,5 +214,5 @@ public partial class MainWindow : Window
     }
     private sealed class SessionRow { public string Id { get; set; } = ""; public string Label { get; set; } = ""; }
     private sealed class EventRow { public int Seq { get; set; } public string Label { get; set; } = ""; public JObject Data { get; set; } = new(); }
-    private sealed class ChatRow { public string Kind { get; set; } = ""; public string Label { get; set; } = ""; public string Text { get; set; } = ""; }
+    private sealed class ChatRow { public int Turn { get; set; } public string Kind { get; set; } = ""; public string Label { get; set; } = ""; public string Text { get; set; } = ""; }
 }
