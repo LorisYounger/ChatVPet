@@ -53,6 +53,7 @@ public partial class VPetChatProcess
                     TrainingProtocolVersion = allow ? "2026-11-25" : "",
                     ProcessVersion = typeof(VPetChatProcess).Assembly.ManifestModule.ModuleVersionId.ToString(),
                     Template = chatModel == "chatvpet-qw35-9b-v1" ? "chatvpet-v1" : "process",
+                    Language = ChatProtocol.NormalizeLanguage(Language),
                     Allow = allow, TurnId = turnId ?? Guid.NewGuid().ToString("N"), ChatModel = chatModel, ToolModel = toolModel,
                     InputAuthorized = allow && observation.Length == 0 && (summary == null || summary.Allow)
                         && recent.All(TrainingSourceAllowed),
@@ -74,7 +75,7 @@ public partial class VPetChatProcess
             var used = new HashSet<DiaryEntry>();
             foreach (var item in SelectMemories(turn, MemoryLimit, recent))
             {
-                string text = MemoryText(item);
+                string text = MemoryText(item, turn.Language);
                 if (text.Length > remaining) continue;
                 fitted.Add(text); remaining -= text.Length + 2;
                 turn.InputAuthorized &= TrainingSourceAllowed(item);
@@ -82,7 +83,7 @@ public partial class VPetChatProcess
             }
             turn.Reference = string.Join("; ", fitted);
             turn.UsedDiaryIds = used.Select(x => x.Id).ToList();
-            turn.InitialInput = ChatProtocol.UserMessage(message, turn.State, turn.Reference, observation, summary: turn.Summary);
+            turn.InitialInput = ChatProtocol.UserMessage(message, turn.State, turn.Reference, observation, summary: turn.Summary, language: turn.Language);
             long available = (long)RequestCharacterLimit - turn.System.Length - turn.InitialInput.Length;
             if (RequestCharacterLimit <= 0 || available < 0 || MaxHistoryBeforeCompress <= 0 || SummaryAPIAskFunction == null
                 || attemptedBoundary == boundary || turn.History.Sum(m => (long)m.Content.Length) <= available)
@@ -182,7 +183,7 @@ public partial class VPetChatProcess
                     {
                         foreach (var item in found)
                         {
-                            string text = MemoryText(item);
+                            string text = MemoryText(item, turn.Language);
                             if (text.Length > remaining) continue;
                             recalled.Add(text); remaining -= text.Length + 2;
                             turn.ResultsAuthorized &= TrainingSourceAllowed(item);
@@ -289,13 +290,14 @@ public partial class VPetChatProcess
         return selected;
     }
 
-    private static string MemoryText(Dialogue entry)
+    private static string MemoryText(Dialogue entry, string? language = null)
     {
         if (entry is DiaryEntry diary) return diary.ToContextLine();
-        string text = $"{entry.CreatedAt:yyyy-MM-dd HH:mm} 玩家: {entry.Question}";
-        if (entry.MemoryAnswer.Length > 0) text += "; 桌宠: " + entry.MemoryAnswer;
+        var (playerLabel, petLabel, hostLabel) = ChatProtocol.MemoryLabels(language);
+        string text = $"{entry.CreatedAt:yyyy-MM-dd HH:mm} {playerLabel}: {entry.Question}";
+        if (entry.MemoryAnswer.Length > 0) text += $"; {petLabel}: " + entry.MemoryAnswer;
         string receipts = string.Join("; ", entry.HostEvidence);
-        if (receipts.Length > 0) text += "; 宿主记录: " + receipts;
+        if (receipts.Length > 0) text += $"; {hostLabel}: " + receipts;
         return text;
     }
 
@@ -369,7 +371,7 @@ public partial class VPetChatProcess
                 if (control.ForceToStop || control.StopBeforeNext) return;
                 if (call.Code == "finish")
                 {
-                    string note = "操作模型说明(不是执行事实): " + call.Args.GetValueOrDefault("reason", "无需进一步操作。");
+                    string note = ChatProtocol.ToolNotePrefix(turn.Language) + call.Args.GetValueOrDefault("reason", "无需进一步操作。");
                     lock (turnGate) turn.ResultReference = note.Length <= ContextCharacterBudget ? note : "";
                     RunStep(turn, "finish", "操作判断", call.Args, () => new HostReceipt { Status = "skipped",
                         Facts = "判断已结束，没有新增操作。" });
@@ -528,14 +530,14 @@ public partial class VPetChatProcess
                 {
                     Revision = turn.ReceiptRevision,
                     Input = ChatProtocol.UserMessage(turn.Original, turn.State, turn.ResultReference, initial: turn.Initial.Body,
-                        receipt: string.Join("; ", turn.Receipts.Select(x => x.ToContext())))
+                        receipt: string.Join("; ", turn.Receipts.Select(x => x.ToContext(turn.Language))), language: turn.Language)
                 };
                 if (turn.InputAuthorized && turn.ResultsAuthorized)
                 {
                     // Only the tool model's text conclusion may leave the operational receipt store.
                     if (turn.ConclusionRevision == turn.ReceiptRevision && turn.ResultReference.Length > 0
                         && turn.Receipts.All(x => x.Tool is not ("图片观察" or "已有图片观察") && x.IsTerminal))
-                        exchange.TrainingInput = ChatProtocol.UserMessage(turn.Original, turn.State, initial: turn.Initial.Body, receipt: turn.ResultReference);
+                        exchange.TrainingInput = ChatProtocol.UserMessage(turn.Original, turn.State, initial: turn.Initial.Body, receipt: turn.ResultReference, language: turn.Language);
                     else if (turn.Receipts.All(x => x.Tool == "历史补查"))
                         exchange.TrainingInput = exchange.Input;
                 }

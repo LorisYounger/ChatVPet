@@ -64,6 +64,20 @@ namespace ChatVPet.ChatProcess
         [JsonIgnore] public ILocalization Localization;
 
         /// <summary>
+        /// 当前对话与提示词语言（zh-Hans / zh-Hant / en）
+        /// </summary>
+        public string Language { get; set; } = ChatProtocol.SimplifiedChinese;
+
+        /// <summary>
+        /// 统一切换语言与分词本地化实现
+        /// </summary>
+        public void SetLanguage(string? language)
+        {
+            Language = ChatProtocol.NormalizeLanguage(language);
+            Localization = ChatProtocol.CreateLocalization(Language);
+        }
+
+        /// <summary>
         /// 系统描述
         /// </summary>
         public string SystemDescription { get; set; } = ChatProtocol.RenderSystem();

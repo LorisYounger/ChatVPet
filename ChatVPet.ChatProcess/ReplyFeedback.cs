@@ -87,7 +87,7 @@ public partial class VPetChatProcess
         if (!string.IsNullOrWhiteSpace(direction))
         {
             messages.Add(new("assistant", parent.Length > 0 ? parent : revision == 0 ? turn.FirstReply : turn.Results.First(r => r.Revision == revision).Reply));
-            messages.Add(new("user", "本次改答要求：" + direction));
+            messages.Add(new("user", ChatProtocol.RevisionRequestPrefix(turn.Language) + direction));
         }
         return GenerateReply(turn, messages, revision != 0);
     }

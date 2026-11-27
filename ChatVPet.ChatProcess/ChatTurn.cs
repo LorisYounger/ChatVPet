@@ -27,6 +27,7 @@ public partial class ChatTurn
     public string FirstReply { get; set; } = "";
     public string ProcessVersion { get; set; } = "";
     public string Template { get; set; } = "";
+    public string Language { get; set; } = "";
     public string ChatModel { get; set; } = "";
     public string ToolModel { get; set; } = "";
     public string Original { get; set; } = "";
@@ -87,6 +88,6 @@ public class HostReceipt
     public string Facts { get; set; } = "";
     public List<string> DisplayedItems { get; set; } = [];
     public bool IsTerminal => Status != "unknown";
-    public string ToContext() =>
-        $"{Tool}: {Status switch { "observed" => "已查到", "applied" => "已完成", "skipped" => "未执行", "failed" => "失败", "not_found" => "未找到", _ => "尚未确认" }}; {Facts}";
+    public string ToContext(string? language = null) =>
+        $"{Tool}: {ChatProtocol.ReceiptStatusLabel(Status, language)}; {Facts}";
 }

@@ -112,11 +112,7 @@ public partial class VPetChatProcess
                 while (remaining > available && count < history.Count) remaining -= lengths[count++];
             }
             limit = Math.Max(1, SummaryCharacterLimit);
-            instruction = Localization.DiaryCompressionSystemPrompt +
-                $"\n输入含 previousSummary（上次提要）与 dialogues（新增连续对话，按 Sequence 排序；Question 为主人原话，InitialAnswer/Answer/Callbacks 为桌宠对白，Observation 与 Receipts 为宿主记录）。只输出 JSON 对象，含两个非空字符串字段（使用原对话语言，各自不超过 {limit} 字）：\"diary\" 仅记录本次 dialogues；\"summary\" 合并 previousSummary 与本次事实，保留偏好、名称、约定、时间、人物、进度与未完成事项，省略琐事。" +
-                "\n事实规则：1) 主人给出的名称、偏好、更正与生活经历以 Question 为准，新明确事实覆盖旧事实，保留否定与不确定性；" +
-                "2) 游戏操作的成败仅以 Receipts 为准，未执行或未确认按原状记录，某轮未操作不否定此前已成功的回执；" +
-                "3) 空 Answer 或桌宠回复“不记得/没找到/补查失败”仅表示当轮无对白证据，不得据此删除或覆盖 previousSummary 已有事实。";
+            instruction = Localization.DiaryCompressionSystemPrompt + "\n" + ChatProtocol.SummaryInstruction(Language, limit);
             long inputSize = instruction.Length + SummaryInput(previous, []).Length;
             // Never jump across pending turns. Count each serialized entry before adding it
             // instead of repeatedly serializing a potentially huge imported history.

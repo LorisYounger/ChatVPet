@@ -23,6 +23,15 @@ for (int index = 0; index < 2; index++)
 }
 Check(ChatProtocol.RenderSystem() != ChatProtocol.RenderSystem(useChatVPetPrompt: true), "ChatVPet selection uses its own template");
 Check(ChatProtocol.RenderSystem(useChatVPetPrompt: true).StartsWith("你叫萝莉斯,") && ChatProtocol.RenderSystem(useChatVPetPrompt: true).Contains("称呼主人为“主人”"), "ChatVPet template renders default identity");
+Check(ChatProtocol.NormalizeLanguage(null) == "zh-Hans" && ChatProtocol.NormalizeLanguage("") == "zh-Hans"
+    && ChatProtocol.NormalizeLanguage("zh-TW") == "zh-Hant" && ChatProtocol.NormalizeLanguage("zh-Hant") == "zh-Hant"
+    && ChatProtocol.NormalizeLanguage("en-US") == "en" && ChatProtocol.NormalizeLanguage("ja") == "en", "Language normalization covers empty/zh-Hans/zh-Hant/en/other");
+Check(ChatProtocol.RenderSystem(language: "zh-Hant").StartsWith("你叫蘿莉斯，") && ChatProtocol.RenderSystem(language: "zh-Hant").Contains("[回執:…]"), "Traditional Chinese system template renders default identity and Hant prefixes");
+Check(ChatProtocol.RenderSystem(language: "en").StartsWith("Your name is Lolis,") && ChatProtocol.RenderSystem(language: "en").Contains("[Receipt:...]"), "English system template renders default identity and English prefixes");
+Check(ChatProtocol.UserMessage("hi", state: ChatProtocol.FormatState(new DateTime(2026, 11, 27, 21, 30, 0), true, "Happy", 600, "en"), receipt: "ok", summary: "prev", language: "en")
+    is string enMsg && enMsg.Contains("State:Happy, Affinity:Close") && enMsg.Contains("[Reference:Earlier conversation summary") && enMsg.Contains("[Receipt:ok]"), "English UserMessage and FormatState use English labels");
+Check(ChatProtocol.UserMessage("你好", state: ChatProtocol.FormatState(new DateTime(2026, 11, 27, 21, 30, 0), true, "Happy", 600, "zh-Hant"), receipt: "好", summary: "前情", language: "zh-Hant")
+    is string hantMsg && hantMsg.Contains("狀態:開心, 好感:親近") && hantMsg.Contains("[參考:較早對話提要") && hantMsg.Contains("[回執:好]"), "Traditional Chinese UserMessage and FormatState use Hant labels");
 
 VPetChatProcess NewProcess() => new()
 {

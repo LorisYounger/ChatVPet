@@ -7,8 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="..\training\chatvpet\system-process-template.txt" LogicalName="ChatVPet.SystemTemplate" />
-    <EmbeddedResource Include="..\training\chatvpet\system-chatvpet-template.txt" LogicalName="ChatVPet.ChatVPetSystemTemplate" />
+    <EmbeddedResource Include="..\training\chatvpet\system-process-template.txt" LogicalName="ChatVPet.SystemTemplate" WithCulture="false" />
+    <EmbeddedResource Include="..\training\chatvpet\system-process-template.zh-Hant.txt" LogicalName="ChatVPet.SystemTemplate.zh-Hant" WithCulture="false" />
+    <EmbeddedResource Include="..\training\chatvpet\system-process-template.en.txt" LogicalName="ChatVPet.SystemTemplate.en" WithCulture="false" />
+    <EmbeddedResource Include="..\training\chatvpet\system-chatvpet-template.txt" LogicalName="ChatVPet.ChatVPetSystemTemplate" WithCulture="false" />
+    <EmbeddedResource Include="..\training\chatvpet\system-chatvpet-template.zh-Hant.txt" LogicalName="ChatVPet.ChatVPetSystemTemplate.zh-Hant" WithCulture="false" />
+    <EmbeddedResource Include="..\training\chatvpet\system-chatvpet-template.en.txt" LogicalName="ChatVPet.ChatVPetSystemTemplate.en" WithCulture="false" />
     <PackageReference Include="Faithlife.JiebaNet.Segmenter" Version="0.1.1" />
     <PackageReference Include="LinePutScript" Version="1.11.9" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
