@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Net.Http.Headers;
 using System.Text;
@@ -25,16 +25,18 @@ public sealed class ModelApiClient : IDisposable
         if (key.Length > 0) http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", key);
     }
 
-    private JObject Post(string path, object body)
+    private JObject Send(HttpMethod method, string path, object? body)
     {
-        var trace = Trace == null ? null : new ModelApiTrace { Endpoint = url + path, Model = model, Request = JObject.FromObject(body) };
+        var trace = Trace == null ? null : new ModelApiTrace { Endpoint = url + path, Model = model, Request = body == null ? new() : JObject.FromObject(body) };
         if (trace != null) Trace?.Invoke(trace);
         var timer = trace == null ? null : Stopwatch.StartNew();
         try
         {
-            using var content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
+            using var request = new HttpRequestMessage(method, url + path);
+            if (body != null)
+                request.Content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
             Requests++;
-            using var response = http.PostAsync(url + path, content).GetAwaiter().GetResult();
+            using var response = http.SendAsync(request).GetAwaiter().GetResult();
             string raw = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
             if (trace != null) { trace.StatusCode = (int)response.StatusCode; trace.Response = raw; }
             response.EnsureSuccessStatusCode();
@@ -53,11 +55,14 @@ public sealed class ModelApiClient : IDisposable
         }
     }
 
+    private JObject Post(string path, object body) => Send(HttpMethod.Post, path, body);
+
     public VPetChatProcess.AIAPIAskResult Chat(string system, IReadOnlyList<ChatMessage> messages, List<ToolUse> tools,
-        double temperature = 1, int maxTokens = 2048)
+        double temperature = 1, int maxTokens = 2048, int? seed = null)
     {
         var wire = messages.Prepend(new ChatMessage("system", system)).Select(m => new { role = m.Role, content = m.Content });
         var body = new JObject { ["model"] = model, ["messages"] = JArray.FromObject(wire), ["temperature"] = temperature, ["max_tokens"] = maxTokens };
+        if (seed.HasValue) body["seed"] = seed.Value;
         if (tools.Count > 0)
             body["tools"] = JArray.FromObject(tools.Select(x => new { type = "function", function = new { name = x.Code, description = x.Descriptive, parameters = x.Parameters } }));
         var response = Post("/chat/completions", body);
@@ -147,6 +152,109 @@ public sealed class ModelApiClient : IDisposable
         string? observation = choice["message"]?["content"]?.Value<string>();
         if (string.IsNullOrWhiteSpace(observation)) throw new InvalidDataException("视觉服务返回空观察。");
         return observation;
+    }
+
+    public static string ResolveSearchMode(string? mode, string? url)
+    {
+        string normalized = (mode ?? "").Trim().ToLowerInvariant();
+        if (normalized is "" or "off" or "none") return "";
+        if (normalized is "deepseek" or "openai_responses" or "searxng") return normalized;
+        if (normalized == "auto" && !string.IsNullOrWhiteSpace(url))
+        {
+            if (url.Contains("deepseek.com", StringComparison.OrdinalIgnoreCase)) return "deepseek";
+            if (url.Contains("openai.com", StringComparison.OrdinalIgnoreCase)) return "openai_responses";
+        }
+        return "";
+    }
+
+    public string WebSearch(string mode, string query, int count = 5, string? oriQuestion = null)
+    {
+        string resolved = ResolveSearchMode(mode, url);
+        if (resolved.Length == 0) throw new InvalidOperationException("未配置有效的联网搜索模式: " + mode);
+        query = query.Trim();
+        count = Math.Clamp(count, 1, 10);
+        if (resolved == "deepseek")
+        {
+            string searchPath = url.EndsWith("/v1", StringComparison.OrdinalIgnoreCase) ? "/tools/search" : "/v1/tools/search";
+            var body = new JObject
+            {
+                ["query"] = query.Length > 128 ? query[..128] : query,
+                ["count"] = count,
+                ["need_content"] = false
+            };
+            if (!string.IsNullOrWhiteSpace(oriQuestion))
+            {
+                string oq = oriQuestion.Trim();
+                body["ori_question"] = oq.Length > 128 ? oq[..128] : oq;
+            }
+            var response = Post(searchPath, body);
+            return FormatSearchItems(response["results"] as JArray, count, "summary", "snippet");
+        }
+        if (resolved == "openai_responses")
+        {
+            var response = Post("/responses", new
+            {
+                model,
+                instructions = "请联网检索并简洁准确地汇总与查询直接相关的事实与数据，仅陈述查到的信息，不要编造。",
+                input = string.IsNullOrWhiteSpace(oriQuestion) ? query : $"问题：{oriQuestion.Trim()}\n搜索关键词：{query}",
+                tools = new object[] { new { type = "web_search" } },
+                max_output_tokens = 1024
+            });
+            var texts = new List<string>();
+            var sources = new List<string>();
+            var seenUrls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (response["output"] is JArray output)
+            {
+                foreach (var item in output)
+                {
+                    if (item["content"] is not JArray contents) continue;
+                    foreach (var part in contents)
+                    {
+                        if (part["type"]?.Value<string>() != "output_text") continue;
+                        string text = part["text"]?.Value<string>()?.Trim() ?? "";
+                        if (text.Length > 0) texts.Add(text);
+                        if (part["annotations"] is not JArray annotations) continue;
+                        foreach (var ann in annotations)
+                        {
+                            if (ann["type"]?.Value<string>() != "url_citation") continue;
+                            string? citationUrl = ann["url"]?.Value<string>()?.Trim();
+                            if (string.IsNullOrEmpty(citationUrl) || !seenUrls.Add(citationUrl)) continue;
+                            string title = ann["title"]?.Value<string>()?.Trim() ?? "";
+                            sources.Add(title.Length > 0 ? $"{title} ({citationUrl})" : citationUrl);
+                            if (sources.Count >= count) break;
+                        }
+                    }
+                }
+            }
+            string summary = texts.Count > 0 ? string.Join("\n", texts) : response["output_text"]?.Value<string>()?.Trim() ?? "";
+            if (summary.Length == 0) return "";
+            return sources.Count > 0 ? summary + "\n来源: " + string.Join("; ", sources) : summary;
+        }
+        string searxPath = (url.EndsWith("/search", StringComparison.OrdinalIgnoreCase) ? "" : "/search")
+            + $"?q={Uri.EscapeDataString(query)}&format=json";
+        var searxResponse = Send(HttpMethod.Get, searxPath, null);
+        return FormatSearchItems(searxResponse["results"] as JArray, count, "content", "snippet");
+    }
+
+    private static string FormatSearchItems(JArray? results, int count, string primaryField, string fallbackField)
+    {
+        if (results == null || results.Count == 0) return "";
+        var lines = new List<string>();
+        foreach (var item in results.Take(count))
+        {
+            string title = item["title"]?.Value<string>()?.Trim() ?? "";
+            string body = item[primaryField]?.Value<string>()?.Trim() ?? "";
+            if (body.Length == 0) body = item[fallbackField]?.Value<string>()?.Trim() ?? "";
+            if (body.Length > 600) body = body[..600] + "…";
+            string link = item["url"]?.Value<string>()?.Trim() ?? "";
+            if (title.Length == 0 && body.Length == 0) continue;
+            var parts = new List<string>();
+            if (title.Length > 0) parts.Add($"{lines.Count + 1}. {title}");
+            if (body.Length > 0) parts.Add(body);
+            if (link.Length > 0) parts.Add("来源: " + link);
+            lines.Add(string.Join("\n", parts));
+        }
+        return string.Join("\n\n", lines);
     }
 
     public void Dispose() => http.Dispose();

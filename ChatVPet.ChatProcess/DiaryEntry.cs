@@ -5,6 +5,8 @@ namespace ChatVPet.ChatProcess
     /// </summary>
     public class DiaryEntry : Dialogue
     {
+        public bool Allow { get; set; }
+
         public List<string> SourceTurns { get; set; } = [];
         public List<string> SourceDialogueIds { get; set; } = [];
         /// <summary>衰减下限，防止权重归零</summary>
@@ -108,35 +110,11 @@ namespace ChatVPet.ChatProcess
         }
 
         /// <summary>
-        /// 设置基础重要性权重（LLM 调节接口）
-        /// </summary>
-        public void SetBaseWeight(float weight)
-        {
-            BaseImportanceWeight = Math.Max(MinImportanceWeight, weight);
-            RecalculateWeight();
-        }
-
-        /// <summary>
-        /// 相对调整基础重要性权重（LLM 调节接口）
-        /// </summary>
-        public void AdjustBaseWeight(float delta)
-        {
-            SetBaseWeight(BaseImportanceWeight + delta);
-        }
-
-        /// <summary>
         /// 转换为在系统提示中展示的单行摘要（含十六进制 ID 和时间戳）
         /// </summary>
         public string ToContextLine()
         {
-            return $"[{RecordedAt:yyyy-MM-dd HH:mm} #{Id:x}] {NormalizeContextText(Answer)}";
-        }
-
-        private static string NormalizeContextText(string? text)
-        {
-            if (string.IsNullOrEmpty(text))
-                return string.Empty;
-            return text.Replace("\r\n", " ").Replace('\r', ' ').Replace('\n', ' ').Trim();
+            return $"[{RecordedAt:yyyy-MM-dd HH:mm} #{Id:x}] {Answer.Replace("\r\n", " ").Replace('\r', ' ').Replace('\n', ' ').Trim()}";
         }
     }
 }

@@ -98,6 +98,10 @@ internal sealed class DefaultsWindow : Window
             Field("重排 API Key", profile.RerankApiKey, s => profile.RerankApiKey = s, true);
             var enabled = new CheckBox { Content = "启用重排", Foreground = Foreground, IsChecked = profile.RerankEnabled };
             editor.Children.Add(enabled); readFields.Add(() => profile.RerankEnabled = enabled.IsChecked == true);
+            Field("联网搜索模式 (auto / off / deepseek / openai_responses / searxng)", profile.WebSearchMode, s => profile.WebSearchMode = string.IsNullOrWhiteSpace(s) ? "auto" : s);
+            Field("联网搜索 URL (DeepSeek/OpenAI 留空复用操作 API)", profile.WebSearchApiUrl, s => profile.WebSearchApiUrl = s);
+            Field("联网搜索模型 (仅 OpenAI Responses 可选)", profile.WebSearchModel, s => profile.WebSearchModel = s);
+            Field("联网搜索 API Key (留空复用操作密钥)", profile.WebSearchApiKey, s => profile.WebSearchApiKey = s, true);
         }
         var data = new DataSettingsForm(this, service, EditProfile); form.Children.Add(data);
         EditProfile(data.Values.Config);

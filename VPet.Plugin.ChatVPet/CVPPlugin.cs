@@ -1,8 +1,6 @@
 using ChatVPet.ChatProcess;
 using LinePutScript;
 using LinePutScript.Localization.WPF;
-using Microsoft.CognitiveServices.Speech;
-using Microsoft.CognitiveServices.Speech.Audio;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -21,7 +19,6 @@ public partial class CVPPlugin : MainPlugin
 {
     public VPetChatProcess VPetChatProcess = new();
     public OpenAIChatConfig? OpenAIConfig;
-    public SpeechRecognizer? Recognizer;
     public CVPTTalkAPI? TalkAPI;
     public string SideMessage = "";
     public int temptoken;
@@ -45,7 +42,6 @@ public partial class CVPPlugin : MainPlugin
             string path = settingsPath;
             OpenAIConfig = File.Exists(path) ? JsonConvert.DeserializeObject<OpenAIChatConfig>(File.ReadAllText(path))! : new OpenAIChatConfig();
             EnsureSave();
-            ConfigureVoice();
         });
         TalkAPI = new CVPTTalkAPI(this);
         MW.TalkAPI.Add(TalkAPI);
@@ -93,12 +89,12 @@ public partial class CVPPlugin : MainPlugin
             process.RecoverInterruptedTurns();
             string committed = line[(gstr)"last_receipt"] ?? "";
             if (committed.Length > 0) process.ReceiveReceipt(JsonConvert.DeserializeObject<HostReceipt>(committed)!);
-            process.AllowTool = IsToolAllowed;
+            var host = new GameHost(MW, process, GetSaveId, "chatvpet_process");
+            process.AllowTool = host.IsToolAllowed;
             process.ScreenshotFunction = ObserveScreenshot;
             process.QuitFunction = FinishQuit;
-            process.W2VEngine = new W2VEngine(process);
             ReloadKnowledge();
-            RegisterTools();
+            host.RegisterTools();
             ConfigureModels();
             loadedSave = save;
         }
@@ -106,6 +102,29 @@ public partial class CVPPlugin : MainPlugin
 
     internal string GetSaveId() => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(
         $"{Environment.UserName}\0{MW.SteamID}\0{MW.PrefixSave}\0{MW.GameSavesData.Data["chatvpet_process"][(gstr)"id"]}")));
+
+    internal void ImportCloud(string file, string target)
+    {
+        var data = JObject.Parse(File.ReadAllText(file));
+        var settings = data["settings"] ?? throw new InvalidDataException("缺少模型设置。");
+        var chat = (string?)settings["Model"] ?? throw new InvalidDataException("缺少聊天模型。");
+        var tool = (string?)settings["ToolModel"] ?? throw new InvalidDataException("缺少 ToolCall 模型。");
+        var dialogues = data["dialogues"]!.ToObject<List<Dialogue>>()!;
+        var diaries = data["diaries"]!.ToObject<List<DiaryEntry>>()!;
+        var summaries = data["summaries"]!.ToObject<List<ConversationSummary>>()!;
+        lock (saveGate)
+        {
+            EnsureSave();
+            if (target != GetSaveId()) throw new InvalidOperationException("目标存档已经切换。");
+            VPetChatProcess.ImportConversation(dialogues, diaries, summaries);
+            OpenAIConfig!.Model = chat;
+            OpenAIConfig.ToolModel = tool;
+            OpenAIConfig.UseChatVPetPrompt = (bool?)settings["UseChatVPetPrompt"] == true;
+            if ((string?)settings["EmbeddingModel"] is string embedding) OpenAIConfig.EmbeddingModel = embedding;
+            Save();
+            ConfigureModels();
+        }
+    }
 
     public void ReloadKnowledge()
     {
@@ -153,18 +172,9 @@ public partial class CVPPlugin : MainPlugin
 
     public override void Save()
     {
-        if (OpenAIConfig != null)
-            File.WriteAllText(settingsPath, JsonConvert.SerializeObject(OpenAIConfig, Formatting.Indented), Encoding.UTF8);
-
-    }
-
-    public void ConfigureVoice()
-    {
-        Recognizer?.Dispose(); Recognizer = null;
-        if (!AzureVoiceEnable) return;
-        var config = SpeechConfig.FromSubscription(AzureKey, AzureRegion);
-        config.SpeechRecognitionLanguage = AzureRecognitionLanguage;
-        Recognizer = new SpeechRecognizer(config, AudioConfig.FromDefaultMicrophoneInput());
+        if (OpenAIConfig == null) return;
+        File.WriteAllText(settingsPath + ".tmp", JsonConvert.SerializeObject(OpenAIConfig, Formatting.Indented), Encoding.UTF8);
+        File.Move(settingsPath + ".tmp", settingsPath, true);
     }
 
     public override async void Setting()
@@ -174,7 +184,6 @@ public partial class CVPPlugin : MainPlugin
     }
     public override void EndGame()
     {
-        Recognizer?.Dispose();
-        chatApi?.Dispose(); toolApi?.Dispose(); embeddingApi?.Dispose(); rerankApi?.Dispose();
+        chatApi?.Dispose(); toolApi?.Dispose(); embeddingApi?.Dispose(); rerankApi?.Dispose(); searchApi?.Dispose();
     }
 }

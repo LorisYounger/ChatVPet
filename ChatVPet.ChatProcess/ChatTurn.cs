@@ -6,6 +6,7 @@ public sealed class ResultExchange
 {
     public long Sequence { get; set; }
     public int Revision { get; set; }
+    public string TrainingInput { get; set; } = "";
     public string Input { get; set; } = "";
     public string Reply { get; set; } = "";
 }
@@ -15,6 +16,19 @@ public partial class ChatTurn
     public string SaveId { get; set; } = "";
     public string TurnId { get; set; } = Guid.NewGuid().ToString("N");
     public long Sequence { get; set; }
+    public string TrainingProtocolVersion { get; set; } = "";
+    public bool Allow { get; set; }
+    public bool InputAuthorized { get; set; }
+    public bool ResultsAuthorized { get; set; }
+    public int ToolRound { get; set; }
+    public string WaitingStep { get; set; } = "";
+    public string EffectiveCandidate { get; set; } = "";
+    public int AnswerVersion { get; set; }
+    public string FirstReply { get; set; } = "";
+    public string ProcessVersion { get; set; } = "";
+    public string Template { get; set; } = "";
+    public string ChatModel { get; set; } = "";
+    public string ToolModel { get; set; } = "";
     public string Original { get; set; } = "";
     public string System { get; set; } = "";
     public string Summary { get; set; } = "";
@@ -23,6 +37,7 @@ public partial class ChatTurn
     public string Observation { get; set; } = "";
     public string InitialInput { get; set; } = "";
     public List<ResultExchange> Results { get; set; } = [];
+    public int ConclusionRevision { get; set; }
     public string ResultReference { get; set; } = "";
     public ChatHeader Initial { get; set; } = new();
     public List<ChatMessage> History { get; set; } = [];
@@ -54,6 +69,12 @@ public partial class ChatTurn
     public bool QuitCompleted { get; set; }
 }
 
+public sealed class ReplyDisplay
+{
+    public string Animation { get; set; } = "";
+    public bool Fallback { get; set; }
+}
+
 public class HostReceipt
 {
     public double? MoneySpent { get; set; }
@@ -66,7 +87,6 @@ public class HostReceipt
     public string Facts { get; set; } = "";
     public List<string> DisplayedItems { get; set; } = [];
     public bool IsTerminal => Status != "unknown";
-    public string ToContext() => Tool == "plan_action" && Status == "observed"
-        ? "行动条件已登记，登记时尚未执行。"
-        : $"{Tool}: {Status switch { "observed" => "已查到", "applied" => "已完成", "skipped" => "未执行", "failed" => "失败", "not_found" => "未找到", _ => "尚未确认" }}; {Facts}";
+    public string ToContext() =>
+        $"{Tool}: {Status switch { "observed" => "已查到", "applied" => "已完成", "skipped" => "未执行", "failed" => "失败", "not_found" => "未找到", _ => "尚未确认" }}; {Facts}";
 }

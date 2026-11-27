@@ -69,12 +69,12 @@ public partial class TurnInspector : UserControl
             {
                 string tool = (string?)r["Tool"] ?? "";
                 string status = (string?)r["Status"] ?? "";
-                if ((string?)r["StepId"] == "finish" || tool == "plan_action" && status == "observed") continue;
+                if ((string?)r["StepId"] == "finish") continue;
                 string name = tool switch
                 {
                     "list_items" => "查询商品", "read_state" => "读取桌宠状态", "buy_item" => "购买物品", "eat_item" => "食用物品",
                     "list_activities" => "查询活动", "start_activity" => "开始活动", "stop_activity" => "停止活动", "adjust_state" => "调整状态",
-                    "search_animations" => "查询动画", "play_animation" => "播放动画", "plan_action" => "登记行动", _ => tool
+                    "search_animations" => "查询动画", "play_animation" => "播放动画", _ => tool
                 };
                 string state = status switch { "applied" => "已执行", "observed" => "已查询", "skipped" => "已跳过", "failed" => "失败", _ => "待核对" };
                 steps.Add(new(name, state, status is "applied" or "observed" ? "#95D9C4" : "#E5BC89", (string?)r["Facts"] ?? ""));

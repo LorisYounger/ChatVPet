@@ -14,8 +14,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using VPet_Simulator.Windows.Interface;
-using Microsoft.CognitiveServices.Speech.Audio;
-using Microsoft.CognitiveServices.Speech;
 using ChatVPet.ChatProcess;
 using System.Collections.ObjectModel;
 
@@ -36,6 +34,29 @@ namespace VPet.Plugin.ChatVPet
         {
             ExtensionFunction.StartURL("https://github.com/LorisYounger/ChatVPet/blob/main/TrainingProtocol.md");
         }
+        private async void ImportCloud(object sender, RoutedEventArgs e)
+        {
+            var picker = new Microsoft.Win32.OpenFileDialog { Filter = "ChatVPet 云端会话|*.json" };
+            if (picker.ShowDialog() != true) return;
+            string target = plugin.GetSaveId();
+            if (MessageBox.Show(this, $"将覆盖当前桌宠 {plugin.MW.Core.Save!.Name} 的会话和模型选择。\n目标存档 {target}\n继续导入？",
+                "导入云端会话", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
+            string path = picker.FileName;
+            try
+            {
+                await Task.Run(() => plugin.ImportCloud(path, target));
+                var cfg = plugin.OpenAIConfig;
+                if (cfg == null || string.IsNullOrWhiteSpace(cfg.ApiUrl) || string.IsNullOrWhiteSpace(cfg.ToolApiUrl))
+                {
+                    MessageBox.Show(this, "会话和模型名称已导入。当前尚未配置独立插件的聊天或 ToolCall API 地址与密钥，请在此设置页补充后再继续聊天。",
+                        "导入云端会话", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+                Close();
+            }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message); }
+        }
+
         ObservableCollection<string> Knowledges = new ObservableCollection<string>();
         ObservableCollection<string> Dialogues = new ObservableCollection<string>();
         ObservableCollection<string> Tools = new ObservableCollection<string>();
@@ -70,7 +91,10 @@ namespace VPet.Plugin.ChatVPet
                 tbEmbeddingInstruction.Text = plugin.OpenAIConfig.EmbeddingInstruction;
                 cbScreenshot.IsChecked = plugin.OpenAIConfig.ScreenshotEnabled;
                 cbScreenScope.SelectedIndex = plugin.OpenAIConfig.ScreenshotScope == "screen" ? 1 : 0;
-                cbQuit.IsChecked = plugin.OpenAIConfig.AllowQuit;
+                SelectWebSearchMode(plugin.OpenAIConfig.WebSearchMode);
+                tbWebSearchUrl.Text = plugin.OpenAIConfig.WebSearchApiUrl;
+                tbWebSearchKey.Text = plugin.OpenAIConfig.WebSearchApiKey;
+                tbWebSearchModel.Text = plugin.OpenAIConfig.WebSearchModel;
                 tbEmbeddingModel.Text = plugin.OpenAIConfig.EmbeddingModel;
                 lbSpend.Content = plugin.TotalTokensUsage.ToString() + " Token";
                 totalused = plugin.TotalTokensUsage;
@@ -165,13 +189,17 @@ namespace VPet.Plugin.ChatVPet
                 EmbeddingApiKey = tbEmbeddingAPIKey.Text,
                 EmbeddingModel = string.IsNullOrWhiteSpace(tbEmbeddingModel.Text) ? "Qwen/Qwen3-Embedding-0.6B" : tbEmbeddingModel.Text,
                 ToolApiUrl = tbToolUrl.Text.TrimEnd('/'), ToolApiKey = tbToolKey.Text, ToolModel = tbToolModel.Text,
+                WebSearchMode = (cbWebSearchMode.SelectedItem as ComboBoxItem)?.Tag as string ?? "auto",
+                WebSearchApiUrl = tbWebSearchUrl.Text.Trim().TrimEnd('/'),
+                WebSearchApiKey = tbWebSearchKey.Text,
+                WebSearchModel = tbWebSearchModel.Text.Trim(),
                 RerankApiUrl = tbRerankUrl.Text, RerankApiKey = tbRerankKey.Text,
                 RerankModel = string.IsNullOrWhiteSpace(tbRerankModel.Text) ? "Qwen/Qwen3-Reranker-0.6B" : tbRerankModel.Text,
                 RerankEnabled = cbRerank.IsChecked == true, RetrievalTimeoutSeconds = timeout,
                 EmbeddingVersion = tbEmbeddingVersion.Text, RerankVersion = tbRerankVersion.Text,
                 EmbeddingInstruction = tbEmbeddingInstruction.Text,
                 ScreenshotEnabled = cbScreenshot.IsChecked == true, ScreenshotScope = cbScreenScope.SelectedIndex == 1 ? "screen" : "pet",
-                AllowQuit = cbQuit.IsChecked == true,
+                AllowQuit = plugin.OpenAIConfig?.AllowQuit ?? true,
             };
 
             plugin.ShowToken = swShowToken.IsChecked ?? false;
@@ -202,7 +230,6 @@ namespace VPet.Plugin.ChatVPet
                 {
                     plugin.ReloadKnowledge();
                     plugin.ConfigureModels();
-                    plugin.ConfigureVoice();
                     plugin.MW.Save();
                 });
                 Close();
@@ -333,12 +360,30 @@ namespace VPet.Plugin.ChatVPet
                 result.Tools.Select(x => $"[{x.Score:F3}] {x.Item.Code}: {x.Item.Descriptive}"));
         }
 
+        private void SelectWebSearchMode(string? mode)
+        {
+            string target = string.IsNullOrWhiteSpace(mode) ? "auto" : mode.Trim().ToLowerInvariant();
+            for (int i = 0; i < cbWebSearchMode.Items.Count; i++)
+                if (cbWebSearchMode.Items[i] is ComboBoxItem item && (item.Tag as string) == target)
+                { cbWebSearchMode.SelectedIndex = i; return; }
+            cbWebSearchMode.SelectedIndex = 0;
+        }
+
         private async void TestRetrieval_Click(object sender, RoutedEventArgs e)
         {
             var button = (Button)sender;
             button.IsEnabled = false;
             try { tbApiTestResult.Text = await Task.Run(plugin.TestRetrievalApis); }
             catch (Exception ex) { tbApiTestResult.Text = ex.Message; }
+            finally { button.IsEnabled = true; }
+        }
+
+        private async void TestWebSearch_Click(object sender, RoutedEventArgs e)
+        {
+            var button = (Button)sender;
+            button.IsEnabled = false;
+            try { tbWebSearchTestResult.Text = await Task.Run(plugin.TestWebSearchApi); }
+            catch (Exception ex) { tbWebSearchTestResult.Text = ex.Message; }
             finally { button.IsEnabled = true; }
         }
 

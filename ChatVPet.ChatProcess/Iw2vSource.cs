@@ -16,21 +16,8 @@ namespace ChatVPet.ChatProcess
         IEnumerable<string> KeyWords { get; }
 
         /// <summary>
-        /// 用于嵌入向量生成的原始文本列表，每项将被独立生成一个向量，
-        /// 与 <see cref="EmbeddingVectors"/> 一一对应。
+        /// 用于嵌入向量生成的原始文本列表。
         /// </summary>
         IEnumerable<string> EmbeddingTexts { get; }
-
-        /// <summary>
-        /// 聚合向量（<see cref="EmbeddingVectors"/> 各向量的均值），用于快速余弦相似度检索。
-        /// 由 <see cref="W2VEngine"/> 自动填充，无需手动赋值。
-        /// </summary>
-        float[]? Vector { get; set; }
-
-        /// <summary>
-        /// 每个 <see cref="EmbeddingTexts"/> 对应的嵌入向量缓存，
-        /// 由 <see cref="W2VEngine"/> 自动填充，无需手动赋值。
-        /// </summary>
-        float[][]? EmbeddingVectors { get; set; }
     }
 }

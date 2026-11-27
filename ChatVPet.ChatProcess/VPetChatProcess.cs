@@ -88,11 +88,6 @@ namespace ChatVPet.ChatProcess
         /// </summary>
         public int MaxToolRecallCount { get; set; } = 6;
 
-        /// <summary>
-        /// 词向量引擎
-        /// </summary>
-        public W2VEngine? W2VEngine { get; set; }
-
         // ── 日记功能 ────────────────────────────────────────────────────
 
         /// <summary>
@@ -151,49 +146,26 @@ namespace ChatVPet.ChatProcess
         }
 
         /// <summary>
-        /// 根据向量相似度检索与 <paramref name="query"/> 相关的知识库、工具和对话历史，
+        /// 根据向量与关键词混合相似度检索与 <paramref name="query"/> 相关的知识库、工具和对话历史，
         /// 结果按评分升序排列（分数越低越相关），并过滤掉超出 <see cref="IInCheck.IgnoreValue"/> 阈值的条目。
         /// </summary>
-        /// <param name="query">查询文本</param>
-        /// <returns>包含各类别已评分并排序结果的 <see cref="QuerySimilarResult"/></returns>
-        /// <exception cref="InvalidOperationException"><see cref="W2VEngine"/> 未初始化时抛出</exception>
         public QuerySimilarResult QuerySimilar(string query)
         {
+            List<KnowledgeDataBase> knowledges;
+            List<ToolUse> tools;
+            List<Dialogue> dialogues;
             lock (turnGate)
             {
-                if (W2VEngine == null)
-                    throw new InvalidOperationException("W2VEngine is null");
-
-                var vector = W2VEngine.GetQueryVector(query);
-                W2VEngine.GetQueryVector(KnowledgeDataBases);
-                W2VEngine.GetQueryVector(Tools);
-                W2VEngine.GetQueryVector(Dialogues);
-
-                var knowledges = KnowledgeDataBases
-                    .Select(x => (Item: x, Score: x.InCheck(query, W2VEngine.ComputeSimilarity(query, x, vector))))
-                    .Where(x => x.Score < IInCheck.IgnoreValue)
-                    .OrderBy(x => x.Score)
-                    .ToList();
-
-                var tools = Tools
-                    .Select(x => (Item: x, Score: x.InCheck(query, W2VEngine.ComputeSimilarity(query, x, vector))))
-                    .Where(x => x.Score < IInCheck.IgnoreValue)
-                    .OrderBy(x => x.Score)
-                    .ToList();
-
-                var dialogues = Dialogues
-                    .Select(x => (Item: x, Score: x.InCheck(query, W2VEngine.ComputeSimilarity(query, x, vector))))
-                    .Where(x => x.Score < IInCheck.IgnoreValue)
-                    .OrderBy(x => x.Score)
-                    .ToList();
-
-                return new QuerySimilarResult
-                {
-                    Knowledges = knowledges,
-                    Tools = tools,
-                    Dialogues = dialogues
-                };
+                knowledges = KnowledgeDataBases.ToList();
+                tools = Tools.ToList();
+                dialogues = Dialogues.ToList();
             }
+            return new QuerySimilarResult
+            {
+                Knowledges = Retrieval.Score(query, knowledges),
+                Tools = Retrieval.Score(query, tools),
+                Dialogues = Retrieval.Score(query, dialogues)
+            };
         }
 
     }

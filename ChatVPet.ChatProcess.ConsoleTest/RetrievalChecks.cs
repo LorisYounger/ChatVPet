@@ -16,14 +16,12 @@ internal static class RetrievalChecks
         }
 
         var process = new VPetChatProcess();
-        var engine = new W2VEngine(process);
-        process.W2VEngine = engine;
         var knowledge = new KnowledgeDataBase("balance", ["balance"], ["money left"], process.Localization);
         var tool = new ToolUse("balance", "read balance", ["money"], ["money left"], [], process.Localization);
         Check(knowledge.EmbeddingTexts.SequenceEqual(["money left", "balance"]), "Knowledge retrieval examples");
         Check(tool.EmbeddingTexts.Contains("money left"), "Tool retrieval examples");
         var plainKnowledge = new KnowledgeDataBase("balance", [], [], process.Localization);
-        Check(engine.ComputeSimilarity("balance", plainKnowledge, []) > 0.99f,
+        Check(W2VEngine.ComputeKeywordSimilarity("balance", plainKnowledge.KeyWords, process.Localization) > 0.99f,
             "Knowledge text remains searchable without explicit keywords or vectors");
         var restored = JsonConvert.DeserializeObject<KnowledgeDataBase>(JsonConvert.SerializeObject(knowledge))!;
         Check(restored.EmbeddingTexts.Contains("balance"), "Deserialized knowledge keeps its embedding text");
@@ -40,14 +38,13 @@ internal static class RetrievalChecks
             embeddedTexts.AddRange(batch);
             return batch.Select(_ => new float[] { 1, 0 }).ToArray();
         };
-        engine.GetQueryVector(new Iw2vSource[] { knowledge, tool });
-        Check(embeddedTexts.Contains("money left") && knowledge.EmbeddingVectors?.Length == 2,
-            "Examples reach the embedding delegate");
+        process.Retrieval.Score("balance", [knowledge]);
+        Check(embeddedTexts.Any(x => x.Contains("money left")), "Examples reach the embedding delegate");
         int cachedCalls = embeddingCalls;
-        engine.GetQueryVector(new Iw2vSource[] { knowledge, tool });
+        process.Retrieval.Score("balance", [knowledge]);
         Check(embeddingCalls == cachedCalls, "Cached vectors are reused");
-        W2VEngine.ClearVectors([knowledge, tool]);
-        engine.GetQueryVector(new Iw2vSource[] { knowledge, tool });
+        process.ClearRetrievalCache();
+        process.Retrieval.Score("balance", [knowledge]);
         Check(embeddingCalls > cachedCalls, "Cleared vectors are rebuilt");
 
         Check(W2VEngine.ComputeKeywordSimilarity("体力", ["体力"], process.Localization) > 0.99f,
@@ -56,10 +53,6 @@ internal static class RetrievalChecks
             "Unrelated keywords score zero");
         Check(W2VEngine.ComputeCosineSimilarity([1, 0], [-1, 0]) == 0,
             "Opposite vectors stay within the score range");
-        Check(W2VEngine.AggregateSimilarity([0.8f, 0.2f], 1) < 0.8f,
-            "Two-vector aggregation retains both scores");
-        Check(W2VEngine.AggregateSimilarity([0.8f, 0.8f, 0], 1) == 1,
-            "Multi-vector aggregation clamps its score");
 
         process.KnowledgeDataBases.Add(new KnowledgeDataBase("unrelated", ["rain"], [], process.Localization));
         process.KnowledgeDataBases.Add(knowledge);
@@ -67,10 +60,9 @@ internal static class RetrievalChecks
         process.Tools.Add(tool);
         var dialogue = new Dialogue("balance", "balance", process.Localization);
         process.Dialogues.Add(dialogue);
-        // Return an empty vector per input to exercise keyword-only scoring without a network service.
-        process.AIAPIEmbeddingFunction = texts => texts.Select(_ => Array.Empty<float>()).ToArray();
-        W2VEngine.ClearVectors(process.KnowledgeDataBases);
-        W2VEngine.ClearVectors(process.Tools);
+        // Exercise keyword-only scoring without a network service.
+        process.AIAPIEmbeddingFunction = null;
+        process.ClearRetrievalCache();
         var result = process.QuerySimilar("balance");
         Check(result.Knowledges.Count == 2 && ReferenceEquals(result.Knowledges[0].Item, knowledge)
             && result.Knowledges[0].Score < result.Knowledges[1].Score,

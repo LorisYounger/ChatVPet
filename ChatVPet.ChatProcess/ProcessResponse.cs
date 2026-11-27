@@ -31,10 +31,6 @@ namespace ChatVPet.ChatProcess
         /// 是否是最终反馈, 允许用户输入新内容
         /// </summary>
         public bool IsEnd { get; set; } = false;
-        /// <summary>
-        /// 是否是错误, 如果为是, Anser是错误消息
-        /// </summary>
-        public bool IsError { get; set; } = false;
 
     }
     /// <summary>

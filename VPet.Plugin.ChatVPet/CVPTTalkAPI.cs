@@ -43,8 +43,9 @@ namespace VPet.Plugin.ChatVPet
                 Visibility = Plugin.AzureVoiceEnable ? Visibility.Visible : Visibility.Collapsed
             };
 
-            btnvoice.PreviewMouseDown += (s, e) => Task.Run(VoiceRecognize);
-            btnvoice.PreviewMouseUp += (s, e) => voicecontinue = false;
+            btnvoice.PreviewMouseLeftButtonDown += async (_, _) => await VoiceRecognize();
+            btnvoice.PreviewMouseLeftButtonUp += (_, _) => voiceHeld = false;
+            btnvoice.LostMouseCapture += (_, _) => voiceHeld = false;
             ButtonHelper.SetCornerRadius(btnvoice, new CornerRadius(4));
             Grid.SetColumn(btnvoice, 3);
             MainGrid.Children.Add(btnvoice);
@@ -118,36 +119,41 @@ namespace VPet.Plugin.ChatVPet
             retryReply.IsEnabled = turns.Any(x => x!.PendingReply);
         }
 
-        private bool voicecontinue = false;
-        private bool voiceisworking = false;
-        private void VoiceRecognize()
+        private bool voiceHeld;
+        private bool voiceWorking;
+        private async Task VoiceRecognize()
         {
-            //如果没有语音识别或者正在进行语音识别则返回
-            if (Plugin.Recognizer == null)
-                return;
-            voicecontinue = true;
-            if (voiceisworking)
+            if (!Plugin.AzureVoiceEnable) return;
+            voiceHeld = true;
+            if (voiceWorking) return;
+            voiceWorking = true;
+            try
             {
-                return;
-            }
-            voiceisworking = true;
-            while (voicecontinue == true)
-            {
-                try
+                var key = Plugin.AzureKey;
+                var region = Plugin.AzureRegion;
+                var language = Plugin.AzureRecognitionLanguage;
+                using var recognizer = await Task.Run(() =>
                 {
-                    var rr = Plugin.Recognizer.RecognizeOnceAsync().Result;
-                    if (string.IsNullOrEmpty(rr.Text))
+                    var config = SpeechConfig.FromSubscription(key, region);
+                    config.SpeechRecognitionLanguage = language;
+                    return new SpeechRecognizer(config);
+                });
+                while (voiceHeld && Plugin.AzureVoiceEnable)
+                {
+                    var result = await recognizer.RecognizeOnceAsync();
+                    if (!Plugin.AzureVoiceEnable) break;
+                    if (result.Reason == ResultReason.Canceled)
                     {
-                        continue;
+                        var cancellation = CancellationDetails.FromResult(result);
+                        if (cancellation.Reason == CancellationReason.Error)
+                            Plugin.MW.Main.LabelDisplayShow("语音输入失败：" + cancellation.ErrorCode);
+                        break;
                     }
-                    Dispatcher.Invoke(() => tbTalk.AppendText(rr.Text));
-                }
-                catch (Exception e)
-                {
-                    MessageBox.Show(e.ToString());
+                    if (!string.IsNullOrEmpty(result.Text)) tbTalk.AppendText(result.Text);
                 }
             }
-            voiceisworking = false;
+            catch (Exception ex) { Plugin.MW.Main.LabelDisplayShow("语音输入失败：" + ex.Message); }
+            finally { voiceWorking = false; }
         }
         protected CVPPlugin Plugin;
         public override string APIName => "ChatVPetProcess";
@@ -217,8 +223,8 @@ namespace VPet.Plugin.ChatVPet
             string? graph = null;
             if (!response.SuppressSayAnimation && response.Expression != null)
             {
-                string name = "say_" + response.Expression;
-                if (Plugin.MW.Core.Graph!.FindGraphs(name, AnimatType.A_Start, Plugin.MW.Core.Save!.Mode).Count > 0) graph = name;
+                graph = Plugin.MW.Core.Graph!.FindGraphs(response.Expression, AnimatType.A_Start, Plugin.MW.Core.Save!.Mode)
+                    ?.FirstOrDefault(g => g.GraphInfo.Type == GraphType.Say && string.Equals(g.GraphInfo.Name, response.Expression, StringComparison.OrdinalIgnoreCase))?.GraphInfo.Name;
             }
             Plugin.MW.Main.Say(response.Reply, marker, graph);
             lastSpeech = FinishSpeech();

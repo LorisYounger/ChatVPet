@@ -71,7 +71,7 @@ public partial class VPetChatProcess
             // conversation lock during generation and publishes its progress independently.
             while (CompressHistoryBatch(saveId, available)) { }
         }
-        catch (Exception ex) when (ex is not OutOfMemoryException)
+        catch (Exception ex)
         {
             LastSummaryError = "日记整理未完成，原聊天记录已保留：" + ex.Message;
         }
@@ -113,13 +113,10 @@ public partial class VPetChatProcess
             }
             limit = Math.Max(1, SummaryCharacterLimit);
             instruction = Localization.DiaryCompressionSystemPrompt +
-                "\n同时更新累计前情提要。previousSummary 是上次提要，dialogues 是新整理的连续对话。只输出 JSON 对象，两个字段均为非空字符串：" +
-                "\"diary\" 只记本次 dialogues 的经历；\"summary\" 合并旧提要与本次事实，保留重要偏好、约定、时间、人物、话题进度与未完成事项，省略过时琐事。" +
-                $"每个字段最多 {limit} 个字符，使用原对话语言。保留否定、纠正与不确定性，新的明确事实覆盖旧事实；不要把推测写成事实。" +
-                "主人明确给出的名字、偏好、更正和生活经历按 Question 记录，不需要游戏回执证明；只有宿主游戏操作的成败以 Receipts 为准。" +
-                "InitialAnswer 是行动前的初答，Callbacks 按时间记录宿主 HostInput 与桌宠 ResultAnswer。Sequence 是本存档的发生顺序。HostInput 重复的问题属于同一轮。Observation 与 Receipts 来自宿主。Answer 是桌宠对白，不是权威事实。空 Answer 表示没有可采用的对白证据，不代表主人没说过或事情没发生。" +
-                "桌宠说不记得、没找到或补查失败，不是否定或纠正：不得据此删除、降级为待核或覆盖 previousSummary 中已有的名字、约定和已完成操作。" +
-                "保留本次与此前的时间范围，某轮没购买不等于从未购买；不得用笼统的‘以上未执行’否定此前明确成功的回执。";
+                $"\n输入含 previousSummary（上次提要）与 dialogues（新增连续对话，按 Sequence 排序；Question 为主人原话，InitialAnswer/Answer/Callbacks 为桌宠对白，Observation 与 Receipts 为宿主记录）。只输出 JSON 对象，含两个非空字符串字段（使用原对话语言，各自不超过 {limit} 字）：\"diary\" 仅记录本次 dialogues；\"summary\" 合并 previousSummary 与本次事实，保留偏好、名称、约定、时间、人物、进度与未完成事项，省略琐事。" +
+                "\n事实规则：1) 主人给出的名称、偏好、更正与生活经历以 Question 为准，新明确事实覆盖旧事实，保留否定与不确定性；" +
+                "2) 游戏操作的成败仅以 Receipts 为准，未执行或未确认按原状记录，某轮未操作不否定此前已成功的回执；" +
+                "3) 空 Answer 或桌宠回复“不记得/没找到/补查失败”仅表示当轮无对白证据，不得据此删除或覆盖 previousSummary 已有事实。";
             long inputSize = instruction.Length + SummaryInput(previous, []).Length;
             // Never jump across pending turns. Count each serialized entry before adding it
             // instead of repeatedly serializing a potentially huge imported history.
@@ -165,10 +162,11 @@ public partial class VPetChatProcess
                 !GetUncompressedHistory(previous).Take(entries.Count).SequenceEqual(entries) ||
                 entries.Any(x => !CanSummarize(x)) || input != SummaryInput(previous, entries)) return false;
             if (previous != null) Summaries.Remove(previous);
-            Summaries.Add(new() { SaveId = saveId, Text = recap, ThroughDialogueId = entries[^1].DialogueId });
+            bool allow = (previous == null || previous.Allow) && entries.All(TrainingSourceAllowed);
+            Summaries.Add(new() { Allow = allow, SaveId = saveId, Text = recap, ThroughDialogueId = entries[^1].DialogueId });
             DiaryEntries.Add(new DiaryEntry(diary, Localization)
             {
-                SaveId = saveId, SourceDialogueIds = entries.Select(x => x.DialogueId).ToList(),
+                Allow = allow, SaveId = saveId, SourceDialogueIds = entries.Select(x => x.DialogueId).ToList(),
                 SourceTurns = entries.Where(x => x.Turn != null).Select(x => x.Turn!.TurnId).ToList()
             });
             foreach (var entry in entries) entry.IsActive = false;

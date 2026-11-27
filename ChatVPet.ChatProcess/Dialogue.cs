@@ -87,16 +87,5 @@ namespace ChatVPet.ChatProcess
         /// </summary>
         [JsonIgnore]
         public virtual IEnumerable<string> EmbeddingTexts => [Question, MemoryAnswer, .. HostEvidence];
-
-        /// <summary>
-        /// 向量
-        /// </summary>
-        [JsonIgnore]
-        public float[]? Vector { get; set; }
-        /// <summary>
-        /// 每个 EmbeddingTexts 对应的嵌入向量缓存
-        /// </summary>
-        [JsonIgnore]
-        public float[][]? EmbeddingVectors { get; set; }
     }
 }

@@ -56,16 +56,6 @@ namespace ChatVPet.ChatProcess
         public virtual IEnumerable<string> EmbeddingTexts => [.. _embeddingExamples, KnowledgeData];
 
         private readonly string[] _embeddingExamples = [];
-        /// <summary>
-        /// 向量
-        /// </summary>
-        [JsonIgnore]
-        public float[]? Vector { get; set; }
-        /// <summary>
-        /// 每个 EmbeddingTexts 对应的嵌入向量缓存
-        /// </summary>
-        [JsonIgnore]
-        public float[][]? EmbeddingVectors { get; set; }
 
         public float InCheck(string message, float similarity) => IInCheck.InCheck(message, similarity, this);
 

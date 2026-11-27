@@ -375,4 +375,5 @@ VPet.Solution/Properties/launchSettings.json
 *.pt
 *.pth
 *.gguf
-/ChatVPet.ChatProcess.ConsoleTest
+/ChatVPet.ChatProcess.ConsoleTest/*
+!/ChatVPet.ChatProcess.ConsoleTest/FeedbackExport.cs

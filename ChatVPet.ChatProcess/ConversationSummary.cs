@@ -4,6 +4,7 @@ namespace ChatVPet.ChatProcess;
 public class ConversationSummary
 {
     public string SaveId { get; set; } = "default";
+    public bool Allow { get; set; }
     public string Text { get; set; } = "";
     public string ThroughDialogueId { get; set; } = "";
 }

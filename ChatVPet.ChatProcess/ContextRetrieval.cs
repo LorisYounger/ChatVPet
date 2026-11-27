@@ -37,14 +37,19 @@ public class ContextRetrieval(VPetChatProcess process)
     // Settings searches and conversation retrieval may overlap; serialize cache fills, including identical requests.
     private readonly object gate = new();
     private string scope = "";
-    private int dimension;
 
     public void Clear()
     {
         lock (gate)
         {
-            vectors.Clear(); queries.Clear(); scores.Clear(); dimension = 0;
+            vectors.Clear(); queries.Clear(); scores.Clear();
         }
+    }
+
+    public List<(T Item, float Score)> Score<T>(string query, IEnumerable<T> source) where T : class, Iw2vSource, IInCheck
+    {
+        lock (gate)
+            return Recall(query, source, out _, out _).Select(x => (x.Item, x.Score)).ToList();
     }
 
     public List<T> Select<T>(string query, IEnumerable<T> source, int limit) where T : class, Iw2vSource, IInCheck
@@ -54,75 +59,10 @@ public class ContextRetrieval(VPetChatProcess process)
             var timer = Stopwatch.StartNew();
             long requestsBefore = EmbeddingRequests + RerankRequests;
             long hitsBefore = CacheHits;
-            string error = "";
-            ServiceUnavailable = false;
-            string currentScope = process.SaveId + "|" + EmbeddingIdentity + "|" + RerankIdentity + "|" + QueryInstruction;
-            if (scope != currentScope) { Clear(); scope = currentScope; }
-            var candidates = source.Select(x => (Item: x, Text: string.Join("\n", x.EmbeddingTexts))).ToList();
-            if (limit <= 0 || candidates.Count == 0) return [];
-            float[] queryVector = [];
-            var currentVectors = new Dictionary<string, float[]>();
-            try
-            {
-                if (process.AIAPIEmbeddingFunction != null)
-                {
-                    string queryText = QueryInstruction.Length == 0 ? query : $"Instruct: {QueryInstruction}\nQuery: {query}";
-                    string queryKey = Digest(queryText);
-                    if (UseCache && queries.TryGetValue(queryKey, out var cached) && DateTime.UtcNow - cached.Time < CacheLifetime)
-                    {
-                        queryVector = cached.Vector; CacheHits++;
-                    }
-                    else
-                    {
-                        CacheMisses++; EmbeddingRequests++;
-                        var result = process.AIAPIEmbeddingFunction([queryText]);
-                        ValidateVectors(result, 1);
-                        queryVector = result[0];
-                        if (UseCache)
-                        {
-                            if (queries.Count >= QueryCapacity) queries.Remove(queries.Keys.First());
-                            queries[queryKey] = (DateTime.UtcNow, queryVector);
-                        }
-                    }
-                    var missing = new Dictionary<string, string>();
-                    foreach (var candidate in candidates)
-                    {
-                        string key = Digest(candidate.Text);
-                        if (UseCache && vectors.TryGetValue(key, out var vector)) { currentVectors[key] = vector; CacheHits++; }
-                        else { missing[key] = candidate.Text; CacheMisses++; }
-                    }
-                    foreach (var batch in missing.Chunk(64))
-                    {
-                        EmbeddingRequests++;
-                        var result = process.AIAPIEmbeddingFunction(batch.Select(x => x.Value));
-                        ValidateVectors(result, batch.Length);
-                        for (int i = 0; i < batch.Length; i++)
-                        {
-                            currentVectors[batch[i].Key] = result[i];
-                            if (UseCache)
-                            {
-                                if (vectors.Count >= VectorCapacity) vectors.Remove(vectors.Keys.First());
-                                vectors[batch[i].Key] = result[i];
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex) when (ex is not OutOfMemoryException)
-            {
-                ServiceUnavailable = true;
-                error = ex.Message;
-                queryVector = [];
-                process.LastRetrievalError = "向量服务不可用，使用关键词检索。";
-            }
-            var shortlist = candidates.Select(x =>
-            {
-                float keyword = W2VEngine.ComputeKeywordSimilarity(query, x.Item.KeyWords.Concat([x.Text]), process.Localization);
-                float similarity = keyword;
-                if (queryVector.Length > 0 && currentVectors.TryGetValue(Digest(x.Text), out var vector))
-                    similarity = 0.8f * W2VEngine.ComputeCosineSimilarity(queryVector, vector) + 0.2f * keyword;
-                return (x.Item, x.Text, Score: x.Item.InCheck(query, similarity));
-            }).Where(x => x.Score < IInCheck.IgnoreValue).OrderBy(x => x.Score).Take(CandidateCount).ToList();
+            if (limit <= 0) return [];
+            var scored = Recall(query, source, out var candidates, out string error);
+            if (candidates.Count == 0) return [];
+            var shortlist = scored.Take(CandidateCount).ToList();
             var selected = shortlist.Select(x => x.Item).Take(limit).ToList();
             float[]? rankedScores = null;
             if (shortlist.Count > 0 && process.AIAPIRerankFunction != null)
@@ -130,27 +70,26 @@ public class ContextRetrieval(VPetChatProcess process)
                 try
                 {
                     var pairScores = new float[shortlist.Count];
-                    var missing = new List<int>();
+                    var missing = new List<(int Index, string Key)>();
                     for (int i = 0; i < shortlist.Count; i++)
                     {
-                        var key = Digest(query + "\0" + shortlist[i].Text);
+                        string key = Digest(query + "\0" + shortlist[i].Text);
                         if (UseCache && scores.TryGetValue(key, out var cached) && DateTime.UtcNow - cached.Time < CacheLifetime)
                         { pairScores[i] = cached.Score; CacheHits++; }
-                        else { missing.Add(i); CacheMisses++; }
+                        else { missing.Add((i, key)); CacheMisses++; }
                     }
                     if (missing.Count > 0)
                     {
                         RerankRequests++; RerankCandidates += missing.Count;
-                        var result = process.AIAPIRerankFunction(query, missing.Select(i => shortlist[i].Text).ToList());
-                        if (result.Length != missing.Count || result.Any(x => !float.IsFinite(x) || x < 0 || x > 1))
-                            throw new InvalidDataException("Rerank must return one finite score in [0,1] per document, in input order.");
+                        var result = process.AIAPIRerankFunction(query, missing.Select(m => shortlist[m.Index].Text).ToList());
                         for (int j = 0; j < missing.Count; j++)
                         {
-                            int i = missing[j]; pairScores[i] = result[j];
+                            var (i, key) = missing[j];
+                            pairScores[i] = result[j];
                             if (UseCache)
                             {
                                 if (scores.Count >= ScoreCapacity) scores.Remove(scores.Keys.First());
-                                scores[Digest(query + "\0" + shortlist[i].Text)] = (DateTime.UtcNow, result[j]);
+                                scores[key] = (DateTime.UtcNow, result[j]);
                             }
                         }
                     }
@@ -158,7 +97,7 @@ public class ContextRetrieval(VPetChatProcess process)
                         .OrderByDescending(x => x.Score).Take(limit).Select(x => x.Item).ToList();
                     rankedScores = pairScores;
                 }
-                catch (Exception ex) when (ex is not OutOfMemoryException)
+                catch (Exception ex)
                 {
                     ServiceUnavailable = true;
                     error = ex.Message;
@@ -181,17 +120,78 @@ public class ContextRetrieval(VPetChatProcess process)
         }
     }
 
-    private void ValidateVectors(float[][] result, int count)
+    private List<(T Item, string Text, float Score)> Recall<T>(string query, IEnumerable<T> source,
+        out List<(T Item, string Text, string Key)> candidates, out string error) where T : class, Iw2vSource, IInCheck
     {
-        if (result.Length != count || result.Any(v => v.Length == 0 || v.Any(x => !float.IsFinite(x))))
-            throw new InvalidDataException("Embedding count or values are invalid.");
-        int returnedDimension = result[0].Length;
-        if (result.Any(v => v.Length != returnedDimension) || dimension != 0 && dimension != returnedDimension)
+        error = "";
+        ServiceUnavailable = false;
+        string currentScope = process.SaveId + "|" + EmbeddingIdentity + "|" + RerankIdentity + "|" + QueryInstruction;
+        if (scope != currentScope) { Clear(); scope = currentScope; }
+        candidates = source.Select(x =>
         {
-            Clear();
-            throw new InvalidDataException("Embedding dimensions changed; vectors cleared.");
+            string text = string.Join("\n", x.EmbeddingTexts);
+            return (Item: x, Text: text, Key: Digest(text));
+        }).ToList();
+        if (candidates.Count == 0) return [];
+        float[] queryVector = [];
+        var currentVectors = new Dictionary<string, float[]>();
+        try
+        {
+            if (process.AIAPIEmbeddingFunction != null)
+            {
+                string queryText = QueryInstruction.Length == 0 ? query : $"Instruct: {QueryInstruction}\nQuery: {query}";
+                string queryKey = Digest(queryText);
+                if (UseCache && queries.TryGetValue(queryKey, out var cached) && DateTime.UtcNow - cached.Time < CacheLifetime)
+                {
+                    queryVector = cached.Vector; CacheHits++;
+                }
+                else
+                {
+                    CacheMisses++; EmbeddingRequests++;
+                    queryVector = process.AIAPIEmbeddingFunction([queryText])[0];
+                    if (UseCache)
+                    {
+                        if (queries.Count >= QueryCapacity) queries.Remove(queries.Keys.First());
+                        queries[queryKey] = (DateTime.UtcNow, queryVector);
+                    }
+                }
+                var missing = new Dictionary<string, string>();
+                foreach (var candidate in candidates)
+                {
+                    if (UseCache && vectors.TryGetValue(candidate.Key, out var vector)) { currentVectors[candidate.Key] = vector; CacheHits++; }
+                    else { missing[candidate.Key] = candidate.Text; CacheMisses++; }
+                }
+                foreach (var batch in missing.Chunk(64))
+                {
+                    EmbeddingRequests++;
+                    var result = process.AIAPIEmbeddingFunction(batch.Select(x => x.Value));
+                    for (int i = 0; i < batch.Length; i++)
+                    {
+                        currentVectors[batch[i].Key] = result[i];
+                        if (UseCache)
+                        {
+                            if (vectors.Count >= VectorCapacity) vectors.Remove(vectors.Keys.First());
+                            vectors[batch[i].Key] = result[i];
+                        }
+                    }
+                }
+            }
         }
-        dimension = returnedDimension;
+        catch (Exception ex)
+        {
+            ServiceUnavailable = true;
+            error = ex.Message;
+            queryVector = [];
+            process.LastRetrievalError = "向量服务不可用，使用关键词检索。";
+        }
+        return candidates.Select(x =>
+        {
+            float keyword = W2VEngine.ComputeKeywordSimilarity(query, x.Item.KeyWords.Concat([x.Text]), process.Localization);
+            float similarity = keyword;
+            if (queryVector.Length > 0 && currentVectors.TryGetValue(x.Key, out var vector) && vector.Length > 0)
+                similarity = 0.8f * W2VEngine.ComputeCosineSimilarity(queryVector, vector) + 0.2f * keyword;
+            return (x.Item, x.Text, Score: x.Item.InCheck(query, similarity));
+        }).Where(x => x.Score < IInCheck.IgnoreValue).OrderBy(x => x.Score).ToList();
     }
 
     private static string Digest(string text) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)));

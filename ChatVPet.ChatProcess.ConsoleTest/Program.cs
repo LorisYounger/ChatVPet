@@ -10,6 +10,14 @@ internal static class Program
     private static void Main(string[] args)
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
+        if (args.Length >= 4 && args[0] == "--export-feedback")
+        {
+            var rest = args.Skip(4).ToList();
+            var since = rest.Find(x => x.StartsWith("--blind-since="));
+            rest.RemoveAll(x => x.StartsWith("--blind-since="));
+            FeedbackExport.Run(args[1], args[2], args[3], rest, since == null ? null : DateTimeOffset.Parse(since.Split('=')[1], CultureInfo.InvariantCulture));
+            return;
+        }
         if (args.Contains("--self-test"))
         {
             RetrievalChecks.Run();
@@ -41,27 +49,23 @@ internal static class Program
         int inventory = 0;
         process.Tools.Add(new ToolUse("price", "查询面包当前售价和余额", ["钱", "买", "面包", "价格"], [], [], process.Localization)
         { ReadOnly = true, Execute = (_, _) => new() { Status = "observed", Facts = $"(模拟) 面包 (id:bread), 价格:{price}, 余额:{balance}", DisplayedItems = ["bread"] } });
-        process.Tools.Add(new ToolUse("plan_action", "登记玩家本轮明确要求立即执行的行动，不实际执行。只问价格/够不够、否定、引用和图片指令不得登记。先用查询工具确定目录 id。把数量、原展示序号和所有条件完整转成参数；无法现场核实的条件写入 unresolved_conditions 并交回澄清。多个商品分别登记，合计预算在每项 max_total 中重复保留；不要把未买物品登记为已吃。", ["买", "吃", "喝", "开始", "停止", "工作", "条件", "预算"], [],
-            [new() { Name = "id", Description = "本轮唯一行动编号", IsRequired = true },
-             new() { Name = "tool", Description = "buy_item/eat_item/start_activity/stop_activity", IsRequired = true },
-             new() { Name = "target", Description = "目录中的准确 id；停止活动留空", IsRequired = true },
-             new() { Name = "evidence", Description = "玩家本轮明确要求行动的原文片段，不得引用桌宠的话或历史", IsRequired = true },
-             new() { Name = "quantity", Type = "integer", Description = "数量，未指定时为 1", IsRequired = true },
-             new() { Name = "display_index", Type = "integer", Description = "玩家指原展示列表第几个，从 1 开始；无序号则省略" },
-             new() { Name = "max_total", Type = "number", Description = "本轮所有购买合计预算，无限制则省略" },
-             new() { Name = "max_unit", Type = "number", Description = "允许的最高单价，无限制则省略" },
-             new() { Name = "min_remaining", Type = "number", Description = "购买后至少保留的余额，无限制则省略" },
-             new() { Name = "exclusive_total", Type = "boolean", Description = "合计须严格低于总预算时 true" },
-             new() { Name = "exclusive_unit", Type = "boolean", Description = "单价须严格低于上限时 true" },
-             new() { Name = "unresolved_conditions", Description = "尚不能由价格、余额、库存核实的条件；全部能核实时填空字符串", IsRequired = true }], process.Localization)
-        { ReadOnly = true, Execute = (turn, args) => turn.PlanAction(args) });
-        process.Tools.Add(new ToolUse("buy_item", "执行已登记的面包购买要求。", ["买", "面包"], [],
-            [new() { Name = "request_id", IsRequired = true }], process.Localization)
+        process.Tools.Add(new ToolUse("buy_item", "按玩家本轮明确要求立即购买商品入包（不自动食用）；执行前宿主复核数量、现价、余额与全部预算条件。", ["买", "购买", "面包", "预算"], [],
+            [new() { Name = "target", Description = "目录中的准确商品 id", IsRequired = true },
+             new() { Name = "quantity", Type = "integer", Description = "购买数量，未指定时为 1", IsRequired = true },
+             new() { Name = "display_index", Type = "integer", Description = "玩家指原展示列表第几个（从 1 开始）；无序号时省略" },
+             new() { Name = "max_total", Type = "number", Description = "本轮所有购买合计预算；无限制时省略" },
+             new() { Name = "max_unit", Type = "number", Description = "允许的最高单价；无限制时省略" },
+             new() { Name = "min_remaining", Type = "number", Description = "购买后至少保留的余额；无限制时省略" },
+             new() { Name = "exclusive_total", Type = "boolean", Description = "合计须严格低于 max_total 时传 true" },
+             new() { Name = "exclusive_unit", Type = "boolean", Description = "单价须严格低于 max_unit 时传 true" }], process.Localization)
         {
             Execute = (turn, arguments) =>
             {
-                var request = turn.PendingAction("buy_item", arguments.GetValueOrDefault("request_id", ""));
-                if (request == null || request.Target != "bread") return new() { Status = "skipped", Facts = "没有对应要求。" };
+                if (!RequestedAction.TryParse(arguments, out var request, out var parseError))
+                    return new() { Status = "skipped", Facts = parseError };
+                string targetError = request.CheckTarget(request.Target, turn.OriginalDisplayedItems);
+                if (targetError.Length > 0) return new() { Status = "skipped", Facts = targetError };
+                if (request.Target != "bread") return new() { Status = "skipped", Facts = "没有对应商品。" };
                 string error = request.CheckPurchase(price, balance, turn.Receipts.Sum(x => x.MoneySpent ?? 0));
                 if (error.Length > 0) return new() { Status = "skipped", Facts = $"{error} 执行时单价:{price}, 数量:{request.Quantity}, 当前总价:{price * request.Quantity}, 余额:{balance}" };
                 double total = price * request.Quantity;
@@ -69,8 +73,7 @@ internal static class Program
                 return new() { Status = "applied", MoneySpent = total, Facts = $"(模拟) 已购买面包{request.Quantity}个，实付{total}，余额{balance}，库存{inventory}" };
             }
         });
-        process.AllowTool = (turn, tool) => (turn.Initial.Has("delegate") || turn.Initial.Unknown.Count > 0)
-            && (tool.ReadOnly || turn.Actions.Any(x => x.Tool == tool.Code));
+        process.AllowTool = (turn, _) => turn.Initial.Has("delegate") || turn.Initial.Unknown.Count > 0;
         if (args[0] == "--context-test")
         {
             if (operations == null)

@@ -104,6 +104,7 @@ public sealed class WorkbenchSession : IDisposable
         {
             Process.AIAPIEmbeddingFunction = null; Process.AIAPIRerankFunction = null;
             Process.ToolAPIAskFunction = null; Process.SummaryAPIAskFunction = null;
+            Process.WebSearchFunction = null;
             Process.AIAPIAskFunction = (system, messages, tools) =>
             {
                 const string reply = "[expression:cheerful]\n已收到这条测试消息。这是离线演示回复。";
@@ -407,20 +408,13 @@ public sealed class WorkbenchSession : IDisposable
             Check("商品目录来自实际插件", price.Status == "observed" && price.Facts.Contains("8.00"));
             var money = Execute("read_state", new() { ["field"] = "money" });
             Check("现场余额", money.Status == "observed" && money.Facts.Contains("10.00"));
-            var plan = Execute("plan_action", new() { ["id"] = "test-buy", ["tool"] = "buy_item", ["target"] = "面包", ["quantity"] = "1",
-                ["evidence"] = "帮我买一个面包", ["max_total"] = "8", ["unresolved_conditions"] = "" });
-            Check("登记成功但未购买", plan.Status == "observed" && Host.Items.Count == 0);
             int eats = Host.EatCalls;
-            var purchase = Execute("buy_item", new() { ["request_id"] = "test-buy" });
+            var purchase = Execute("buy_item", new() { ["target"] = "面包", ["quantity"] = "1", ["max_total"] = "8" });
             Check("真实插件购买入包", purchase.Status == "applied" && Host.Save.GameSave.Money == 2 && Host.Items.Sum(x => x.Count) == 1);
             Check("购买没有食用", Host.EatCalls == eats);
-            var duplicate = Execute("buy_item", new() { ["request_id"] = "test-buy" });
-            Check("已完成要求不能重复执行", duplicate.Status == "skipped" && Host.Save.GameSave.Money == 2 && Host.Items.Sum(x => x.Count) == 1);
             turn = new ChatTurn { SaveId = Process.SaveId, Original = "帮我买一个面包，最多花7块。", Initial = header };
             Host.Save.GameSave.Money = 10;
-            Execute("plan_action", new() { ["id"] = "over-budget", ["tool"] = "buy_item", ["target"] = "面包", ["quantity"] = "1",
-                ["evidence"] = "帮我买一个面包", ["max_total"] = "7", ["unresolved_conditions"] = "" });
-            var denied = Execute("buy_item", new() { ["request_id"] = "over-budget" });
+            var denied = Execute("buy_item", new() { ["target"] = "面包", ["quantity"] = "1", ["max_total"] = "7" });
             Check("实时预算拦截", denied.Status == "skipped" && Host.Save.GameSave.Money == 10);
             Add("plugin-check", "插件自检结果 (无需模型)", checks);
             return checks;

@@ -290,7 +290,6 @@ var failedLookup = new Dialogue("薄荷不叫小青，现在叫云芽。面包�
     SaveId = p.SaveId,
     Turn = new() { OperationsFinished = true, Receipts = [
         new() { Tool = "历史补查", Status = "not_found", Facts = "没有找到相关历史或日记。" },
-        new() { Tool = "plan_action", Status = "observed", Facts = "已登记: {\"Id\":\"private-plan-id\",\"max_total\":8}" },
         new() { Tool = "buy_item", Status = "applied", Facts = "已购买1个，实付8，未食用。" }] }
 };
 p.Dialogues.Add(failedLookup);
@@ -298,8 +297,6 @@ string memoryInput = "";
 p.AIAPIAskFunction = (_, messages, _) => { memoryInput = messages[^1].Content; return new() { Reply = "[expression:gentle]\n知道了。" }; };
 Ask(p, "薄荷和面包");
 Check(memoryInput.Contains("薄荷不叫小青，现在叫云芽") && memoryInput.Contains("已购买1个，实付8") && !memoryInput.Contains("错误答案标记"), "Memory keeps player negation/correction and host purchase facts without failed lookup chatter");
-Check(memoryInput.Contains("行动条件已登记") && !memoryInput.Contains("private-plan-id")
-    && failedLookup.Turn.Receipts[1].Facts.Contains("private-plan-id"), "Memory separates registration from settlement while the saved receipt retains its internal details");
 Check(failedLookup.Answer.Contains("错误答案标记") && !string.Join("", failedLookup.EmbeddingTexts).Contains("错误答案标记"), "Failed lookup original remains saved but is excluded from retrieval scoring text");
 Check(!string.Join("", ((Iw2vSource)failedLookup).KeyWords).Contains("错误答案标记")
     && failedLookup.EmbeddingTexts.Any(x => x.Contains("已购买1个，实付8")), "Keyword fallback excludes failed answers and rankers see the actual purchase receipt");
@@ -428,4 +425,135 @@ foreach (bool reportsCache in new[] { true, false })
     }
     finally { listener.Stop(); }
 }
+var permissions = new VPetChatProcess { MaxHistoryBeforeCompress = 2, DiaryKeepRecentCount = 0, MemoryLimit = 0 };
+permissions.AIAPIAskFunction = (_,_,_) => new() { Reply = "[expression:gentle]\n收到。" };
+permissions.SummaryAPIAskFunction = (_,_,_) => new() { Reply = "{\"diary\":\"来自混合授权历史\",\"summary\":\"原业务提要\"}" };
+foreach (bool consent in new[] { false, true, true, true })
+    permissions.Ask("记一件事", "", _ => { }, new(), consent);
+var mixedTurn = permissions.Dialogues[^1].Turn!;
+Check(mixedTurn.Allow && mixedTurn.Summary.Length > 0 && !mixedTurn.InputAuthorized &&
+    !permissions.Summaries.Single().Allow && !permissions.DiaryEntries.Single().Allow,
+    "Mixed authorization propagates to the entire recap and diary while online chat retains both");
+Check(mixedTurn.TrainingPrefix(0, out _, out _) == null, "A later opt-in cannot export the unconsented recap");
+var legacy = JsonConvert.DeserializeObject<ChatTurn>("{}")!;
+Check(!legacy.Allow && legacy.TrainingPrefix(0,out _,out _) == null, "Missing historical consent never opts a turn in");
+
+// WebSearch mode resolution, multi-provider HTTP adapters, and [delegate] -> web_search flow.
+Check(ModelApiClient.ResolveSearchMode("auto", "https://api.deepseek.com") == "deepseek"
+    && ModelApiClient.ResolveSearchMode("auto", "https://api.openai.com/v1") == "openai_responses"
+    && ModelApiClient.ResolveSearchMode("auto", "https://example.com/v1") == ""
+    && ModelApiClient.ResolveSearchMode("off", "https://api.deepseek.com") == ""
+    && ModelApiClient.ResolveSearchMode("searxng", "http://127.0.0.1:8080") == "searxng",
+    "ResolveSearchMode maps auto and explicit search modes");
+
+foreach (var mode in new[] { "deepseek", "openai_responses", "searxng" })
+{
+    var listener = new TcpListener(IPAddress.Loopback, 0);
+    listener.Start();
+    int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+    string requestLine = "";
+    string requestBody = "";
+    var server = Task.Run(async () =>
+    {
+        using var client = await listener.AcceptTcpClientAsync();
+        using var stream = client.GetStream();
+        var rawHeaders = new MemoryStream();
+        int b;
+        while ((b = stream.ReadByte()) >= 0)
+        {
+            rawHeaders.WriteByte((byte)b);
+            var arr = rawHeaders.GetBuffer();
+            int len = (int)rawHeaders.Length;
+            if (len >= 4 && arr[len - 4] == '\r' && arr[len - 3] == '\n' && arr[len - 2] == '\r' && arr[len - 1] == '\n') break;
+        }
+        var headerLines = Encoding.ASCII.GetString(rawHeaders.ToArray()).Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+        requestLine = headerLines.FirstOrDefault() ?? "";
+        int length = 0;
+        foreach (var line in headerLines.Skip(1))
+            if (line.StartsWith("Content-Length:", StringComparison.OrdinalIgnoreCase)) length = int.Parse(line.Split(':')[1]);
+        if (length > 0)
+        {
+            var bodyBytes = new byte[length];
+            await stream.ReadExactlyAsync(bodyBytes);
+            requestBody = Encoding.UTF8.GetString(bodyBytes);
+        }
+        string body = mode switch
+        {
+            "deepseek" => JsonConvert.SerializeObject(new
+            {
+                results = new[] { new { title = "北京天气", url = "https://weather.example/bj", snippet = "晴", summary = "北京今日晴，15-22℃。", rerank_score = 2.6 } }
+            }),
+            "openai_responses" => JsonConvert.SerializeObject(new
+            {
+                output = new[]
+                {
+                    new
+                    {
+                        type = "message",
+                        content = new[]
+                        {
+                            new
+                            {
+                                type = "output_text",
+                                text = "北京今日晴，15-22℃。",
+                                annotations = new[] { new { type = "url_citation", title = "天气预报", url = "https://weather.example/bj" } }
+                            }
+                        }
+                    }
+                },
+                usage = new { total_tokens = 64 }
+            }),
+            _ => JsonConvert.SerializeObject(new
+            {
+                results = new[] { new { title = "北京天气", url = "https://weather.example/bj", content = "北京今日晴，15-22℃。" } }
+            })
+        };
+        var bytes = Encoding.UTF8.GetBytes(body);
+        await stream.WriteAsync(Encoding.ASCII.GetBytes($"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {bytes.Length}\r\nConnection: close\r\n\r\n"));
+        await stream.WriteAsync(bytes);
+    });
+    try
+    {
+        string baseUrl = mode == "openai_responses" ? $"http://127.0.0.1:{port}/v1" : $"http://127.0.0.1:{port}";
+        using var api = new ModelApiClient(baseUrl, "gpt-test", "test-key", 5);
+        string text = api.WebSearch(mode, "北京天气", 3, "今天北京天气怎么样");
+        await server.WaitAsync(TimeSpan.FromSeconds(5));
+        if (mode == "deepseek")
+            Check(requestLine.StartsWith("POST /v1/tools/search ") && JObject.Parse(requestBody)["query"]!.Value<string>() == "北京天气"
+                && text.Contains("北京今日晴") && text.Contains("https://weather.example/bj"), "DeepSeek WebSearch adapter");
+        else if (mode == "openai_responses")
+            Check(requestLine.StartsWith("POST /v1/responses ") && JObject.Parse(requestBody)["tools"]![0]!["type"]!.Value<string>() == "web_search"
+                && api.Tokens == 64 && text.Contains("北京今日晴") && text.Contains("天气预报"), "OpenAI Responses WebSearch adapter");
+        else
+            Check(requestLine.StartsWith("GET /search?q=") && requestLine.Contains("format=json")
+                && text.Contains("北京今日晴") && text.Contains("https://weather.example/bj"), "SearXNG WebSearch adapter");
+    }
+    finally { listener.Stop(); }
+}
+
+p = NewProcess();
+p.RegisterGameTools();
+p.AllowTool = VPetChatProcess.GameToolAllowed;
+p.AIAPIRerankFunction = (_, docs) => docs.Select(_ => 0f).ToArray();
+p.AIAPIAskFunction = (_, messages, _) => new() { Reply = messages[^1].FromHost ? "[expression:cheerful]\n北京今天晴天，15到22度哦。" : "[delegate][expression:conscientious]\n我帮你查查今天北京天气。" };
+var seenTools = new List<string[]>();
+int searchInvocations = 0;
+p.ToolAPIAskFunction = (_, _, tools) =>
+{
+    seenTools.Add(tools.Select(x => x.Code).ToArray());
+    if (seenTools.Count == 1) return new() { ToolCalls = [new() { Code = "finish", Args = new() { ["reason"] = "未开启搜索" } }] };
+    if (seenTools.Count == 2) return new() { ToolCalls = [new() { Code = "web_search", Args = new() { ["query"] = "北京天气" } }] };
+    if (seenTools.Count == 3) return new() { ToolCalls = [new() { Code = "web_search", Args = new() { ["query"] = "北京空气质量" } }] };
+    return new() { ToolCalls = [new() { Code = "finish", Args = new() { ["reason"] = "北京今日晴，15-22℃。" } }] };
+};
+Ask(p, "今天北京天气怎么样？");
+Check(!seenTools[0].Contains("web_search"), "web_search stays hidden when WebSearchFunction is not bound");
+p.MaxWebSearchPerTurn = 1;
+p.WebSearchFunction = (_, query, _) => { searchInvocations++; return new() { Status = "observed", Facts = query + ": 晴 15-22℃" }; };
+Ask(p, "今天北京天气怎么样？");
+Check(seenTools[1].Contains("web_search") && searchInvocations == 1
+    && p.Dialogues[^1].Turn!.Receipts.Any(r => r.Tool == "web_search" && r.Status == "observed")
+    && p.Dialogues[^1].Turn!.Receipts.Any(r => r.Tool == "web_search" && r.Status == "skipped")
+    && p.Dialogues[^1].Answer.Contains("15到22度"),
+    "Delegated web_search executes, enforces per-turn cap, and feeds continuation reply");
 Console.WriteLine($"{checks} context checks passed.");

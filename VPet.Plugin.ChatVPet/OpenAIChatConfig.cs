@@ -19,9 +19,13 @@ namespace VPet.Plugin.ChatVPet
         public string ToolApiUrl { get; set; } = "";
         public string ToolApiKey { get; set; } = "";
         public string ToolModel { get; set; } = "";
+        public string WebSearchMode { get; set; } = "auto";
+        public string WebSearchApiUrl { get; set; } = "";
+        public string WebSearchApiKey { get; set; } = "";
+        public string WebSearchModel { get; set; } = "";
         public bool ScreenshotEnabled { get; set; }
         public string ScreenshotScope { get; set; } = "pet";
-        public bool AllowQuit { get; set; }
+        public bool AllowQuit { get; set; } = true;
 
         public string WebProxy { get; set; } = "";
         public string Model { get; set; } = "";

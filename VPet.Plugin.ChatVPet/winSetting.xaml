@@ -135,7 +135,22 @@
                         <TextBlock x:Name="tbApiTestResult" TextWrapping="Wrap" Margin="0,4" />
                         <CheckBox x:Name="cbScreenshot" Content="允许按聊天请求截图并发送给视觉 API" Margin="0,8" />
                         <ComboBox x:Name="cbScreenScope" SelectedIndex="0"><ComboBoxItem Content="仅桌宠区域" /><ComboBoxItem Content="主屏幕" /></ComboBox>
-                        <CheckBox x:Name="cbQuit" Content="允许桌宠说完后保存并退出游戏" Margin="0,8" />
+                        <TextBlock Text="联网搜索模式 (由操作模型在 [delegate] 时调用)" Margin="0,12,0,4" />
+                        <ComboBox x:Name="cbWebSearchMode" SelectedIndex="0">
+                            <ComboBoxItem Content="自动 (按操作 API 识别 DeepSeek / OpenAI)" Tag="auto" />
+                            <ComboBoxItem Content="关闭" Tag="off" />
+                            <ComboBoxItem Content="DeepSeek Search API (/v1/tools/search)" Tag="deepseek" />
+                            <ComboBoxItem Content="OpenAI Responses API (web_search)" Tag="openai_responses" />
+                            <ComboBoxItem Content="SearXNG (JSON API)" Tag="searxng" />
+                        </ComboBox>
+                        <TextBlock Text="联网搜索 URL (DeepSeek/OpenAI 留空复用操作 API；SearXNG 填实例地址)" TextWrapping="Wrap" Margin="0,6,0,0" />
+                        <TextBox x:Name="tbWebSearchUrl" Margin="0,4" />
+                        <TextBlock Text="联网搜索密钥 (留空复用操作密钥，SearXNG 可留空)" />
+                        <TextBox x:Name="tbWebSearchKey" Margin="0,4" />
+                        <TextBlock Text="联网搜索模型 (仅 OpenAI Responses 需要，留空复用操作模型)" />
+                        <TextBox x:Name="tbWebSearchModel" Margin="0,4" />
+                        <Button Content="测试已保存的联网搜索配置" Click="TestWebSearch_Click" Margin="0,4,0,0" />
+                        <TextBlock x:Name="tbWebSearchTestResult" TextWrapping="Wrap" Margin="0,4" />
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -327,6 +342,7 @@
             </TabItem>
         </TabControl>
         <Rectangle Height="3" Fill="{DynamicResource SecondaryDarker}" Margin="5,0,5,0" />
+        <Button Content="导入 ChatGPTPlus 云端会话到当前存档" Click="ImportCloud" Margin="5,0" />
         <Button pu:ButtonHelper.CornerRadius="4" Content="{ll:Str 保存设置}" Margin="5"
                 Background="{DynamicResource SecondaryLight}" Padding="2" Click="btnSave_Click" />
     </StackPanel>
