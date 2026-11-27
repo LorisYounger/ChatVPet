@@ -4,7 +4,6 @@ namespace ChatVPet.ChatProcess;
 
 public partial class VPetChatProcess
 {
-    public string SaveId { get; set; } = "default";
     public string HostState { get; set; } = "";
     public int MemoryLimit { get; set; } = 5;
     public int RecallMemoryLimit { get; set; } = 20;
@@ -47,7 +46,7 @@ public partial class VPetChatProcess
                     int skip = Math.Max(0, recent.Count - Math.Max(0, MaxHistoryCount));
                     recent = recent.Skip(recent.Take(skip).TakeWhile(CanSummarize).Count()).ToList();
                 }
-                var prior = Dialogues.LastOrDefault(x => x.SaveId == SaveId)?.Turn;
+                var prior = Dialogues.LastOrDefault()?.Turn;
                 turn = new ChatTurn
                 {
                     TrainingProtocolVersion = allow ? "2026-11-25" : "",
@@ -59,7 +58,7 @@ public partial class VPetChatProcess
                         && recent.All(TrainingSourceAllowed),
                     ResultsAuthorized = allow && (prior is not { DisplayedItems.Count: > 0 }
                         || prior.Allow && prior.InputAuthorized && prior.ResultsAuthorized),
-                    SaveId = SaveId, Original = message, System = SystemDescription, State = HostState, Observation = observation,
+                    Original = message, System = SystemDescription, State = HostState, Observation = observation,
                     Summary = summary?.Text ?? "",
                     History = Dialogue.Timeline(recent).Select(x => x.Message).ToList(),
                     DisplayedItems = prior?.DisplayedItems.ToList() ?? [],
@@ -107,9 +106,9 @@ public partial class VPetChatProcess
             turn.Sequence = NextSequence();
             turn.Initial = initial;
             turn.FirstReply = initial.Raw;
-            foreach (var entry in DiaryEntries.Where(x => x.SaveId == SaveId && x.IsActive))
+            foreach (var entry in DiaryEntries.Where(x => x.IsActive))
                 if (used.Contains(entry)) entry.OnHit(); else if (DiaryDecayRate > 0) entry.ApplyDecay(DiaryDecayRate);
-            var dialogue = new Dialogue(turn.Original, initial.Raw, Localization) { SaveId = SaveId, DialogueId = turn.TurnId, Turn = turn };
+            var dialogue = new Dialogue(turn.Original, initial.Raw, Localization) { DialogueId = turn.TurnId, Turn = turn };
             Dialogues.Add(dialogue);
             Checkpoint?.Invoke();
         }
@@ -134,7 +133,7 @@ public partial class VPetChatProcess
     public void ResumeHostTurn(ChatTurn turn, Action<ProcessResponse> respond)
     {
         lock (turnGate)
-            if (turn.SaveId != SaveId || turn.OperationsFinished || turn.WaitingStep.Length > 0) return;
+            if (!Dialogues.Any(d => d.Turn == turn) || turn.OperationsFinished || turn.WaitingStep.Length > 0) return;
         ContinueOperations(turn, [], [], respond, new ProcessControl());
     }
 
@@ -143,7 +142,7 @@ public partial class VPetChatProcess
         bool pendingReply;
         lock (turnGate)
         {
-            if (turn.SaveId != SaveId || turn.OperationsFinished || turn.WaitingStep.Length == 0) return false;
+            if (!Dialogues.Any(d => d.Turn == turn) || turn.OperationsFinished || turn.WaitingStep.Length == 0) return false;
             var waiting = turn.Receipts.Find(x => x.StepId == turn.WaitingStep);
             if (waiting == null || waiting.Status != "unknown" || waiting.Facts.Length == 0) return false;
             turn.WaitingStep = "";
@@ -232,7 +231,7 @@ public partial class VPetChatProcess
         HashSet<DiaryEntry> used;
         lock (turnGate)
         {
-            if (turn.SaveId != SaveId || Dialogues.Any(d => d.DialogueId == turn.TurnId))
+            if (Dialogues.Any(d => d.DialogueId == turn.TurnId))
                 throw new InvalidOperationException("该回合已发生变化。");
             recent = GetUncompressedHistory(GetSummary());
             used = DiaryEntries.Where(x => turn.UsedDiaryIds.Contains(x.Id)).ToHashSet();
@@ -271,9 +270,9 @@ public partial class VPetChatProcess
         List<Dialogue> candidates;
         lock (turnGate)
         {
-            candidates = Dialogues.Where(x => x.SaveId == turn.SaveId && x.Turn?.TurnId != turn.TurnId && !recent.Contains(x))
+            candidates = Dialogues.Where(x => x.Turn?.TurnId != turn.TurnId && !recent.Contains(x))
                 .Where(x => x.Question != turn.Original || x.MemoryAnswer.Length > 0 || x.HostEvidence.Any())
-                .Concat(DiaryEntries.Where(x => x.SaveId == turn.SaveId && x.IsActive))
+                .Concat(DiaryEntries.Where(x => x.IsActive))
                 .DistinctBy(x => (x.Question, x.MemoryAnswer, HostTurn: x.HostEvidence.Any() ? x.DialogueId : ""))
                 .ToList();
         }
@@ -396,7 +395,7 @@ public partial class VPetChatProcess
                 if (turn.WaitingStep.Length > 0) return;
                 if (receipt.DisplayedItems.Count > 0)
                 {
-                    respond(new ProcessResponse { SaveId = turn.SaveId, TurnId = turn.TurnId, DisplayedList = receipt.Facts });
+                    respond(new ProcessResponse { TurnId = turn.TurnId, DisplayedList = receipt.Facts });
                     lock (turnGate)
                     {
                         turn.DisplayedItems = receipt.DisplayedItems;
@@ -415,7 +414,7 @@ public partial class VPetChatProcess
         {
             var existing = turn.Receipts.Find(x => x.StepId == step);
             if (existing != null) return existing;
-            pending = new HostReceipt { SaveId = turn.SaveId, TurnId = turn.TurnId, StepId = step, Tool = tool, Arguments = args };
+            pending = new HostReceipt { TurnId = turn.TurnId, StepId = step, Tool = tool, Arguments = args };
             turn.Receipts.Add(pending);
             if (RemoteHostTool?.Invoke(tool) == true)
             {
@@ -444,7 +443,7 @@ public partial class VPetChatProcess
         bool needReply;
         lock (turnGate)
         {
-            turn = Dialogues.Find(x => x.SaveId == receipt.SaveId && x.Turn?.TurnId == receipt.TurnId)?.Turn;
+            turn = Dialogues.Find(x => x.Turn?.TurnId == receipt.TurnId)?.Turn;
             var old = turn?.Receipts.Find(x => x.StepId == receipt.StepId);
             if (turn == null || old == null || old.IsTerminal || receipt.Status is not ("observed" or "applied" or "skipped" or "failed" or "unknown")
                 || old.Status == receipt.Status && old.Facts == receipt.Facts) return false;
@@ -478,15 +477,10 @@ public partial class VPetChatProcess
         {
             foreach (var dialogue in dialogues)
             {
-                dialogue.SaveId = SaveId;
                 if (dialogue.Turn is not ChatTurn turn) continue;
-                turn.SaveId = SaveId;
                 turn.WaitingStep = "";
                 turn.OperationsFinished = true;
-                foreach (var receipt in turn.Receipts) receipt.SaveId = SaveId;
             }
-            foreach (var diary in diaries) diary.SaveId = SaveId;
-            foreach (var summary in summaries) summary.SaveId = SaveId;
             if (diaries.Count > 0) DiaryEntry.EnsureCounterAbove(diaries.Max(x => x.Id));
             Dialogues = dialogues; DiaryEntries = diaries; Summaries = summaries;
             Retrieval.Clear();
@@ -504,7 +498,7 @@ public partial class VPetChatProcess
                 if (turn == null || turn.OperationsFinished) continue;
                 turn.OperationsFinished = true;
                 if (turn.Receipts.Count == 0)
-                    turn.Receipts.Add(new HostReceipt { SaveId = turn.SaveId, TurnId = turn.TurnId, StepId = "interrupted",
+                    turn.Receipts.Add(new HostReceipt { TurnId = turn.TurnId, StepId = "interrupted",
                         Tool = "回合恢复", Status = "skipped", Facts = "上次回合中断，没有自动继续操作。" });
                 turn.ReceiptRevision++;
             }
@@ -553,7 +547,6 @@ public partial class VPetChatProcess
             reply = GenerateReply(turn, messages!, true);
         else
             ChatProtocol.TryParse(existingReply, true, out reply);
-        bool shouldPresent;
         lock (turnGate)
         {
             if (existingReply.Length == 0)
@@ -562,9 +555,8 @@ public partial class VPetChatProcess
                 exchange.Reply = dialogue.Answer = reply.Raw;
                 Checkpoint?.Invoke();
             }
-            shouldPresent = SaveId == turn.SaveId;
         }
-        if (shouldPresent) Present(turn, reply, respond, true);
+        Present(turn, reply, respond, true);
         lock (turnGate)
         {
             turn.PresentedRevision = turn.ReceiptRevision;
@@ -574,13 +566,13 @@ public partial class VPetChatProcess
 
     private static void Present(ChatTurn turn, ChatHeader header, Action<ProcessResponse> respond, bool continuation) => respond(new ProcessResponse
     {
-        SaveId = turn.SaveId, TurnId = turn.TurnId, Reply = header.Body, Expression = header.Expression,
+        TurnId = turn.TurnId, Reply = header.Body, Expression = header.Expression,
         SuppressSayAnimation = !continuation && header.Has("animation"), QuitAfterSpeech = !continuation && header.Has("quit"),
         ListPosition = continuation ? 1 : 0
     });
 
     private static void End(ChatTurn turn, Action<ProcessResponse> respond) => respond(new ProcessResponse
-    { SaveId = turn.SaveId, TurnId = turn.TurnId, IsEnd = true, ListPosition = 2 });
+    { TurnId = turn.TurnId, IsEnd = true, ListPosition = 2 });
 
     public void DeleteMemory(Dialogue entry)
     {
@@ -589,13 +581,13 @@ public partial class VPetChatProcess
             if (entry is DiaryEntry diary) DiaryEntries.Remove(diary);
             else
             {
-                var summary = Summaries.Find(x => x.SaveId == entry.SaveId);
+                var summary = GetSummary();
                 int index = Dialogues.IndexOf(entry);
-                if (summary != null && index >= 0 && index <= Dialogues.FindIndex(x => x.SaveId == entry.SaveId && x.DialogueId == summary.ThroughDialogueId))
+                if (summary != null && index >= 0 && index <= Dialogues.FindIndex(x => x.DialogueId == summary.ThroughDialogueId))
                 {
                     Summaries.Remove(summary);
-                    foreach (var item in Dialogues.Where(x => x.SaveId == entry.SaveId)) item.IsActive = true;
-                    foreach (var item in Dialogues.Where(x => x.SaveId == entry.SaveId && x.Turn != null)) item.Turn!.Summary = "";
+                    foreach (var item in Dialogues) item.IsActive = true;
+                    foreach (var item in Dialogues.Where(x => x.Turn != null)) item.Turn!.Summary = "";
                 }
                 Dialogues.Remove(entry);
                 DiaryEntries.RemoveAll(x => x.SourceDialogueIds.Contains(entry.DialogueId)

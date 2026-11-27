@@ -34,14 +34,6 @@ namespace VPet.Plugin.ChatVPet
             get => MW.Set["ChatVPetProcess"].GetInt("MaxRecallCount", 5);
             set => MW.Set["ChatVPetProcess"][(gint)"MaxRecallCount"] = value;
         }
-        /// <summary>
-        /// 累计使用Token数量
-        /// </summary>
-        public int TokenCount
-        {
-            get => MW.Set["ChatVPetProcess"][(gint)"TokenCount"];
-            set => MW.Set["ChatVPetProcess"][(gint)"TokenCount"] = value;
-        }
 
         public string AzureKey
         {

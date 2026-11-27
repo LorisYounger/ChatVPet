@@ -13,7 +13,6 @@ public sealed class ResultExchange
 
 public partial class ChatTurn
 {
-    public string SaveId { get; set; } = "";
     public string TurnId { get; set; } = Guid.NewGuid().ToString("N");
     public long Sequence { get; set; }
     public string TrainingProtocolVersion { get; set; } = "";
@@ -79,7 +78,6 @@ public sealed class ReplyDisplay
 public class HostReceipt
 {
     public double? MoneySpent { get; set; }
-    public string SaveId { get; set; } = "";
     public string TurnId { get; set; } = "";
     public string StepId { get; set; } = "";
     public string Tool { get; set; } = "";

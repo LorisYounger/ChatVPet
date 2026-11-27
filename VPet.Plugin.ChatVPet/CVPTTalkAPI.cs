@@ -102,7 +102,7 @@ namespace VPet.Plugin.ChatVPet
                     Plugin.EnsureSave();
                     var process = Plugin.VPetChatProcess;
                     if (!process.Dialogues.Any(x => x.Turn?.TurnId == turnId)) return;
-                    process.RetryReply(turnId, Present);
+                    process.RetryReply(turnId, response => Present(process, response));
                 });
             }
             catch (Exception ex) { Plugin.MW.Main.LabelDisplayShow("ChatVPet: " + ex.Message); }
@@ -113,7 +113,7 @@ namespace VPet.Plugin.ChatVPet
         {
             var process = Plugin.VPetChatProcess;
             var snapshot = await Task.Run(process.ReadMemories);
-            if (process != Plugin.VPetChatProcess) return;
+            if (!Plugin.IsCurrentProcess(process)) return;
             var turns = snapshot.History.Select(x => x.Turn).Where(x => x != null).ToList();
             displayedOptions.Text = turns.SelectMany(x => x!.Receipts).LastOrDefault(x => x.DisplayedItems.Count > 0)?.Facts ?? "";
             retryReply.IsEnabled = turns.Any(x => x!.PendingReply);
@@ -178,11 +178,11 @@ namespace VPet.Plugin.ChatVPet
                 string observation = "";
                 if (image != null)
                     observation = Plugin.ObserveAttachedImage(content, image);
-                process.Ask(content, observation, Present, new ProcessControl());
+                process.Ask(content, observation, response => Present(process, response), new ProcessControl());
                 _ = Task.Run(() =>
                 {
-                    try { process.CompressHistory(); Plugin.SideMessage = process.LastSummaryError; }
-                    catch (Exception) { Plugin.SideMessage = "日记整理未完成，原聊天记录已保留。"; }
+                    try { process.CompressHistory(); }
+                    catch (Exception) { }
                 });
             }
             catch (Exception ex)
@@ -195,14 +195,14 @@ namespace VPet.Plugin.ChatVPet
             finally { Dispatcher.Invoke(() => IsEnabled = true); }
         }
 
-        private void Present(ProcessResponse response)
+        private void Present(VPetChatProcess process, ProcessResponse response)
         {
-            if (response.SaveId != Plugin.GetSaveId()) return;
+            if (!Plugin.IsCurrentProcess(process)) return;
             if (response.DisplayedList != null) Dispatcher.Invoke(() => displayedOptions.Text = response.DisplayedList);
             if (string.IsNullOrEmpty(response.Reply)) return;
             // Operations can run while the initial speech is playing; subsequent replies remain ordered.
             lastSpeech.GetAwaiter().GetResult();
-            if (response.SaveId != Plugin.GetSaveId()) return;
+            if (!Plugin.IsCurrentProcess(process)) return;
             var ended = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             bool shown = false;
             var bar = Plugin.MW.Main.MsgBar;
@@ -239,7 +239,7 @@ namespace VPet.Plugin.ChatVPet
                     while (Plugin.MW.Main.PlayingVoice && DateTime.UtcNow < until) await Task.Delay(100).ConfigureAwait(false);
                     return !Plugin.MW.Main.PlayingVoice;
                 }
-                catch (TimeoutException) { Plugin.SideMessage = "本句播报结束状态尚未确认。"; return false; }
+                catch (TimeoutException) { return false; }
                 finally
                 {
                     bar.EndAction -= OnEnd;

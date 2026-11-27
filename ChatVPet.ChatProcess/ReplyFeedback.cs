@@ -96,10 +96,10 @@ public partial class VPetChatProcess
     {
         lock (turnGate)
         {
-            var dialogue = Dialogues.LastOrDefault(x => x.SaveId == SaveId);
-            if (dialogue?.Turn != turn || turn.SaveId != SaveId || turn.AnswerVersion != version || revision != 0
+            var dialogue = Dialogues.LastOrDefault();
+            if (dialogue?.Turn != turn || turn.AnswerVersion != version || revision != 0
                 || !turn.OperationsFinished || turn.Receipts.Count != 0 || !ChatProtocol.TryParse(turn.Initial.Raw, true, out _)
-                || Dialogues.Any(d => d.SaveId == SaveId && d.Turn?.LastSequence > turn.Sequence)
+                || Dialogues.Any(d => d.Turn?.LastSequence > turn.Sequence)
                 || !GetUncompressedHistory(GetSummary()).Contains(dialogue) || !ChatProtocol.TryParse(raw, true, out var header)) return false;
             turn.Initial = header;
             turn.AnswerVersion++;

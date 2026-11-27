@@ -125,7 +125,7 @@ public class ContextRetrieval(VPetChatProcess process)
     {
         error = "";
         ServiceUnavailable = false;
-        string currentScope = process.SaveId + "|" + EmbeddingIdentity + "|" + RerankIdentity + "|" + QueryInstruction;
+        string currentScope = EmbeddingIdentity + "|" + RerankIdentity + "|" + QueryInstruction;
         if (scope != currentScope) { Clear(); scope = currentScope; }
         candidates = source.Select(x =>
         {

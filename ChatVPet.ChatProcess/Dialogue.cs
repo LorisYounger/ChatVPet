@@ -13,7 +13,6 @@ namespace ChatVPet.ChatProcess
     public class Dialogue : Iw2vSource, IInCheck
     {
         public string DialogueId { get; set; } = Guid.NewGuid().ToString("N");
-        public string SaveId { get; set; } = "default";
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public bool IsActive { get; set; } = true;
         public ChatTurn? Turn { get; set; }
@@ -49,8 +48,16 @@ namespace ChatVPet.ChatProcess
         /// <summary>
         /// 转换为消息
         /// </summary>
-        private IEnumerable<(long Order, ChatMessage Message)> OrderedMessages() => Turn?.OrderedMessages()
-            ?? [(0, new("user", Question)), (0, new("assistant", Answer))];
+        private IEnumerable<(long Order, ChatMessage Message)> OrderedMessages()
+        {
+            if (Turn != null)
+            {
+                foreach (var message in Turn.OrderedMessages()) yield return message;
+                yield break;
+            }
+            if (Question.Length > 0) yield return (0, new("user", Question));
+            if (Answer.Length > 0) yield return (0, new("assistant", Answer));
+        }
 
         public IEnumerable<ChatMessage> ToMessages() => OrderedMessages().Select(m => m.Message);
 

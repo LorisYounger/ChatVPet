@@ -24,7 +24,6 @@ namespace VPet.Plugin.ChatVPet
         CVPPlugin plugin;
         private readonly VPetChatProcess process;
         private Dialogue[] history = [];
-        long totalused = 0;
         private void Hyperlink_Click(object sender, RoutedEventArgs e)
         {
             ExtensionFunction.StartURL("https://github.com/LorisYounger/ChatVPet");
@@ -38,13 +37,12 @@ namespace VPet.Plugin.ChatVPet
         {
             var picker = new Microsoft.Win32.OpenFileDialog { Filter = "ChatVPet 云端会话|*.json" };
             if (picker.ShowDialog() != true) return;
-            string target = plugin.GetSaveId();
-            if (MessageBox.Show(this, $"将覆盖当前桌宠 {plugin.MW.Core.Save!.Name} 的会话和模型选择。\n目标存档 {target}\n继续导入？",
+            if (MessageBox.Show(this, $"将覆盖当前桌宠 {plugin.MW.Core.Save!.Name} 的会话和模型选择。\n继续导入？",
                 "导入云端会话", MessageBoxButton.YesNo) != MessageBoxResult.Yes) return;
             string path = picker.FileName;
             try
             {
-                await Task.Run(() => plugin.ImportCloud(path, target));
+                await Task.Run(() => plugin.ImportCloud(path, process));
                 var cfg = plugin.OpenAIConfig;
                 if (cfg == null || string.IsNullOrWhiteSpace(cfg.ApiUrl) || string.IsNullOrWhiteSpace(cfg.ToolApiUrl))
                 {
@@ -97,7 +95,6 @@ namespace VPet.Plugin.ChatVPet
                 tbWebSearchModel.Text = plugin.OpenAIConfig.WebSearchModel;
                 tbEmbeddingModel.Text = plugin.OpenAIConfig.EmbeddingModel;
                 lbSpend.Content = plugin.TotalTokensUsage.ToString() + " Token";
-                totalused = plugin.TotalTokensUsage;
             }
             tbSystem.Text = ChatProtocol.RenderSystem(plugin.MW.Core.Save!.Name, plugin.MW.Core.Save!.HostName, cbChatVPetPrompt.IsChecked == true);
             cbChatVPetPrompt.Checked += PromptChanged;
@@ -246,19 +243,7 @@ namespace VPet.Plugin.ChatVPet
         private void tbSeachDB_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
-            {
-                string search = tbSeachDB.Text;
-                if (string.IsNullOrEmpty(search))
-                {
-                    lbKnow.ItemsSource = Knowledges;
-                    lbHistory.ItemsSource = Dialogues;
-                    lbTool.ItemsSource = Tools;
-                    return;
-                }
-                lbKnow.ItemsSource = new ObservableCollection<string>(Knowledges.Where(x => x.Contains(search)));
-                lbHistory.ItemsSource = new ObservableCollection<string>(Dialogues.Where(x => x.Contains(search)));
-                lbTool.ItemsSource = new ObservableCollection<string>(Tools.Where(x => x.Contains(search)));
-            }
+                btn_SearchDB(sender, e);
         }
 
         private void lb_SelectionChanged(object sender, SelectionChangedEventArgs e)

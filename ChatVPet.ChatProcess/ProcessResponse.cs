@@ -13,7 +13,6 @@ namespace ChatVPet.ChatProcess
     /// </summary>
     public class ProcessResponse
     {
-        public string SaveId { get; set; } = "";
         public string TurnId { get; set; } = "";
         public string? Expression { get; set; }
         public string? DisplayedList { get; set; }

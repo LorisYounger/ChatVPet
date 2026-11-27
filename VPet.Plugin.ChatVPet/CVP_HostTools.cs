@@ -45,11 +45,11 @@ public partial class CVPPlugin
         return new HostReceipt { Status = "observed", Facts = observation };
     }
 
-    private HostReceipt FinishQuit(ChatTurn turn)
+    private HostReceipt FinishQuit(GameHost host)
     {
         if (OpenAIConfig?.AllowQuit != true) return new HostReceipt { Status = "skipped", Facts = "玩家未允许桌宠自行退出。" };
         if (TalkAPI?.LastSpeechCompleted != true) return new HostReceipt { Status = "failed", Facts = "本句尚未确认播报结束，保留会话。" };
-        if (turn.SaveId != GetSaveId()) return new HostReceipt { Status = "skipped", Facts = "已切换存档。" };
+        if (!host.IsCurrentSave) return new HostReceipt { Status = "skipped", Facts = "已切换存档。" };
         MW.Save();
         var window = (Window)MW;
         var closed = new System.Threading.Tasks.TaskCompletionSource<bool>(System.Threading.Tasks.TaskCreationOptions.RunContinuationsAsynchronously);

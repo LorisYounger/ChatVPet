@@ -16,8 +16,11 @@ using static VPet_Simulator.Core.GraphInfo;
 
 namespace VPet.Plugin.ChatVPet;
 
-internal sealed class GameHost(IMainWindow MW, VPetChatProcess VPetChatProcess, Func<string> GetSaveId, string receiptSection)
+internal sealed class GameHost(IMainWindow MW, VPetChatProcess VPetChatProcess, string receiptSection)
 {
+    public GameSave_v2 Save { get; } = MW.GameSavesData;
+    public bool IsCurrentSave => ReferenceEquals(Save, MW.GameSavesData);
+
     public void RegisterTools()
     {
         VPetChatProcess.RegisterGameTools();
@@ -63,25 +66,24 @@ internal sealed class GameHost(IMainWindow MW, VPetChatProcess VPetChatProcess, 
             var execute = tool.Execute!;
             tool.Execute = (turn, args) =>
             {
-                if (turn.SaveId != GetSaveId()) return new HostReceipt { Status = "skipped", Facts = "已切换存档，未执行。" };
-                var saveData = MW.GameSavesData;
+                if (!IsCurrentSave) return new HostReceipt { Status = "skipped", Facts = "已切换存档，未执行。" };
                 HostReceipt result;
                 try { result = execute(turn, args); }
                 catch
                 { result = new HostReceipt { Status = "unknown", Facts = "宿主操作中断，实际结果需要核对。" }; }
-                if (!ReferenceEquals(saveData, MW.GameSavesData) || turn.SaveId != GetSaveId())
+                if (!IsCurrentSave)
                     return new HostReceipt { Status = "unknown", Facts = result.Facts + " 操作期间存档已切换，保存结果需要核对。" };
                 var pending = turn.Receipts.Last();
-                result.SaveId = turn.SaveId; result.TurnId = turn.TurnId; result.StepId = pending.StepId;
+                result.TurnId = turn.TurnId; result.StepId = pending.StepId;
                 result.Tool = tool.Code; result.Arguments = args;
                 // The latest committed step is enough: Process checkpoints each result before starting another step.
-                MW.GameSavesData.Data[receiptSection][(gstr)"last_receipt"] = Newtonsoft.Json.JsonConvert.SerializeObject(result);
+                Save.Data[receiptSection][(gstr)"last_receipt"] = Newtonsoft.Json.JsonConvert.SerializeObject(result);
                 try { MW.Save(); }
                 catch
                 {
                     result.Status = "unknown";
                     result.Facts += " 宿主保存未确认；不要重复执行，重新加载后核对。";
-                    MW.GameSavesData.Data[receiptSection][(gstr)"last_receipt"] = Newtonsoft.Json.JsonConvert.SerializeObject(result);
+                    Save.Data[receiptSection][(gstr)"last_receipt"] = Newtonsoft.Json.JsonConvert.SerializeObject(result);
                 }
                 return result;
             };
@@ -90,7 +92,7 @@ internal sealed class GameHost(IMainWindow MW, VPetChatProcess VPetChatProcess, 
 
     public bool IsToolAllowed(ChatTurn turn, ToolUse tool)
     {
-        if (turn.SaveId != GetSaveId()) return false;
+        if (!IsCurrentSave) return false;
         return global::ChatVPet.ChatProcess.VPetChatProcess.GameToolAllowed(turn, tool);
     }
 

@@ -20,17 +20,15 @@ public partial class CVPPlugin : MainPlugin
     public VPetChatProcess VPetChatProcess = new();
     public OpenAIChatConfig? OpenAIConfig;
     public CVPTTalkAPI? TalkAPI;
-    public string SideMessage = "";
-    public int temptoken;
     public Task Ready { get; private set; } = Task.CompletedTask;
-    private GameSave_v2? loadedSave;
+    private GameHost? gameHost;
     private readonly object saveGate = new();
-    private readonly string dataDirectory;
+    private readonly string legacyDirectory;
     private readonly string settingsPath;
     public CVPPlugin(IMainWindow mainwin) : this(mainwin, ExtensionValue.BaseDirectory) { }
     public CVPPlugin(IMainWindow mainwin, string storageDirectory) : base(mainwin)
     {
-        dataDirectory = Path.Combine(storageDirectory, "ChatVPet");
+        legacyDirectory = Path.Combine(storageDirectory, "ChatVPet");
         settingsPath = Path.Combine(storageDirectory, "ChatVPetProcess.Settings.json");
     }
     public override string PluginName => "ChatVPetProcess";
@@ -62,48 +60,48 @@ public partial class CVPPlugin : MainPlugin
     {
         lock (saveGate)
         {
-            if (ReferenceEquals(loadedSave, MW.GameSavesData) && VPetChatProcess.SaveId == GetSaveId()) return;
-            // Session changes are persisted by Process.Checkpoint before and after each operation.
-            var save = MW.GameSavesData;
-            var line = save.Data["chatvpet_process"];
-            string id = line[(gstr)"id"] ?? "";
-            if (string.IsNullOrEmpty(id))
+            if (gameHost?.IsCurrentSave == true) return;
+            var process = new VPetChatProcess();
+            var host = new GameHost(MW, process, "chatvpet_process");
+            var line = host.Save.Data["chatvpet_process"];
+            string? history = line[(gstr)"history"];
+            if (string.IsNullOrEmpty(history) && line[(gstr)"id"] is { Length: > 0 } legacyId)
             {
-                id = Guid.NewGuid().ToString("N");
-                line[(gstr)"id"] = id;
-                MW.Save();
+                var key = Encoding.UTF8.GetBytes($"{Environment.UserName}\0{MW.SteamID}\0{MW.PrefixSave}\0{legacyId}");
+                var path = Path.Combine(legacyDirectory, Convert.ToHexString(SHA256.HashData(key)) + ".turns.json");
+                if (File.Exists(path)) history = File.ReadAllText(path);
             }
-            id = GetSaveId();
-            var process = new VPetChatProcess { SaveId = id };
-            string path = Path.Combine(dataDirectory, id + ".turns.json");
-            if (File.Exists(path))
+            if (!string.IsNullOrEmpty(history))
             {
-                var data = JObject.Parse(File.ReadAllText(path));
+                var data = JObject.Parse(history);
                 process.Dialogues = data["dialogues"]!.ToObject<List<Dialogue>>()!;
                 process.DiaryEntries = data["diaries"]!.ToObject<List<DiaryEntry>>()!;
                 process.Summaries = data["summaries"]?.ToObject<List<ConversationSummary>>() ?? [];
                 if (process.DiaryEntries.Count > 0) DiaryEntry.EnsureCounterAbove(process.DiaryEntries.Max(x => x.Id));
             }
             VPetChatProcess = process;
-            process.Checkpoint = () => SaveSession(process);
+            process.Checkpoint = () => line[(gstr)"history"] = JsonConvert.SerializeObject(new
+            {
+                dialogues = process.Dialogues, diaries = process.DiaryEntries, summaries = process.Summaries
+            });
             process.RecoverInterruptedTurns();
+            if (!string.IsNullOrEmpty(history)) line.Remove("id");
             string committed = line[(gstr)"last_receipt"] ?? "";
             if (committed.Length > 0) process.ReceiveReceipt(JsonConvert.DeserializeObject<HostReceipt>(committed)!);
-            var host = new GameHost(MW, process, GetSaveId, "chatvpet_process");
             process.AllowTool = host.IsToolAllowed;
-            process.ScreenshotFunction = ObserveScreenshot;
-            process.QuitFunction = FinishQuit;
+            process.ScreenshotFunction = turn => host.IsCurrentSave ? ObserveScreenshot(turn)
+                : new HostReceipt { Status = "skipped", Facts = "已切换存档。" };
+            process.QuitFunction = _ => FinishQuit(host);
             ReloadKnowledge();
             host.RegisterTools();
             ConfigureModels();
-            loadedSave = save;
+            gameHost = host;
         }
     }
 
-    internal string GetSaveId() => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(
-        $"{Environment.UserName}\0{MW.SteamID}\0{MW.PrefixSave}\0{MW.GameSavesData.Data["chatvpet_process"][(gstr)"id"]}")));
+    internal bool IsCurrentProcess(VPetChatProcess process) => process == VPetChatProcess && gameHost?.IsCurrentSave == true;
 
-    internal void ImportCloud(string file, string target)
+    internal void ImportCloud(string file, VPetChatProcess target)
     {
         var data = JObject.Parse(File.ReadAllText(file));
         var settings = data["settings"] ?? throw new InvalidDataException("缺少模型设置。");
@@ -115,13 +113,13 @@ public partial class CVPPlugin : MainPlugin
         lock (saveGate)
         {
             EnsureSave();
-            if (target != GetSaveId()) throw new InvalidOperationException("目标存档已经切换。");
+            if (target != VPetChatProcess) throw new InvalidOperationException("目标存档已经切换。");
             VPetChatProcess.ImportConversation(dialogues, diaries, summaries);
             OpenAIConfig!.Model = chat;
             OpenAIConfig.ToolModel = tool;
             OpenAIConfig.UseChatVPetPrompt = (bool?)settings["UseChatVPetPrompt"] == true;
             if ((string?)settings["EmbeddingModel"] is string embedding) OpenAIConfig.EmbeddingModel = embedding;
-            Save();
+            MW.Save();
             ConfigureModels();
         }
     }
@@ -148,26 +146,6 @@ public partial class CVPPlugin : MainPlugin
             if (double.IsFinite(MW.Core.Save!.Likability)) state += ", 好感:" + ChatProtocol.AffinityTier(MW.Core.Save!.Likability);
         }
         return state;
-    }
-
-    private void SaveSession(VPetChatProcess process)
-    {
-        Directory.CreateDirectory(dataDirectory);
-        string path = Path.Combine(dataDirectory, process.SaveId + ".turns.json");
-        string json = JsonConvert.SerializeObject(new { dialogues = process.Dialogues, diaries = process.DiaryEntries, summaries = process.Summaries });
-        using (var stream = new FileStream(path + ".tmp", FileMode.Create, FileAccess.Write, FileShare.None))
-        {
-            var bytes = Encoding.UTF8.GetBytes(json);
-            stream.Write(bytes);
-            stream.Flush(true);
-        }
-        // File indexing on Windows can briefly deny replacement immediately after a checkpoint write.
-        for (int attempt = 0; ; attempt++)
-        {
-            try { File.Move(path + ".tmp", path, true); break; }
-            catch (Exception ex) when (attempt < 4 && ex is IOException or UnauthorizedAccessException)
-            { System.Threading.Thread.Sleep(25 * (attempt + 1)); }
-        }
     }
 
     public override void Save()

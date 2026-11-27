@@ -51,8 +51,6 @@ public sealed class PluginHost : IDisposable
             Save.GameSave.Money = 10;
             Save.GameSave.HostName = "测试员";
         }
-        Save.Data["chatvpet_process"][(gstr)"id"] = id;
-        Save.Data["chatvpet_process"].Remove("last_receipt");
         var controller = DispatchProxy.Create<IController, SandboxProxy>();
         ((SandboxProxy)(object)controller).Call = (method, _) => method.Name switch
         {

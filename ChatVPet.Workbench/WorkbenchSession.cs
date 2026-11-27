@@ -225,16 +225,6 @@ public sealed class WorkbenchSession : IDisposable
         Process.Dialogues = state["dialogues"]!.ToObject<List<Dialogue>>()!;
         Process.DiaryEntries = state["diaries"]!.ToObject<List<DiaryEntry>>()!;
         Process.Summaries = state["summaries"]!.ToObject<List<ConversationSummary>>()!;
-        // A branch owns a new isolated save; rewrite ownership, not conversation facts.
-        foreach (var dialogue in Process.Dialogues)
-        {
-            dialogue.SaveId = Process.SaveId;
-            if (dialogue.Turn == null) continue;
-            dialogue.Turn.SaveId = Process.SaveId;
-            foreach (var receipt in dialogue.Turn.Receipts) receipt.SaveId = Process.SaveId;
-        }
-        foreach (var diary in Process.DiaryEntries) diary.SaveId = Process.SaveId;
-        foreach (var summary in Process.Summaries) summary.SaveId = Process.SaveId;
         if (Process.DiaryEntries.Count > 0) DiaryEntry.EnsureCounterAbove(Process.DiaryEntries.Max(x => x.Id));
         Host.Restore((JObject)state["host"]!);
         Process.RecoverInterruptedTurns();
@@ -394,10 +384,10 @@ public sealed class WorkbenchSession : IDisposable
         {
             Host.Save.GameSave.Money = 10; Host.TestBread().Price = 8; Host.Items.Clear();
             ChatProtocol.TryParse("[delegate][expression:cheerful]\n我先查一下，再按预算买。", false, out var header);
-            var turn = new ChatTurn { SaveId = Process.SaveId, Original = "帮我买一个面包，最多花8块，不要吃。", Initial = header };
+            var turn = new ChatTurn { Original = "帮我买一个面包，最多花8块，不要吃。", Initial = header };
             HostReceipt Execute(string code, Dictionary<string, string> arguments)
             {
-                var pending = new HostReceipt { SaveId = Process.SaveId, TurnId = turn.TurnId, StepId = Guid.NewGuid().ToString("N"), Tool = code, Arguments = arguments };
+                var pending = new HostReceipt { TurnId = turn.TurnId, StepId = Guid.NewGuid().ToString("N"), Tool = code, Arguments = arguments };
                 turn.Receipts.Add(pending);
                 var result = Process.Tools.Single(x => x.Code == code).Execute!(turn, arguments);
                 pending.Status = result.Status; pending.Facts = result.Facts; pending.MoneySpent = result.MoneySpent;
@@ -412,7 +402,7 @@ public sealed class WorkbenchSession : IDisposable
             var purchase = Execute("buy_item", new() { ["target"] = "面包", ["quantity"] = "1", ["max_total"] = "8" });
             Check("真实插件购买入包", purchase.Status == "applied" && Host.Save.GameSave.Money == 2 && Host.Items.Sum(x => x.Count) == 1);
             Check("购买没有食用", Host.EatCalls == eats);
-            turn = new ChatTurn { SaveId = Process.SaveId, Original = "帮我买一个面包，最多花7块。", Initial = header };
+            turn = new ChatTurn { Original = "帮我买一个面包，最多花7块。", Initial = header };
             Host.Save.GameSave.Money = 10;
             var denied = Execute("buy_item", new() { ["target"] = "面包", ["quantity"] = "1", ["max_total"] = "7" });
             Check("实时预算拦截", denied.Status == "skipped" && Host.Save.GameSave.Money == 10);

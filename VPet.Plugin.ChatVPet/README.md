@@ -8,10 +8,10 @@
 
 - API 设置：保存在宿主根目录的 `ChatVPetProcess.Settings.json`，首次打开设置页时填写。
 - 宿主设置节点：`ChatVPetProcess`，保存记忆数量、语音识别和自定义知识等设置。
-- 会话：保存在宿主根目录的 `ChatVPet/{scope}.turns.json`，包含对话、日记、行动条件和执行回执。scope 由当前用户、SteamID、宿主存档前缀与 `chatvpet_process.id` 派生。
+- 每份游戏存档的 `chatvpet_process.history` 保存一份对话，包含日记、摘要和执行记录。读档或恢复备份时，聊天随游戏进度一起恢复。升级时，若当前存档关联的旧版 `.turns.json` 文件在本机可用，插件会在首次加载时将其读入存档。
 - 执行回执：保存在宿主存档的 `chatvpet_process.last_receipt` 中，随游戏状态记录最近的执行步骤，供重启后核对。回执须与原存档、轮次和步骤匹配，才能更新会话。
 
-本版不读取或迁移旧聊天、旧日记和旧配置，包括旧 `OpenAISetting.json`、`CGPTV` 节点及全局历史/日记文件，也不会自动删除玩家文件。本版生成的存档可正常重新加载。
+更早版本的全局聊天、日记和配置文件（含 `OpenAISetting.json`、`CGPTV` 节点）仍按原样保留。
 
 ## API 配置
 

@@ -82,8 +82,8 @@ public partial class CVPPlugin
     {
         if (chatApi == null) throw new InvalidOperationException("请先配置聊天 API。");
         var result = chatApi.Chat(system, messages, tools, OpenAIConfig!.Temperature, OpenAIConfig.MaxTokens);
-        temptoken = (int)result.Tokens;
-        ChatTokens += temptoken; TotalTokensUsage += temptoken; TokenCount = temptoken;
+        int tokens = (int)result.Tokens;
+        ChatTokens += tokens; TotalTokensUsage += tokens;
         if (result.CachedTokens.HasValue && result.PromptTokens.HasValue)
         {
             HasChatCacheUsage = true;

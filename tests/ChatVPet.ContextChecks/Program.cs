@@ -43,7 +43,7 @@ VPetChatProcess NewProcess() => new()
 VPetChatProcess.AIAPIAskResult Summary(string text) => new()
 { Reply = JsonConvert.SerializeObject(new { summary = text, diary = "this batch diary" }) };
 void Ask(VPetChatProcess process, string message) => process.Ask(message, _ => { }, new());
-Dialogue Entry(VPetChatProcess process, string question) => new(question, "answer", process.Localization) { SaveId = process.SaveId };
+Dialogue Entry(VPetChatProcess process, string question) => new(question, "answer", process.Localization);
 
 var p = NewProcess();
 var requests = new List<(string System, List<ChatMessage> History, string Input)>();
@@ -81,10 +81,9 @@ restored.Summaries = data["summaries"]!.ToObject<List<ConversationSummary>>()!;
 Ask(restored, "after restart");
 Check(restored.Dialogues[^1].Turn!.Summary == "recap 2" && restored.Dialogues[^1].Turn!.History[0].Content == requests[6].Input, "Restart preserves both the recap and its exact history boundary");
 Check(restored.Dialogues[0].DialogueId == p.Dialogues[0].DialogueId, "Source identifiers survive serialization");
-restored.SaveId = "another-save";
-Ask(restored, "other save");
-Check(restored.Dialogues[^1].Turn!.Summary == "" && restored.Dialogues[^1].Turn!.History.Count == 0, "A different save receives neither recap nor history from the first save");
-restored.SaveId = "default";
+var otherSave = NewProcess();
+Ask(otherSave, "other save");
+Check(otherSave.Dialogues[^1].Turn!.Summary == "" && otherSave.Dialogues[^1].Turn!.History.Count == 0, "A different save receives neither recap nor history from the first save");
 restored.DeleteMemory(restored.Dialogues[0]);
 Check(restored.ReadSummary() == "" && restored.DiaryEntries.Count == 1, "Deleting a covered source invalidates the cumulative recap and its own diary");
 Ask(restored, "after deletion");
@@ -190,7 +189,7 @@ foreach (string mutation in new[] { "delete", "edit", "switch" })
         Check(started.Wait(TimeSpan.FromSeconds(5)), "Concurrent mutation test starts: " + mutation);
         if (mutation == "delete") p.DeleteMemory(p.Dialogues[0]);
         if (mutation == "edit") p.Dialogues[0].Answer = "corrected";
-        if (mutation == "switch") p.SaveId = "different-save";
+        if (mutation == "switch") p = NewProcess();
     }
     finally { release.Set(); work.GetAwaiter().GetResult(); }
     Check(p.Summaries.Count == 0 && p.DiaryEntries.Count == 0, "Changed source/scope rejects stale compression: " + mutation);
@@ -253,7 +252,7 @@ var beforeLate = shot.ToMessages().ToArray();
 p.AIAPIAskFunction = (_, _, _) => new() { Reply = "[expression:gentle]\n收到。" };
 Ask(p, "另一件事");
 var intervening = p.Dialogues[^1];
-var late = new HostReceipt { SaveId = p.SaveId, TurnId = shot.Turn!.TurnId, StepId = "screenshot", Status = "observed", Facts = "新观察：731" };
+var late = new HostReceipt { TurnId = shot.Turn!.TurnId, StepId = "screenshot", Status = "observed", Facts = "新观察：731" };
 Check(captures == 1 && beforeLate.Length == 4 && !beforeLate[0].Content.Contains("暂未确认") && beforeLate[2].FromHost,
     "Active screenshot follows the real initial reply and is captured once");
 Check(p.ReceiveReceipt(late, _ => { }) && !p.ReceiveReceipt(late, _ => { }) && captures == 1, "Late receipt is applied once without repeating the screenshot");
@@ -296,7 +295,6 @@ p.AIAPIEmbeddingFunction = inputs => inputs.Select(_ => new float[] { 1, 0 }).To
 p.AIAPIRerankFunction = (_, docs) => docs.Select(_ => .9f).ToArray();
 var failedLookup = new Dialogue("薄荷不叫小青，现在叫云芽。面包买到了吗？", "错误答案标记：没找到，所以没买。", p.Localization)
 {
-    SaveId = p.SaveId,
     Turn = new() { OperationsFinished = true, Receipts = [
         new() { Tool = "历史补查", Status = "not_found", Facts = "没有找到相关历史或日记。" },
         new() { Tool = "buy_item", Status = "applied", Facts = "已购买1个，实付8，未食用。" }] }
@@ -359,7 +357,7 @@ p.AIAPIAskFunction = (_, messages, _) =>
     return new() { Reply = "[expression:gentle]\n这次没有找到新资料。" };
 };
 p.Dialogues.Add(Entry(p, "known source"));
-p.Summaries.Add(new() { SaveId = p.SaveId, ThroughDialogueId = p.Dialogues[0].DialogueId, Text = "手铃叫浅滩" });
+p.Summaries.Add(new() { ThroughDialogueId = p.Dialogues[0].DialogueId, Text = "手铃叫浅滩" });
 Ask(p, "手铃叫什么？");
 Check(p.Dialogues[^1].Turn!.Receipts[0].Status == "skipped" && continuationInput.Contains("本轮未启用额外检索") && !continuationInput.Contains("未找到"),
     "Disabled recall reports no search, even when an existing recap answers the question");

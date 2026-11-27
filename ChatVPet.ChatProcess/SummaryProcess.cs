@@ -21,8 +21,8 @@ public partial class VPetChatProcess
 
     private ConversationSummary? GetSummary()
     {
-        var summary = Summaries.Find(x => x.SaveId == SaveId);
-        if (summary != null && !Dialogues.Any(x => x.SaveId == SaveId && x.DialogueId == summary.ThroughDialogueId))
+        var summary = Summaries.FirstOrDefault();
+        if (summary != null && !Dialogues.Any(x => x.DialogueId == summary.ThroughDialogueId))
         {
             Summaries.Remove(summary);
             return null;
@@ -32,11 +32,10 @@ public partial class VPetChatProcess
 
     private List<Dialogue> GetUncompressedHistory(ConversationSummary? summary)
     {
-        var history = Dialogues.Where(x => x.SaveId == SaveId).ToList();
         // Old saves retain their original dialogues. Without a recap, none may be skipped,
         // including records marked inactive by the old diary-only compression.
-        int boundary = summary == null ? -1 : history.FindIndex(x => x.DialogueId == summary.ThroughDialogueId);
-        return history.Skip(boundary + 1).ToList();
+        int boundary = summary == null ? -1 : Dialogues.FindIndex(x => x.DialogueId == summary.ThroughDialogueId);
+        return Dialogues.Skip(boundary + 1).ToList();
     }
 
     private static bool CanSummarize(Dialogue entry) => entry.Turn == null ||
@@ -65,11 +64,9 @@ public partial class VPetChatProcess
         if (Interlocked.Exchange(ref summaryRunning, 1) != 0) return;
         try
         {
-            string saveId;
-            lock (turnGate) saveId = SaveId;
             // Large old saves may need several bounded batches. Each batch releases the
             // conversation lock during generation and publishes its progress independently.
-            while (CompressHistoryBatch(saveId, available)) { }
+            while (CompressHistoryBatch(available)) { }
         }
         catch (Exception ex)
         {
@@ -78,7 +75,7 @@ public partial class VPetChatProcess
         finally { Volatile.Write(ref summaryRunning, 0); }
     }
 
-    private bool CompressHistoryBatch(string saveId, long? available)
+    private bool CompressHistoryBatch(long? available)
     {
         List<Dialogue> entries = [];
         ConversationSummary? previous;
@@ -87,7 +84,7 @@ public partial class VPetChatProcess
         int limit;
         lock (turnGate)
         {
-            if (SaveId != saveId || MaxHistoryBeforeCompress <= 0 || SummaryAPIAskFunction == null) return false;
+            if (MaxHistoryBeforeCompress <= 0 || SummaryAPIAskFunction == null) return false;
             summarize = SummaryAPIAskFunction;
             previous = GetSummary();
             var history = GetUncompressedHistory(previous);
@@ -154,15 +151,15 @@ public partial class VPetChatProcess
         lock (turnGate)
         {
             // Publish recap, diary and boundary together. New turns appended during IO are retained.
-            if (SaveId != saveId || GetSummary() != previous ||
+            if (GetSummary() != previous ||
                 !GetUncompressedHistory(previous).Take(entries.Count).SequenceEqual(entries) ||
                 entries.Any(x => !CanSummarize(x)) || input != SummaryInput(previous, entries)) return false;
             if (previous != null) Summaries.Remove(previous);
             bool allow = (previous == null || previous.Allow) && entries.All(TrainingSourceAllowed);
-            Summaries.Add(new() { Allow = allow, SaveId = saveId, Text = recap, ThroughDialogueId = entries[^1].DialogueId });
+            Summaries.Add(new() { Allow = allow, Text = recap, ThroughDialogueId = entries[^1].DialogueId });
             DiaryEntries.Add(new DiaryEntry(diary, Localization)
             {
-                Allow = allow, SaveId = saveId, SourceDialogueIds = entries.Select(x => x.DialogueId).ToList(),
+                Allow = allow, SourceDialogueIds = entries.Select(x => x.DialogueId).ToList(),
                 SourceTurns = entries.Where(x => x.Turn != null).Select(x => x.Turn!.TurnId).ToList()
             });
             foreach (var entry in entries) entry.IsActive = false;
