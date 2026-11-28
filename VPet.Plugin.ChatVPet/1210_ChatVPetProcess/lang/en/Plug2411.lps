@@ -183,12 +183,13 @@ VCP报错: #VCP error. :|
 删除#Delete:|
 向量搜索#Vector Search:|
 搜索#Search:|
-允许读写文件的目录#Folders the pet can read and write:|
+允许写入文件的目录#Folders the pet can write to:|
 默认写入#Default for saving:|
 添加文件夹#Add folder:|
 设为默认#Set as default:|
 移除#Remove:|
 定位文件：{0}#Show file: {0}:|
 找不到文件：{0}#File not found: {0}:|
-只给文件名时保存到默认目录。移除全部目录可关闭文件访问。读取的文本会随对话发送给模型。#File names without a folder are saved in the default folder. Remove all folders to turn off file access. Text read from files is sent to the models with the conversation.:|
+默认只读写列表中的目录，只给文件名时使用默认目录。读取的内容会随对话发送给模型。#By default, the pet can read and write only in the listed folders. A file name alone uses the default folder. Text the pet reads is sent to the models with the conversation.:|
 操作记录#Tool activity:|
+允许读取任意位置的文本文件#Allow reading text files from any location:|

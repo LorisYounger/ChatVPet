@@ -73,7 +73,7 @@ namespace VPet.Plugin.ChatVPet
 
             this.plugin = plugin;
             process = plugin.VPetChatProcess;
-            fileFolders.LoadFolders(files.Folders);
+            fileFolders.LoadFolders(files);
             if (plugin.OpenAIConfig != null)
             {
                 tbAPIKey.Text = plugin.OpenAIConfig.ApiKey;
@@ -182,8 +182,8 @@ namespace VPet.Plugin.ChatVPet
                 MessageBox.Show("请检查数量、温度、超时和衰减率。压缩保留轮数须小于触发轮数；字符限制须满足：0 < 提要上限 < 整理阈值，且请求上限大于两者之和。衰减率为0到1。");
                 return;
             }
-            try { files.SaveFolders(fileFolders.Paths); }
-            catch (Exception ex) { MessageBox.Show(this, ex.Message, "允许读写文件的目录"); return; }
+            try { fileFolders.SaveFolders(files); }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "允许写入文件的目录".Translate()); return; }
             plugin.OpenAIConfig = new OpenAIChatConfig
             {
                 ApiKey = tbAPIKey.Text,

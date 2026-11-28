@@ -135,9 +135,9 @@
                         <TextBlock x:Name="tbApiTestResult" TextWrapping="Wrap" Margin="0,4" />
                         <CheckBox x:Name="cbScreenshot" Content="允许按聊天请求截图并发送给视觉 API" Margin="0,8" />
                         <ComboBox x:Name="cbScreenScope" SelectedIndex="0"><ComboBoxItem Content="仅桌宠区域" /><ComboBoxItem Content="主屏幕" /></ComboBox>
-                        <TextBlock Text="{ll:Str 允许读写文件的目录}" Margin="0,12,0,4" />
+                        <TextBlock Text="{ll:Str 允许写入文件的目录}" Margin="0,12,0,4" />
                         <local:ChatFolderEditor x:Name="fileFolders" />
-                        <TextBlock Text="{ll:Str 只给文件名时保存到默认目录。移除全部目录可关闭文件访问。读取的文本会随对话发送给模型。}" TextWrapping="Wrap" FontSize="12" />
+                        <TextBlock Text="{ll:Str 默认只读写列表中的目录，只给文件名时使用默认目录。读取的内容会随对话发送给模型。}" TextWrapping="Wrap" FontSize="12" />
                         <TextBlock Text="联网搜索模式 (由操作模型在 [delegate] 时调用)" Margin="0,12,0,4" />
                         <ComboBox x:Name="cbWebSearchMode" SelectedIndex="0">
                             <ComboBoxItem Content="自动 (按操作 API 识别 DeepSeek / OpenAI)" Tag="auto" />

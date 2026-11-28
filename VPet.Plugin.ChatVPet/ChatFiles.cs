@@ -16,29 +16,38 @@ internal sealed class ChatFiles(string plugin)
     // The game directory itself may be writable. Keep its permission list outside the files the pet can edit.
     private const string SettingsKey = @"HKEY_CURRENT_USER\Software\VPet\ChatFileFolders";
 
+    private static string? DocumentFolder
+    {
+        get
+        {
+            string documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            return documents.Length == 0 ? null : Path.Combine(documents, "VPet");
+        }
+    }
+
     public string[] Folders
     {
         get
         {
             if (Registry.GetValue(SettingsKey, plugin, null) is string[] folders) return folders;
-            string documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            return documents.Length == 0 ? [ExtensionValue.BaseDirectory] : [Path.Combine(documents, "VPet"), ExtensionValue.BaseDirectory];
+            return DocumentFolder is string folder ? [folder, ExtensionValue.BaseDirectory] : [ExtensionValue.BaseDirectory];
         }
     }
 
     public void CreateDocumentFolder()
     {
-        string documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        if (documents.Length == 0) return;
-        string folder = Path.Combine(documents, "VPet");
-        if (Folders.Contains(folder, StringComparer.OrdinalIgnoreCase)) Directory.CreateDirectory(folder);
+        if (DocumentFolder is string folder && Folders.Contains(folder, StringComparer.OrdinalIgnoreCase))
+            Directory.CreateDirectory(folder);
     }
 
-    public void SaveFolders(IEnumerable<string> paths)
+    public bool ReadAnywhere => Registry.GetValue(SettingsKey, plugin + ".ReadAnywhere", null) is 1;
+
+    public void SaveFolders(IEnumerable<string> paths, bool readAnywhere)
     {
         var folders = paths.Select(NormalPath).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         foreach (string folder in folders) Directory.CreateDirectory(folder);
         Registry.SetValue(SettingsKey, plugin, folders, RegistryValueKind.MultiString);
+        Registry.SetValue(SettingsKey, plugin + ".ReadAnywhere", readAnywhere ? 1 : 0, RegistryValueKind.DWord);
     }
 
     private static string NormalPath(string path)
@@ -53,15 +62,16 @@ internal sealed class ChatFiles(string plugin)
         return Path.TrimEndingDirectorySeparator(path);
     }
 
-    private static string FilePath(string path, string[] folders)
+    private static string FilePath(string path, string baseFolder, string[] folders, bool readAnywhere = false)
     {
         if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) && !Path.IsPathFullyQualified(path))
             throw new ArgumentException("请指定文件的绝对路径或相对路径。");
-        path = NormalPath(Path.Combine(folders[0], path));
+        path = NormalPath(Path.Combine(baseFolder, path));
+        if (readAnywhere) return path;
         string? root = folders.FirstOrDefault(folder => path.StartsWith(Path.EndsInDirectorySeparator(folder) ? folder : folder + Path.DirectorySeparatorChar,
             StringComparison.OrdinalIgnoreCase));
         if (root == null)
-            throw new UnauthorizedAccessException("文件在允许目录之外。");
+            throw new UnauthorizedAccessException("文件在允许的目录之外。");
         path = root + path[root.Length..];
         // A junction or symbolic link can lead outside the directory selected by the player.
         for (string? current = path; current != null; current = Path.GetDirectoryName(current))
@@ -78,10 +88,15 @@ internal sealed class ChatFiles(string plugin)
         try
         {
             var folders = Folders;
-            if (folders.Length == 0) return new() { Status = "skipped", Facts = "玩家未允许访问任何文件夹。" };
+            bool readAnywhere = ReadAnywhere;
+            if (!readAnywhere && folders.Length == 0)
+                return new() { Status = "skipped", Facts = "玩家未允许访问任何文件夹。" };
+            string baseFolder = folders.FirstOrDefault() ?? DocumentFolder ?? ExtensionValue.BaseDirectory;
             if (string.IsNullOrWhiteSpace(args.GetValueOrDefault("path")))
-                return new() { Status = "observed", Facts = "允许的文件夹（相对路径使用第一个）：\n" + string.Join("\n", folders) };
-            string path = FilePath(args["path"], folders);
+                return new() { Status = "observed", Facts = (readAnywhere ? "可读取当前用户有权访问的文本文件。" : "读取限于下列目录。")
+                    + $"相对读取路径的起点：{baseFolder}\n允许写入的目录："
+                    + (folders.Length == 0 ? "无" : "\n" + string.Join("\n", folders)) };
+            string path = FilePath(args["path"], baseFolder, folders, readAnywhere);
             if (!int.TryParse(args.GetValueOrDefault("offset", "0"), out int offset) || offset < 0)
                 return new() { Status = "failed", Facts = "offset 应为非负字符位置。" };
             using var reader = new StreamReader(path, new UTF8Encoding(false, true), detectEncodingFromByteOrderMarks: true);
@@ -109,9 +124,9 @@ internal sealed class ChatFiles(string plugin)
         try
         {
             var folders = Folders;
-            if (folders.Length == 0) return new() { Status = "skipped", Facts = "玩家未允许访问任何文件夹。" };
+            if (folders.Length == 0) return new() { Status = "skipped", Facts = "玩家未设置允许写入的目录。" };
             if (!args.TryGetValue("content", out string? content)) return new() { Status = "failed", Facts = "缺少要写入的正文。" };
-            string path = FilePath(args.GetValueOrDefault("path", ""), folders);
+            string path = FilePath(args.GetValueOrDefault("path", ""), folders[0], folders);
             string directory = Path.GetDirectoryName(path)!;
             Directory.CreateDirectory(directory);
             string temp = Path.Combine(directory, Path.GetRandomFileName());

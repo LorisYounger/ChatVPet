@@ -37,12 +37,16 @@ public partial class ChatTurn
     public string State { get; set; } = "";
     public string Reference { get; set; } = "";
     public string Observation { get; set; } = "";
+    public string Source { get; set; } = "";
+    public string HostEvents { get; set; } = "";
     public string InitialInput { get; set; } = "";
+    public string TrainingInitialInput { get; set; } = "";
     public List<ResultExchange> Results { get; set; } = [];
     public int ConclusionRevision { get; set; }
     public string ResultReference { get; set; } = "";
     public ChatHeader Initial { get; set; } = new();
     public List<ChatMessage> History { get; set; } = [];
+    public List<ChatMessage>? TrainingHistory { get; set; }
     // Visible order is independent of retrieval ranking.
     public List<string> DisplayedItems { get; set; } = [];
     public List<string> OriginalDisplayedItems { get; set; } = [];
@@ -73,7 +77,7 @@ public partial class ChatTurn
     internal long LastSequence => Results.LastOrDefault(r => r.Reply.Length > 0)?.Sequence ?? Sequence;
 
     internal string HistoryInitialInput() =>
-        ChatProtocol.UserMessage(Original, State, observation: Observation, language: Language);
+        ChatProtocol.UserMessage(Original, State, observation: Observation, language: Language, events: HostEvents);
 
     internal string HistoryResultInput(ResultExchange result)
     {

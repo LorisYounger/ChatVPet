@@ -130,7 +130,8 @@ public partial class CVPPlugin : MainPlugin
     {
         var process = VPetChatProcess;
         process.KnowledgeDataBases.Clear();
-        process.AddKnowledgeDataBase(Properties.Resources.VpetKnowledgeDataBase.Replace("\r", "").Split('\n', StringSplitOptions.RemoveEmptyEntries));
+        string petName = string.IsNullOrWhiteSpace(MW.Core.Save?.Name) ? "萝莉斯" : MW.Core.Save.Name.Trim();
+        process.AddKnowledgeDataBase(Properties.Resources.VpetKnowledgeDataBase.Replace("\r", "").Replace("{0}", petName).Split('\n', StringSplitOptions.RemoveEmptyEntries));
         process.AddKnowledgeDataBase(KnowledgeDataBase.Split('\n', StringSplitOptions.RemoveEmptyEntries));
         foreach (var item in MW.Foods) process.AddKnowledgeDataBase($"物品: {item.TranslateName}; {item.Description}");
         foreach (var work in MW.Core.Graph!.GraphConfig.Works) process.AddKnowledgeDataBase($"活动: {work.NameTrans}; {work.Type}; {work.Time}分钟");

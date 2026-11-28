@@ -23,6 +23,42 @@ for (int index = 0; index < 2; index++)
 }
 Check(ChatProtocol.RenderSystem() != ChatProtocol.RenderSystem(useChatVPetPrompt: true), "ChatVPet selection uses its own template");
 Check(ChatProtocol.RenderSystem(useChatVPetPrompt: true).StartsWith("你叫萝莉斯,") && ChatProtocol.RenderSystem(useChatVPetPrompt: true).Contains("称呼主人为“主人”"), "ChatVPet template renders default identity");
+Check(ChatProtocol.DefaultLolisKnowledgeLine("zh-Hans").Contains("L形发卡") && ChatProtocol.DefaultLolisKnowledgeLine("en").Contains("L-shaped hairclip")
+    && ChatProtocol.DefaultLolisKnowledgeLine("zh-Hans", "小雪").StartsWith("我叫小雪，")
+    && ChatProtocol.DefaultLolisKnowledgeLine("en", "Mimi").StartsWith("I am Mimi,"), "Default Lolis knowledge profile provides localized appearance with pet name replacement");
+Check(ChatProtocol.ObservationSystemPrompt("zh-Hans", ChatProtocol.DefaultLolisKnowledgeLine("zh-Hans")).Contains("参考设定") && !ChatProtocol.ObservationSystemPrompt("zh-Hans").Contains("参考设定"), "ObservationSystemPrompt attaches custom profile only when provided");
+{
+    foreach (var (lang, qWeather, qFile, qReminder) in new[]
+    {
+        ("zh-Hans", "联网查一下今天天气", "把笔记写入文件", "十分钟后定时提醒我喝水"),
+        ("zh-Hant", "幫我聯網搜尋今天天氣", "把筆記寫入檔案", "十分鐘後設定鬧鐘提醒我喝水"),
+        ("en", "search the web for today's weather", "write my notes into a text file", "set a reminder alarm in 10 minutes")
+    })
+    {
+        var toolProc = new VPetChatProcess();
+        toolProc.SetLanguage(lang);
+        toolProc.RegisterGameTools();
+        toolProc.RegisterReminderTool();
+        Check(toolProc.Tools.All(t => t.EmbeddingTexts.Count() >= 3), $"All tools include trilingual retrieval texts ({lang})");
+        Check(toolProc.Retrieval.Select(qWeather, toolProc.Tools, 3).Any(t => t.Code == "web_search"), $"web_search retrieved for {lang}");
+        Check(toolProc.Retrieval.Select(qFile, toolProc.Tools, 3).Any(t => t.Code == "write_file"), $"write_file retrieved for {lang}");
+        Check(toolProc.Retrieval.Select(qReminder, toolProc.Tools, 3).Any(t => t.Code == "set_reminder"), $"set_reminder retrieved for {lang}");
+    }
+}
+{
+    var obsKbProcess = new VPetChatProcess
+    {
+        Localization = new ILocalization.LChineseSimple(),
+        SystemDescription = "fixed",
+        MemoryLimit = 0,
+        MaxKnowledgeCount = 2,
+        MaxHistoryBeforeCompress = 0,
+        AIAPIAskFunction = (_, _, _) => new() { Reply = "[expression:cheerful]\n这是我呀！" }
+    };
+    obsKbProcess.AddKnowledgeDataBase(ChatProtocol.DefaultLolisKnowledgeLine("zh-Hans"));
+    obsKbProcess.Ask("看看这是谁?", "图中是一个白发呆毛、金色眼睛、左耳戴着L形发卡、穿红短裙的女孩。", _ => { }, new());
+    Check(obsKbProcess.Dialogues.Single().Turn!.Reference.Contains("L形发卡"), "Knowledge retrieval matches visual observation details");
+}
 Check(ChatProtocol.NormalizeLanguage(null) == "zh-Hans" && ChatProtocol.NormalizeLanguage("") == "zh-Hans"
     && ChatProtocol.NormalizeLanguage("zh-TW") == "zh-Hant" && ChatProtocol.NormalizeLanguage("zh-Hant") == "zh-Hant"
     && ChatProtocol.NormalizeLanguage("en-US") == "en" && ChatProtocol.NormalizeLanguage("ja") == "en", "Language normalization covers empty/zh-Hans/zh-Hant/en/other");
@@ -32,6 +68,11 @@ Check(ChatProtocol.UserMessage("hi", state: ChatProtocol.FormatState(new DateTim
     is string enMsg && enMsg.Contains("State:Happy, Affinity:Close") && enMsg.Contains("[Reference:Earlier conversation summary") && enMsg.Contains("[Receipt:ok]"), "English UserMessage and FormatState use English labels");
 Check(ChatProtocol.UserMessage("你好", state: ChatProtocol.FormatState(new DateTime(2026, 11, 27, 21, 30, 0), true, "Happy", 600, "zh-Hant"), receipt: "好", summary: "前情", language: "zh-Hant")
     is string hantMsg && hantMsg.Contains("狀態:開心, 好感:親近") && hantMsg.Contains("[參考:較早對話提要") && hantMsg.Contains("[回執:好]"), "Traditional Chinese UserMessage and FormatState use Hant labels");
+Check(ChatProtocol.FormatState(new DateTime(2026, 11, 28, 23, 30, 0), true, "Happy", 30000, "zh-Hans", "洛里斯杨远").EndsWith(", 主人名字:洛里斯杨远")
+    && !ChatProtocol.FormatState(new DateTime(2026, 11, 28, 23, 30, 0), true, "Happy", 30000, "zh-Hans", "主人").Contains("主人名字:")
+    && ChatProtocol.AppendHostNameToState("2026-11-28 周六 23:30, 主人名字:洛里斯杨远", "洛里斯杨远", "zh-Hans") == "2026-11-28 周六 23:30, 主人名字:洛里斯杨远"
+    && ChatProtocol.FormatState(new DateTime(2026, 11, 28, 23, 30, 0), false, null, 0, "en", "Alex").EndsWith(", Owner:Alex"),
+    "FormatState and AppendHostNameToState attach custom host name without duplicating or adding defaults");
 
 VPetChatProcess NewProcess() => new()
 {
@@ -44,6 +85,49 @@ VPetChatProcess.AIAPIAskResult Summary(string text) => new()
 { Reply = JsonConvert.SerializeObject(new { summary = text, diary = "this batch diary" }) };
 void Ask(VPetChatProcess process, string message) => process.Ask(message, _ => { }, new());
 Dialogue Entry(VPetChatProcess process, string question) => new(question, "answer", process.Localization);
+
+foreach (var (language, label) in new[] { ("zh-Hans", "近期互动"), ("zh-Hant", "近期互動"), ("en", "Recent events") })
+{
+    var process = NewProcess();
+    process.Language = language;
+    process.Ask("hello", "", _ => { }, new(), hostEvents: "fed [pudding]\n twice");
+    var dialogue = process.Dialogues.Single();
+    string expected = $"[{label}:fed (pudding)  twice]\nhello";
+    Check(dialogue.Turn!.InitialInput == expected && dialogue.ToMessages(compactHistory: true).First().Content == expected,
+        $"Initial input and compact history escape recent events in {language}");
+}
+
+foreach (var (source, allow, memoryAllowed) in new[] { ("reminder", true, true), ("click", false, true), ("proactive", true, false) })
+{
+    var process = NewProcess();
+    process.MaxHistoryBeforeCompress = 0;
+    process.MaxHistoryCount = 0;
+    process.MemoryLimit = 1;
+    process.Ask("hello", "", _ => { }, new(), allow: memoryAllowed, hostEvents: "fed pudding");
+    process.AIAPIEmbeddingFunction = inputs => inputs.Select(_ => new float[] { 1, 0 }).ToArray();
+    process.AIAPIRerankFunction = (_, docs) => docs.Select(doc => doc.Contains("近期互动: fed pudding") ? 1f : 0f).ToArray();
+    int replies = 0, screenshots = 0, ends = 0;
+    process.AIAPIAskFunction = (_, _, _) => { replies++; return new() { Reply = "[expression:gentle][screenshot]\nhello" }; };
+    process.ScreenshotFunction = _ => { screenshots++; return new() { Status = "observed" }; };
+    process.Ask("pudding", "", response => { if (response.IsEnd) ends++; }, new(), allow: allow, source: source);
+    var turn = process.Dialogues[^1].Turn!;
+    Check(turn.History.Count == 0 && turn.Reference.Contains("近期互动: fed pudding"),
+        $"{source} retrieves earlier host events before the initial reply");
+    Check(turn.Source == source && turn.InitialPresented && turn.OperationsFinished && ends == 1
+        && replies == 1 && screenshots == 0 && turn.Receipts.Count == 0, $"{source} finishes after presenting one reply");
+    Check(turn.Allow == allow && turn.InputAuthorized == (allow && memoryAllowed),
+        $"{source} respects both turn consent and retrieved memory consent");
+}
+
+var reminderCatalog = NewProcess();
+reminderCatalog.RegisterGameTools();
+Check(reminderCatalog.Tools.All(tool => tool.Code != "set_reminder"), "Reminders require explicit registration");
+reminderCatalog.RegisterReminderTool();
+reminderCatalog.RegisterReminderTool();
+var reminder = reminderCatalog.Tools.Single(tool => tool.Code == "set_reminder");
+Check(reminder.Args.Select(arg => (arg.Name, arg.Type, arg.IsRequired)).ToHashSet().SetEquals(
+    [("content", "string", true), ("delay_seconds", "integer", false), ("due_time", "string", false)]),
+    "Repeated registration provides one reminder with required content and two time options");
 
 var p = NewProcess();
 var requests = new List<(string System, List<ChatMessage> History, string Input)>();
@@ -69,7 +153,8 @@ Check(summaryInputs.Count == 1 && requests[4].History.SequenceEqual(requests[5].
 Ask(p, "question 7"); Ask(p, "question 8");
 Check(summaryInputs.Count == 2 && JObject.Parse(summaryInputs[1])["previousSummary"]!.Value<string>() == "recap 1", "Next compression receives the previous cumulative recap");
 Check(JObject.Parse(summaryInputs[1])["dialogues"]!.Count() == 3 && !summaryInputs[1].Contains("question 1"), "Each compression only summarizes the new consecutive batch");
-Check(requests[^1].History[0].Content == requests[6].Input, "Second compression advances the boundary without a gap");
+const string seventhHistoryInput = "[changing state 4]\nquestion 7";
+Check(requests[^1].History[0].Content == seventhHistoryInput, "Second compression starts history at question 7 without replaying its old summary");
 
 // Persist exactly the fields stored by the plugin, then reconstruct the process.
 string saved = JsonConvert.SerializeObject(new { dialogues = p.Dialogues, diaries = p.DiaryEntries, summaries = p.Summaries });
@@ -79,7 +164,7 @@ restored.Dialogues = data["dialogues"]!.ToObject<List<Dialogue>>()!;
 restored.DiaryEntries = data["diaries"]!.ToObject<List<DiaryEntry>>()!;
 restored.Summaries = data["summaries"]!.ToObject<List<ConversationSummary>>()!;
 Ask(restored, "after restart");
-Check(restored.Dialogues[^1].Turn!.Summary == "recap 2" && restored.Dialogues[^1].Turn!.History[0].Content == requests[6].Input, "Restart preserves both the recap and its exact history boundary");
+Check(restored.Dialogues[^1].Turn!.Summary == "recap 2" && restored.Dialogues[^1].Turn!.History[0].Content == seventhHistoryInput, "Restart preserves both the recap and its exact history boundary");
 Check(restored.Dialogues[0].DialogueId == p.Dialogues[0].DialogueId, "Source identifiers survive serialization");
 var otherSave = NewProcess();
 Ask(otherSave, "other save");
@@ -229,12 +314,13 @@ Check(wireRequests[1].SequenceEqual(wireRequests[2]) && p.Dialogues[^1].ToMessag
 p.Dialogues = JsonConvert.DeserializeObject<List<Dialogue>>(JsonConvert.SerializeObject(p.Dialogues))!;
 p.RetryReply(purchaseId, _ => { });
 Check(wireRequests[1].SequenceEqual(wireRequests[3]), "Retry after loading preserves the complete request");
-var committedMessages = p.Dialogues[^1].ToMessages().ToArray();
+var committedMessages = p.Dialogues[^1].ToMessages(compactHistory: true).ToArray();
 p.AIAPIAskFunction = (_, messages, _) => { wireRequests.Add(messages.ToArray()); return new() { Reply = "[expression:gentle]\nOK" }; };
 Ask(p, "next question");
 Check(wireRequests[^1].Skip(2).SkipLast(1).SequenceEqual(committedMessages)
     && committedMessages.Select(m => m.Role).SequenceEqual(["user", "assistant", "user", "assistant"])
-    && committedMessages[^1].Content == "[expression:gentle]\nBought one bread.", "Next request replays the four accepted messages verbatim");
+    && committedMessages[2].FromHost && committedMessages[2].Content.Contains("[回执:")
+    && committedMessages[^1].Content == "[expression:gentle]\nBought one bread.", "Next request replays the compact host message and accepted replies in order");
 Check(purchases == 1 && resultAttempts == 3, "Explicit recovery after malformed continuation reuses the committed receipt");
 
 p = NewProcess();
@@ -331,7 +417,7 @@ foreach (string price in new[] { "实付八元", "实付七元" })
     p.Dialogues.Add(purchase);
 }
 var noisyTail = Entry(p, "另一件事");
-noisyTail.Turn = new() { OperationsFinished = true, InitialInput = "[参考:旧提要和旧回执]\n另一件事",
+noisyTail.Turn = new() { OperationsFinished = true, Original = noisyTail.Question, InitialInput = "[参考:旧提要和旧回执]\n另一件事",
     Initial = new() { Raw = "[expression:gentle]\n好的。" } };
 p.Dialogues.Add(noisyTail);
 p.AIAPIEmbeddingFunction = inputs => inputs.Select(_ => new float[] { 1, 0 }).ToArray();
@@ -342,7 +428,7 @@ p.AIAPIAskFunction = (_, messages, _) => new() { Reply = messages[^1].FromHost
 Ask(p, repeatedQuestion);
 var lookedUp = p.Dialogues[^1].Turn!;
 Check(traces.Count == 2 && traces.All(t => (string?)t["query"] == repeatedQuestion)
-    && lookedUp.History[0].Content == noisyTail.Turn.InitialInput, "Initial and explicit memory searches use the player's question while chat replays the original history");
+    && lookedUp.History[0].Content == noisyTail.Question, "Initial and explicit searches use the player's question and compact history omits the old reference");
 Check(traces.All(t => (int?)t["candidateCount"] == 2)
     && lookedUp.Receipts.Single().Facts.Contains("实付八元") && lookedUp.Receipts.Single().Facts.Contains("实付七元"),
     "A repeated unanswered question supplies no new evidence and identical dialogue with distinct receipts retains both purchases");
@@ -380,12 +466,12 @@ p.ToolAPIAskFunction = (_, _, tools) =>
     return new() { ToolCalls = [new() { Code = "finish" }] };
 };
 Ask(p, "lookup");
-Check(offered.ToHashSet().SetEquals(["list_items", "read_state", "finish"]) && offered.Length == 3,
-    "A delegated lookup retains permitted catalog and state readers below the rerank threshold");
+Check(offered.ToHashSet().SetEquals(["list_items", "read_state", "buy_item", "finish"]) && offered.Length == 4,
+    "A delegated lookup falls back to the top permitted tools and retains catalog and state readers");
 p.Tools.Single(x => x.Code == "list_items").Enabled = false;
 p.AllowTool = (_, tool) => tool.Code != "read_state";
 Ask(p, "lookup");
-Check(offered.SequenceEqual(["finish"]), "Disabled or host-denied readers stay out of the operation request");
+Check(offered.SequenceEqual(["buy_item", "finish"]), "Disabled or host-denied readers stay out of the fallback operation request");
 
 // Exercise the real HTTP adapter against a local fake, without using credentials or an external model.
 foreach (bool reportsCache in new[] { true, false })
@@ -432,16 +518,36 @@ foreach (bool reportsCache in new[] { true, false })
     }
     finally { listener.Stop(); }
 }
-var permissions = new VPetChatProcess { MaxHistoryBeforeCompress = 2, DiaryKeepRecentCount = 0, MemoryLimit = 0 };
+var permissions = new VPetChatProcess { MaxHistoryBeforeCompress = 2, DiaryKeepRecentCount = 1, MemoryLimit = 0 };
 permissions.AIAPIAskFunction = (_,_,_) => new() { Reply = "[expression:gentle]\n收到。" };
-permissions.SummaryAPIAskFunction = (_,_,_) => new() { Reply = "{\"diary\":\"来自混合授权历史\",\"summary\":\"原业务提要\"}" };
-foreach (bool consent in new[] { false, true, true, true })
-    permissions.Ask("记一件事", "", _ => { }, new(), consent);
+permissions.SummaryAPIAskFunction = (_,_,_) => new() { Reply = "{\"diary\":\"含授权对话的日记\",\"summary\":\"含授权对话的提要\"}" };
+permissions.Ask("未授权秘密", "", _ => { }, new(), false);
+permissions.Ask("已授权第一句", "", _ => { }, new(), true);
+permissions.Ask("已授权第二句", "", _ => { }, new(), true);
+permissions.Ask("未授权近期句", "", _ => { }, new(), false);
+permissions.Ask("带观察的授权句", "视觉AI描述：桌宠穿着红短裙", _ => { }, new(), true);
 var mixedTurn = permissions.Dialogues[^1].Turn!;
-Check(mixedTurn.Allow && mixedTurn.Summary.Length > 0 && !mixedTurn.InputAuthorized &&
-    !permissions.Summaries.Single().Allow && !permissions.DiaryEntries.Single().Allow,
-    "Mixed authorization propagates to the entire recap and diary while online chat retains both");
-Check(mixedTurn.TrainingPrefix(0, out _, out _) == null, "A later opt-in cannot export the unconsented recap");
+Check(mixedTurn.Allow && mixedTurn.Summary.Length > 0 && permissions.Summaries.Single().Allow && permissions.DiaryEntries.Single().Allow,
+    "Mixed summary/diary containing at least one authorized turn is marked trainable");
+var sanitizedPrefix = mixedTurn.TrainingPrefix(0, out bool sameInput, out string omissionReason, permissions.Dialogues, permissions.Summaries.Single().Allow);
+Check(sanitizedPrefix != null && omissionReason.Length == 0 && !sameInput
+    && sanitizedPrefix.All(m => !m.Content.Contains("未授权秘密") && !m.Content.Contains("未授权近期句"))
+    && sanitizedPrefix.Any(m => m.Content.Contains("已授权第二句"))
+    && sanitizedPrefix[^1].Content.Contains("含授权对话的提要")
+    && sanitizedPrefix[^1].Content.Contains("视觉AI描述：桌宠穿着红短裙"),
+    "Authorized turns strip unauthorized raw history while keeping authorized history, trainable recap, and vision observation text");
+var allPrivate = new VPetChatProcess { MaxHistoryBeforeCompress = 2, DiaryKeepRecentCount = 0, MemoryLimit = 0 };
+allPrivate.AIAPIAskFunction = (_,_,_) => new() { Reply = "[expression:gentle]\n收到。" };
+allPrivate.SummaryAPIAskFunction = (_,_,_) => new() { Reply = "{\"diary\":\"纯私密日记\",\"summary\":\"纯私密提要\"}" };
+allPrivate.Ask("私密1", "", _ => { }, new(), false);
+allPrivate.Ask("私密2", "", _ => { }, new(), false);
+allPrivate.Ask("私密3", "", _ => { }, new(), false);
+allPrivate.Ask("后来开启授权的一句", "", _ => { }, new(), true);
+var afterPrivate = allPrivate.Dialogues[^1].Turn!;
+var strippedPrivate = afterPrivate.TrainingPrefix(0, out _, out _, allPrivate.Dialogues, allPrivate.Summaries.Single().Allow);
+Check(!allPrivate.Summaries.Single().Allow && !allPrivate.DiaryEntries.Single().Allow
+    && strippedPrivate != null && strippedPrivate.All(m => !m.Content.Contains("纯私密提要") && !m.Content.Contains("私密")),
+    "Purely unauthorized summary stays excluded while later authorized turns still export cleanly");
 var legacy = JsonConvert.DeserializeObject<ChatTurn>("{}")!;
 Check(!legacy.Allow && legacy.TrainingPrefix(0,out _,out _) == null, "Missing historical consent never opts a turn in");
 
@@ -555,12 +661,18 @@ p.ToolAPIAskFunction = (_, _, tools) =>
 };
 Ask(p, "今天北京天气怎么样？");
 Check(!seenTools[0].Contains("web_search"), "web_search stays hidden when WebSearchFunction is not bound");
+string finishOnlyInput = p.Dialogues[^1].Turn!.Results.Single().Input;
+Check(finishOnlyInput.Contains("[回执:未开启搜索]") && !finishOnlyInput.Contains("判断已结束") && !finishOnlyInput.Contains("[参考:整理结果:"),
+    "Direct finish without prior tool reports reason cleanly without defensive boilerplate or duplication");
 p.MaxWebSearchPerTurn = 1;
 p.WebSearchFunction = (_, query, _) => { searchInvocations++; return new() { Status = "observed", Facts = query + ": 晴 15-22℃" }; };
 Ask(p, "今天北京天气怎么样？");
+string searchResultInput = p.Dialogues[^1].Turn!.Results.Single().Input;
 Check(seenTools[1].Contains("web_search") && searchInvocations == 1
     && p.Dialogues[^1].Turn!.Receipts.Any(r => r.Tool == "web_search" && r.Status == "observed")
     && p.Dialogues[^1].Turn!.Receipts.Any(r => r.Tool == "web_search" && r.Status == "skipped")
+    && searchResultInput.Contains("[参考:整理结果: 北京今日晴，15-22℃。]")
+    && !searchResultInput.Contains("操作判断") && !searchResultInput.Contains("判断已结束") && !searchResultInput.Contains("不是执行事实")
     && p.Dialogues[^1].Answer.Contains("15到22度"),
-    "Delegated web_search executes, enforces per-turn cap, and feeds continuation reply");
+    "Delegated web_search executes, enforces per-turn cap, and feeds clean continuation input without finish noise");
 Console.WriteLine($"{checks} context checks passed.");

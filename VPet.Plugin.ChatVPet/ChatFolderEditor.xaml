@@ -4,41 +4,98 @@
     xmlns:ll="clr-namespace:LinePutScript.Localization.WPF;assembly=LinePutScript.Localization.WPF"
     xmlns:pu="clr-namespace:Panuon.WPF.UI;assembly=Panuon.WPF.UI">
     <StackPanel>
-        <ListBox x:Name="Folders" MinHeight="48" MaxHeight="126"
-                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                 HorizontalContentAlignment="Stretch" VirtualizingStackPanel.IsVirtualizing="False"
-                 AlternationCount="{Binding Items.Count, RelativeSource={RelativeSource Self}}">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <DockPanel Margin="3,2" ToolTip="{Binding}">
-                        <TextBlock DockPanel.Dock="Right" Text="{ll:Str 默认写入}" FontWeight="SemiBold" Margin="8,0,0,0">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=(ItemsControl.AlternationIndex)}" Value="0">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                        <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" />
-                    </DockPanel>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
-        <WrapPanel Margin="0,5,0,2">
+        <Border Background="{DynamicResource PrimaryLighter}"
+                BorderBrush="{DynamicResource SecondaryDark}"
+                BorderThickness="1" CornerRadius="5" Padding="2">
+            <ListBox x:Name="Folders" MinHeight="48" MaxHeight="126"
+                     Background="Transparent" BorderThickness="0"
+                     Foreground="{DynamicResource PrimaryText}"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     HorizontalContentAlignment="Stretch" VirtualizingStackPanel.IsVirtualizing="False"
+                     AlternationCount="{Binding Items.Count, RelativeSource={RelativeSource Self}}">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
+                        <Setter Property="BorderBrush" Value="Transparent" />
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Setter Property="Padding" Value="6,4" />
+                        <Setter Property="Margin" Value="1" />
+                        <Setter Property="Cursor" Value="Hand" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter VerticalAlignment="Center" />
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PrimaryLight}" />
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SecondaryLight}" />
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource DARKPrimary}" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <DockPanel ToolTip="{Binding}">
+                            <Border DockPanel.Dock="Right" Margin="8,0,0,0" Padding="6,1" CornerRadius="3"
+                                    Background="{DynamicResource DARKPrimary}" VerticalAlignment="Center">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=(ItemsControl.AlternationIndex)}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{ll:Str 默认写入}" FontSize="11" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource DARKPrimaryText}" />
+                            </Border>
+                            <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                        </DockPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+        <WrapPanel Margin="0,6,0,2">
             <WrapPanel.Resources>
-                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                    <Setter Property="Margin" Value="0,0,5,3" />
-                    <Setter Property="Padding" Value="8,2" />
-                    <Setter Property="pu:ButtonHelper.CornerRadius" Value="4" />
+                <Style TargetType="Button">
+                    <Setter Property="Background" Value="{DynamicResource SecondaryLight}" />
+                    <Setter Property="Foreground" Value="{DynamicResource PrimaryText}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource SecondaryDark}" />
+                    <Setter Property="BorderThickness" Value="1.2" />
+                    <Setter Property="Height" Value="28" />
+                    <Setter Property="Padding" Value="10,0" />
+                    <Setter Property="Margin" Value="0,0,6,3" />
+                    <Setter Property="FontSize" Value="13" />
+                    <Setter Property="Cursor" Value="Hand" />
+                    <Setter Property="pu:ButtonHelper.CornerRadius" Value="5" />
+                    <Setter Property="pu:ButtonHelper.HoverBackground" Value="{DynamicResource Secondary}" />
+                    <Setter Property="pu:ButtonHelper.HoverForeground" Value="{DynamicResource PrimaryText}" />
+                    <Style.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5" />
+                        </Trigger>
+                    </Style.Triggers>
                 </Style>
             </WrapPanel.Resources>
             <Button Content="{ll:Str 添加文件夹}" Click="AddFolder" />
             <Button x:Name="DefaultButton" Content="{ll:Str 设为默认}" Click="SetDefault" />
             <Button x:Name="RemoveButton" Content="{ll:Str 移除}" Click="RemoveFolder" />
         </WrapPanel>
+        <CheckBox x:Name="ReadAnywhere" Style="{DynamicResource ThemedCheckBoxStyle}"
+                  Content="{ll:Str 允许读取任意位置的文本文件}" Margin="0,4,0,4" />
     </StackPanel>
 </UserControl>

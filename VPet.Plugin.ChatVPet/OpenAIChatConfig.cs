@@ -31,6 +31,6 @@ namespace VPet.Plugin.ChatVPet
         public string Model { get; set; } = "";
         public bool UseChatVPetPrompt { get; set; }
         public double Temperature { get; set; } = 1;
-        public int MaxTokens { get; set; } = 2048;
+        public int MaxTokens { get; set; } = 8192;
     }
 }

@@ -159,7 +159,7 @@ public partial class VPetChatProcess
                 !GetUncompressedHistory(previous).Take(entries.Count).SequenceEqual(entries) ||
                 entries.Any(x => !CanSummarize(x)) || input != SummaryInput(previous, entries)) return false;
             if (previous != null) Summaries.Remove(previous);
-            bool allow = (previous == null || previous.Allow) && entries.All(TrainingSourceAllowed);
+            bool allow = (previous != null && previous.Allow) || entries.Any(TrainingSourceAllowed);
             Summaries.Add(new() { Allow = allow, Text = recap, ThroughDialogueId = entries[^1].DialogueId });
             DiaryEntries.Add(new DiaryEntry(diary, Localization)
             {

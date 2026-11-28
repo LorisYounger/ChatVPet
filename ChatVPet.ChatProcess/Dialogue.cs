@@ -35,6 +35,7 @@ namespace ChatVPet.ChatProcess
             get
             {
                 if (Turn == null) yield break;
+                if (Turn.HostEvents.Length > 0) yield return "近期互动: " + Turn.HostEvents;
                 if (Turn.Observation.Length > 0 && !Turn.Receipts.Any(x => x.Tool == "已有图片观察" && x.Status == "observed" && x.Facts == Turn.Observation))
                     yield return "图片观察: " + Turn.Observation;
                 foreach (var receipt in Turn.Receipts.Where(x => x.Tool is not ("历史补查" or "操作判断")))

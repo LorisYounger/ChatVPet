@@ -58,7 +58,7 @@ public sealed class ModelApiClient : IDisposable
     private JObject Post(string path, object body) => Send(HttpMethod.Post, path, body);
 
     public VPetChatProcess.AIAPIAskResult Chat(string system, IReadOnlyList<ChatMessage> messages, List<ToolUse> tools,
-        double temperature = 1, int maxTokens = 2048, int? seed = null, string? reasoningEffort = null)
+        double temperature = 1, int maxTokens = 8192, int? seed = null, string? reasoningEffort = null)
     {
         var wire = messages.Prepend(new ChatMessage("system", system)).Select(m => new { role = m.Role, content = m.Content });
         var body = new JObject { ["model"] = model, ["messages"] = JArray.FromObject(wire), ["temperature"] = temperature, ["max_tokens"] = maxTokens };
@@ -146,22 +146,38 @@ public sealed class ModelApiClient : IDisposable
         return scores;
     }
 
-    public string Observe(string question, byte[] image, string mediaType, string? language = null)
+    public string Observe(string question, byte[] image, string mediaType, string? language = null, string? reasoningEffort = null, string? context = null)
     {
-        var response = Post("/chat/completions", new
+        var body = new JObject
         {
-            model, max_tokens = 512,
-            messages = new object[]
+            ["model"] = model,
+            ["max_tokens"] = 8192,
+            ["messages"] = JArray.FromObject(new object[]
             {
-                new { role = "system", content = ChatProtocol.ObservationSystemPrompt(language) },
+                new { role = "system", content = ChatProtocol.ObservationSystemPrompt(language, context) },
                 new { role = "user", content = new object[] { new { type = "text", text = question },
                     new { type = "image_url", image_url = new { url = $"data:{mediaType};base64,{Convert.ToBase64String(image)}" } } } }
+            })
+        };
+        if (!string.IsNullOrWhiteSpace(reasoningEffort))
+        {
+            string effort = reasoningEffort.Trim().ToLowerInvariant();
+            if (effort is "none" or "disabled" or "off")
+                body["thinking"] = new JObject { ["type"] = "disabled" };
+            else if (effort is "low" or "medium" or "high")
+            {
+                body["thinking"] = new JObject { ["type"] = "enabled" };
+                body["reasoning_effort"] = effort;
             }
-        });
+        }
+        var response = Post("/chat/completions", body);
         var choice = response["choices"]?[0];
-        if (choice?["finish_reason"]?.Value<string>() != "stop") throw new InvalidDataException("Image observation was interrupted.");
-        string? observation = choice["message"]?["content"]?.Value<string>();
-        if (string.IsNullOrWhiteSpace(observation)) throw new InvalidDataException("视觉服务返回空观察。");
+        string? finishReason = choice?["finish_reason"]?.Value<string>();
+        string? observation = choice?["message"]?["content"]?.Value<string>()?.Trim();
+        if (string.IsNullOrWhiteSpace(observation))
+            throw new InvalidDataException(finishReason == "stop" ? "视觉服务返回空观察。" : "图片观察未完整返回，请重试。");
+        if (finishReason is not ("stop" or "length"))
+            throw new InvalidDataException("图片观察未完整返回，请重试。");
         return observation;
     }
 
@@ -206,10 +222,10 @@ public sealed class ModelApiClient : IDisposable
             var response = Post("/responses", new
             {
                 model,
-                instructions = "请联网检索并简洁准确地汇总与查询直接相关的事实与数据，仅陈述查到的信息，不要编造。",
+                instructions = "联网检索并简洁汇总与问题直接相关的事实和数据，按查到的内容直接作答。",
                 input = string.IsNullOrWhiteSpace(oriQuestion) ? query : $"问题：{oriQuestion.Trim()}\n搜索关键词：{query}",
                 tools = new object[] { new { type = "web_search" } },
-                max_output_tokens = 1024
+                max_output_tokens = 8192
             });
             var texts = new List<string>();
             var sources = new List<string>();

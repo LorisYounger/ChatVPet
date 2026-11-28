@@ -4,74 +4,70 @@
 
 只有开启设置中的「参与训练数据收集」开关并同意本协议，LBGAME 才会将相关对话与反馈用于模型训练。关闭该开关不影响正常聊天。
 
-插件升级时沿用您原有的训练选择。更新通知会介绍新版功能，您可随时在设置中查看或更改授权。
-
 ## 参与方式
 
 开启「参与训练数据收集」后，您可以通过以下方式帮助改进桌宠：
 
 - **点赞或点踩**：一键评价桌宠的回复。
-- **修改建议**：用一句话指出改进方向，例如「查一下价格就好」。
+- **修改建议**：指出改进方向，例如「查一下价格就好」,「不要防御性回复」。
 - **详细改进**：主动展开详细编辑界面，具体修改桌宠应该做什么、做到哪一步，以及怎样回答。
 
-以上三种入口均可在设置中单独选择是否显示。只有参与训练的玩家可以对已授权的回复发起纠错，每条原回复最多免费换答 5 次。关闭「参与训练数据收集」时，反馈和纠错入口均隐藏，您仍可正常发送新消息或恢复中断的回复。
+以上三种入口均可在设置中单独选择是否显示。只有参与训练的玩家可以对已授权的回复发起纠错。
 
 ## 收集与使用范围
 
 ### 用于训练的数据
 
-仅当开启收集，且您对某条回复主动给出评价、修改建议或改写时，该轮相关的以下内容可能纳入训练数据：
+开启「参与训练数据收集」期间产生的已授权对话，以及您对已授权回复主动给出的评价、修改建议或改写，其以下内容可纳入训练数据：
 
-- 相关聊天原文
+- 已授权回合的聊天原文（若前文混有未授权期间的消息，导出时会自动剔除未授权历史，仅保留已授权部分）
 - 桌宠回答及候选版本
-- 理解该轮所需的上下文，如桌宠名字与当前状态（例如 `[当前状态: 开心, 好感度:陌生(2)]`）
-- 该回复用到的 TOOLCALL AI 返回结果（TOOLCALL AI 负责替桌宠查看信息或执行操作；例如您问「下载完成了吗？」，工具返回「进度为 80%」，训练样本可包含这句结果及桌宠据此作出的回答）
+- 理解该轮所需的上下文，如桌宠名字、当前状态，以及包含已授权对话的免费自动摘要与日记
+- 该回复用到的 TOOLCALL AI 与视觉观察返回的文字结果（例如图片观察描述或联网搜索结果；原始图片本身不纳入训练）
 - 您实际给出的评价、修改建议或改写内容
 
 ### 不纳入训练的数据
 
-- 关闭「参与训练数据收集」期间的聊天、桌宠回答、工具结果和反馈。日后重新开启，也不会将关闭期间的记录补入训练集。
-- TOOLCALL AI 为执行任务读取的原始资料，包括桌面截图、当时打开的软件或窗口清单，以及工具读取的原始窗口内容。
+- 关闭「参与训练数据收集」期间新产生的聊天原文、桌宠回答与纯未授权摘要。日后重新开启，也不会将关闭期间的原话补入训练集。
+- 原始图片文件/桌面截图、当时打开的软件或窗口清单、原始窗口内容，以及密钥或登录凭据。
 
 ### 常规服务记录
 
 无论是否开启「参与训练数据收集」，LBGAME 都会保存您的聊天正文和桌宠回答，用于显示聊天历史、建立索引和检索先前的消息。这些消息不会与任何无关三方分享或在未允许的情况下进入训练集.
 
+
+
 # ChatVPet Training Protocol
 
-[简体中文](#chatvpet-训练协议)
-
-LBGAME uses your conversations and feedback for model training only after you agree to this protocol and enable the "Participate in training data collection" setting. You can use chat normally with this setting turned off.
-
-Updating the plugin preserves your existing training preference. The update notice introduces the new features, and you can review or change your choice in Settings at any time.
+LBGAME will use relevant conversations and feedback for model training only if you turn on the "Participate in Training Data Collection" toggle in Settings and agree to this agreement. Turning off the toggle does not affect normal chat.
 
 ## How to Participate
 
-When "Participate in training data collection" is enabled, you can help improve the pet in three ways:
+With "Participate in Training Data Collection" enabled, you can help improve your VPet in the following ways:
 
-- **Thumbs-up or thumbs-down**: Rate a reply with a single click.
-- **Short suggestion**: Write a brief note on what to change, such as "just check the price."
-- **Detailed edit**: Open the detailed editor to specify what the pet should do, where it should stop, and how it should reply.
+- **Like or Dislike**: Rate your VPet's replies with one click.
+- **Suggest Improvements**: Point out what should be improved, for example, "Just check the price" or "Don't give defensive replies."
+- **Detailed Edits**: Open the detailed editing interface yourself to specify exactly what your VPet should do, how far it should go, and how it should reply.
 
-Settings let you choose which of these three controls to show. Only players who participate in training can request corrections to eligible replies, with up to five free alternatives per original reply. Turning collection off hides feedback and correction controls. You can still send new messages or resume an interrupted reply.
+You can choose individually in Settings whether to show each of these three options. Only players participating in training can submit corrections to authorized replies.
 
-## Data Scope
+## Scope of Collection and Use
 
 ### Data Used for Training
 
-Only when collection is enabled and you actively rate, suggest changes to, or edit a reply may the following data from that turn be included in training data:
+Authorized conversations generated while "Participate in Training Data Collection" is enabled, as well as any ratings, suggestions for improvement, or rewrites you actively provide for authorized replies, may be included in the training data as follows:
 
-- The relevant chat messages
-- The pet's replies and alternative replies
-- The context needed to understand the turn, such as the pet's name and current status (e.g. `[Current status: Happy, Affection: Stranger(2)]`)
-- The TOOLCALL AI result used for that reply (TOOLCALL AI looks up information or performs actions for the pet; for example, if you ask whether a download is finished and the tool returns "80% complete," the training sample may include that result and the pet's reply)
-- The rating, suggestion, or edit you provided
+- Original chat text from authorized rounds (if the preceding text contains messages from unauthorized periods, the export will automatically filter out the unauthorized history and retain only the authorized portions)
+- VPet responses and candidate versions
+- Context needed to understand the round, such as the VPet's name, current status, and the free automatic summaries and diaries that contain authorized conversations
+- Text results returned by the TOOLCALL AI and visual observations used in this reply (e.g., image observation descriptions or online search results; the original images themselves are not included in training)
+- Your actual ratings, suggested improvements, or rewrites
 
-### Data Excluded from Training
+### Data Not Included in Training
 
-- Messages, replies, tool results, and feedback from periods when "Participate in training data collection" is off. Turning the setting on later does not add earlier conversations to the training set.
-- Raw material read by TOOLCALL AI to complete a task, including desktop screenshots, lists of open applications or windows, and raw window contents. Even if a tool copies a full window list into its result, those raw details are excluded.
+- New chat transcripts, VPet responses, and purely unauthorized summaries generated while "Participate in Training Data Collection" is off. Even if you turn it back on later, the original text from the off period will not be added to the training set.
+- Original image files/desktop screenshots, lists of the software or windows open at the time, original window content, and keys or login credentials.
 
-### Standard Service Records
+### General Service Records
 
-Regardless of the training setting, LBGAME stores your chat messages and the pet's replies to display chat history and to index and retrieve earlier messages. These messages will not be shared with any third parties or entered into the training set without permission.
+Regardless of whether "Participate in Training Data Collection" is on, LBGAME will save your chat messages and VPet responses to display chat history, build indexes, and retrieve previous messages. These messages will not be shared with any unrelated third parties or included in the training set without your permission.

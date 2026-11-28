@@ -10,12 +10,9 @@ internal static class Program
     private static void Main(string[] args)
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
-        if (args.Length >= 4 && args[0] == "--export-feedback")
+        if (args.Length >= 3 && args[0] == "--export-feedback")
         {
-            var rest = args.Skip(4).ToList();
-            var since = rest.Find(x => x.StartsWith("--blind-since="));
-            rest.RemoveAll(x => x.StartsWith("--blind-since="));
-            FeedbackExport.Run(args[1], args[2], args[3], rest, since == null ? null : DateTimeOffset.Parse(since.Split('=')[1], CultureInfo.InvariantCulture));
+            FeedbackExport.Run(args[1], args[2], args.Skip(3));
             return;
         }
         if (args.Contains("--self-test"))

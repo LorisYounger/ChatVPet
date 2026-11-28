@@ -43,24 +43,97 @@ public partial class ChatTurn
 {
     public List<ReplyFeedback> Feedback { get; set; } = [];
 
-    public List<ChatMessage>? TrainingPrefix(int revision, out bool same, out string omission)
+    public List<ChatMessage>? TrainingPrefix(int revision, out bool same, out string omission,
+        IReadOnlyList<Dialogue>? sessionDialogues = null, bool? summaryAllowed = null)
     {
         same = true;
         omission = "";
-        if (!Allow || !InputAuthorized || Observation.Length > 0) { omission = "未授权或不可分离的输入"; return null; }
-        var prefix = ReplyPrefix(revision);
+        if (!Allow) { omission = "本条回复未获训练授权"; return null; }
+
+        List<ChatMessage> history;
+        if (TrainingHistory != null)
+        {
+            history = [.. TrainingHistory];
+            same &= TrainingHistory.Count == History.Count;
+        }
+        else if (InputAuthorized)
+        {
+            history = [.. History];
+        }
+        else if (sessionDialogues != null && History.Count > 0)
+        {
+            history = FilterAuthorizedHistory(History, sessionDialogues, TurnId);
+            same &= history.Count == History.Count;
+        }
+        else
+        {
+            history = [];
+            same &= History.Count == 0;
+        }
+
+        string initialInput;
+        if (TrainingInitialInput.Length > 0)
+        {
+            initialInput = TrainingInitialInput;
+            same &= initialInput == InitialInput;
+        }
+        else if (InputAuthorized)
+        {
+            initialInput = InitialInput;
+        }
+        else
+        {
+            string authorizedSummary = summaryAllowed == true ? Summary : "";
+            initialInput = ChatProtocol.UserMessage(Original, State, reference: "", observation: Observation,
+                summary: authorizedSummary, language: Language, events: HostEvents);
+            same &= initialInput == InitialInput;
+        }
+
+        List<ChatMessage> prefix = [.. history, new("user", initialInput)];
         if (revision == 0) return prefix;
-        if (!ResultsAuthorized) { omission = "回执引用未授权"; return null; }
-        int index = History.Count + 2;
+
+        prefix.Add(new("assistant", Initial.Raw));
         foreach (var exchange in Results)
         {
-            if (exchange.TrainingInput.Length == 0) { omission = "缺少可分离的工具文字结论"; return null; }
-            same &= exchange.Input == exchange.TrainingInput;
-            prefix[index] = new("user", exchange.TrainingInput, true);
-            if (exchange.Revision == revision) break;
-            index += 2;
+            string trainingInput = exchange.TrainingInput.Length > 0 ? exchange.TrainingInput : exchange.Input;
+            same &= exchange.Input == trainingInput;
+            prefix.Add(new("user", trainingInput, true));
+            if (exchange.Revision == revision && exchange.Reply.Length > 0) return prefix;
+            prefix.Add(new("assistant", exchange.Reply));
         }
-        return prefix;
+        throw new InvalidOperationException("找不到这个已完成的回执版本。");
+    }
+
+    private static List<ChatMessage> FilterAuthorizedHistory(List<ChatMessage> history, IReadOnlyList<Dialogue> sessionDialogues, string currentTurnId)
+    {
+        var authorizedContents = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var d in sessionDialogues)
+        {
+            if (d.DialogueId == currentTurnId || d.Turn is not { Allow: true }) continue;
+            foreach (var msg in d.ToMessages(compactHistory: true))
+                authorizedContents.Add(msg.Content);
+        }
+        var filtered = new List<ChatMessage>(history.Count);
+        int i = 0;
+        while (i < history.Count)
+        {
+            if (history[i].Role == "user" && i + 1 < history.Count && history[i + 1].Role == "assistant")
+            {
+                if (authorizedContents.Contains(history[i].Content) && authorizedContents.Contains(history[i + 1].Content))
+                {
+                    filtered.Add(history[i]);
+                    filtered.Add(history[i + 1]);
+                }
+                i += 2;
+            }
+            else
+            {
+                if (authorizedContents.Contains(history[i].Content))
+                    filtered.Add(history[i]);
+                i++;
+            }
+        }
+        return filtered;
     }
 
     public List<ChatMessage> ReplyPrefix(int revision)

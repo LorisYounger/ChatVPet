@@ -17,14 +17,17 @@ public partial class ChatFolderEditor : UserControl
         UpdateButtons();
     }
 
-    internal IEnumerable<string> Paths => Folders.Items.Cast<string>();
+    private IEnumerable<string> Paths => Folders.Items.Cast<string>();
 
-    internal void LoadFolders(IEnumerable<string> paths)
+    internal void LoadFolders(ChatFiles files)
     {
         Folders.Items.Clear();
-        foreach (string path in paths) Folders.Items.Add(path);
+        foreach (string path in files.Folders) Folders.Items.Add(path);
+        ReadAnywhere.IsChecked = files.ReadAnywhere;
         if (Folders.Items.Count > 0) Folders.SelectedIndex = 0;
     }
+
+    internal void SaveFolders(ChatFiles files) => files.SaveFolders(Paths, ReadAnywhere.IsChecked == true);
 
     private void AddFolder(object sender, RoutedEventArgs e)
     {
