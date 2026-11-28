@@ -11,6 +11,12 @@
 !/training/chatvpet/system-process-template.txt
 !/training/chatvpet/system-chatvpet-template.txt
 
+# Internal design, test, training and model release notes stay local.
+/docs/design/
+/docs/testing/
+/docs/training/
+/docs/models/*发布交接*.md
+
 # User-specific files
 /Local/
 *.rsuser
