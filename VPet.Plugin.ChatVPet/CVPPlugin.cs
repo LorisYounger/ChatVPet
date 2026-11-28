@@ -35,6 +35,8 @@ public partial class CVPPlugin : MainPlugin
 
     public override void LoadPlugin()
     {
+        try { new ChatFiles("chatvpet_process").CreateDocumentFolder(); }
+        catch (Exception ex) { MW.Main.LabelDisplayShow("ChatVPet: " + ex.Message); }
         Ready = Task.Run(() =>
         {
             string path = settingsPath;

@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace ChatVPet.ChatProcess;
 
 public sealed record ChatMessage(string Role, string Content, bool FromHost = false);
@@ -46,6 +48,24 @@ public partial class ChatTurn
     public List<string> OriginalDisplayedItems { get; set; } = [];
     public List<int> UsedDiaryIds { get; set; } = [];
     public List<HostReceipt> Receipts { get; set; } = [];
+    public IEnumerable<string> GetWrittenFiles()
+    {
+        return Receipts.Where(r => r.Tool == "write_file" && r.Status == "applied")
+            .Select(r => r.WrittenFile ?? PreviousWritePath(r.Facts))
+            .OfType<string>().Where(path => !string.IsNullOrWhiteSpace(path)).Distinct(StringComparer.OrdinalIgnoreCase);
+
+        // Earlier hosts only saved the final absolute path in the successful write receipt.
+        static string? PreviousWritePath(string facts)
+        {
+            const string prefix = "已写入 ", suffix = " 个字符）。";
+            int countStart = facts.LastIndexOf('（');
+            if (!facts.StartsWith(prefix, StringComparison.Ordinal) || !facts.EndsWith(suffix, StringComparison.Ordinal)
+                || countStart <= prefix.Length || countStart >= facts.Length - suffix.Length
+                || !int.TryParse(facts.AsSpan(countStart + 1, facts.Length - suffix.Length - countStart - 1),
+                    NumberStyles.None, CultureInfo.InvariantCulture, out _)) return null;
+            return facts[prefix.Length..countStart];
+        }
+    }
     [Newtonsoft.Json.JsonIgnore]
     public bool PendingReply => OperationsFinished && !QuitCompleted && (Initial.NeedsResult || Initial.Has("quit"))
         && PresentedRevision != ReceiptRevision;
@@ -88,6 +108,7 @@ public sealed class ReplyDisplay
 
 public class HostReceipt
 {
+    public string? WrittenFile { get; set; }
     public double? MoneySpent { get; set; }
     public string TurnId { get; set; } = "";
     public string StepId { get; set; } = "";

@@ -4,6 +4,7 @@ public partial class VPetChatProcess
 {
     public static bool GameToolAllowed(ChatTurn turn, ToolUse tool)
     {
+        if (tool.Code is "read_file" or "write_file") return turn.Initial.Has("delegate");
         if (tool.Code == "adjust_state") return turn.Initial.Has("mood") || turn.Initial.Has("affinity");
         if (tool.Code == "play_animation") return turn.Initial.Has("animation");
         if (tool.Code == "search_animations") return turn.Initial.Has("animation") || turn.Initial.Has("delegate") || turn.Initial.Unknown.Count > 0;
@@ -92,6 +93,20 @@ public partial class VPetChatProcess
                 ["Play animation: perform a pet animation, action, dance, or emote."],
                 [new ToolUse.Arg { Name = "name", Description = "动画名称", IsRequired = true }],
                 Localization),
+
+            new ToolUse("read_file",
+                "读取玩家允许目录里的文本文件。省略 path 可查询允许目录及顺序。长文件按回执中的 offset 继续读。",
+                ["文件", "读取", "笔记", "文档", "打开", "路径", "目录", "read", "file", "document", "folder"],
+                ["Read a text file, note, or document from the player's allowed folders."],
+                [new() { Name = "path", Description = "绝对路径，或相对于首个允许目录的文件路径" },
+                 new() { Name = "offset", Type = "integer", Description = "起始字符位置，默认 0" }], Localization) { ReadOnly = true },
+
+            new ToolUse("write_file",
+                "按玩家要求创建或覆盖文本文件。局部修改或追加前先读完原文，content 要包含完整的新正文，保留其余内容。",
+                ["文件", "写入", "保存", "生成", "笔记", "网页", "文档", "覆盖", "write", "file", "save", "create"],
+                ["Save text, code, a web page, or notes to a file in the player's allowed folders."],
+                [new() { Name = "path", Description = "绝对路径，或相对于首个允许目录的文件路径", IsRequired = true },
+                 new() { Name = "content", Description = "完整文件内容", IsRequired = true }], Localization),
 
             new ToolUse("web_search",
                 "联网搜索：上网查询现实世界的实时新闻、天气、百科、攻略、最新资讯与公开资料。",

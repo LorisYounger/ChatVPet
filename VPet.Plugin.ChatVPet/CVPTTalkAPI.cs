@@ -22,6 +22,7 @@ namespace VPet.Plugin.ChatVPet
     public class CVPTTalkAPI : TalkBox
     {
         public Button btnvoice;
+        private WrittenFileLinks? fileLinks;
         private readonly TextBlock displayedOptions = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(5) };
         private readonly Button retryReply = new() { Content = "重试结果回复", Margin = new Thickness(5), IsEnabled = false };
         public CVPTTalkAPI(CVPPlugin mainPlugin) : base(mainPlugin)
@@ -199,7 +200,15 @@ namespace VPet.Plugin.ChatVPet
         {
             if (!Plugin.IsCurrentProcess(process)) return;
             if (response.DisplayedList != null) Dispatcher.Invoke(() => displayedOptions.Text = response.DisplayedList);
-            if (string.IsNullOrEmpty(response.Reply)) return;
+            if (string.IsNullOrEmpty(response.Reply))
+            {
+                if (response.WrittenFiles.Length > 0) Dispatcher.Invoke(() =>
+                {
+                    if (fileLinks?.Tag as string == response.TurnId)
+                        foreach (string path in response.WrittenFiles) fileLinks.AddFile(path);
+                });
+                return;
+            }
             // Operations can run while the initial speech is playing; subsequent replies remain ordered.
             lastSpeech.GetAwaiter().GetResult();
             if (!Plugin.IsCurrentProcess(process)) return;
@@ -216,8 +225,13 @@ namespace VPet.Plugin.ChatVPet
             {
                 string cache = Plugin.HasChatCacheUsage ? $", 缓存 {Plugin.ChatCachedTokens}/{Plugin.ChatPromptTokens} 输入Token" : ", 缓存未报告";
                 var text = new TextBlock { Text = Plugin.ShowToken ? $"聊天 {Plugin.ChatTokens}, 操作 {Plugin.ToolTokens}, 日记 {Plugin.SummaryTokens} Token" + cache : "", FontSize = 20 };
-                text.Loaded += OnLoaded; text.Unloaded += OnUnloaded;
-                return text;
+                var panel = new StackPanel();
+                fileLinks = new WrittenFileLinks { Tag = response.TurnId };
+                foreach (string path in response.WrittenFiles) fileLinks.AddFile(path);
+                panel.Children.Add(fileLinks);
+                panel.Children.Add(text);
+                panel.Loaded += OnLoaded; panel.Unloaded += OnUnloaded;
+                return panel;
             });
             bar.EndAction += OnEnd;
             string? graph = null;

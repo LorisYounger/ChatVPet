@@ -23,7 +23,16 @@ namespace VPet.Plugin.ChatVPet
     {
         CVPPlugin plugin;
         private readonly VPetChatProcess process;
-        private Dialogue[] history = [];
+        private readonly ChatFiles files = new("chatvpet_process");
+        private HistoryRow[] history = [];
+
+        private sealed class HistoryRow(Dialogue entry, float? score = null)
+        {
+            public Dialogue Entry => entry;
+            public string Question => score.HasValue ? $"[{score:F3}] {entry.Question}" : entry.Question;
+            public string Answer => ChatProtocol.TryParse(entry.Answer, false, out var header) ? header.Body : entry.Answer;
+            public string Receipts => string.Join(Environment.NewLine, entry.Turn?.Receipts.Select(r => r.ToContext()) ?? []);
+        }
         private void Hyperlink_Click(object sender, RoutedEventArgs e)
         {
             ExtensionFunction.StartURL("https://github.com/LorisYounger/ChatVPet");
@@ -56,7 +65,6 @@ namespace VPet.Plugin.ChatVPet
         }
 
         ObservableCollection<string> Knowledges = new ObservableCollection<string>();
-        ObservableCollection<string> Dialogues = new ObservableCollection<string>();
         ObservableCollection<string> Tools = new ObservableCollection<string>();
         public winSetting(CVPPlugin plugin)
         {
@@ -65,6 +73,7 @@ namespace VPet.Plugin.ChatVPet
 
             this.plugin = plugin;
             process = plugin.VPetChatProcess;
+            fileFolders.LoadFolders(files.Folders);
             if (plugin.OpenAIConfig != null)
             {
                 tbAPIKey.Text = plugin.OpenAIConfig.ApiKey;
@@ -134,16 +143,16 @@ namespace VPet.Plugin.ChatVPet
 
         private async Task LoadDialogue()
         {
-            history = (await Task.Run(process.ReadMemories)).History;
-            Dialogues.Clear();
-            for (int i = 0; i < history.Length; i++)
-            {
-                Dialogue item = history[i];
-                Dialogues.Add(i + "_Q:" + item.Question);
-                Dialogues.Add(i + "_A:" + item.Answer);
-                Dialogues.Add(i + "_T:" + string.Join("; ", item.Turn?.Receipts.Select(x => x.ToContext()) ?? []));// + string.Join(", ", ts.Select(x => x.Code + ":" + x.Args)) + ']');
-            }
-            lbHistory.ItemsSource = Dialogues;
+            history = (await Task.Run(process.ReadMemories)).History.Select(entry => new HistoryRow(entry)).ToArray();
+            lbHistory.ItemsSource = history;
+        }
+
+        private void HistoryFilesChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            var links = (WrittenFileLinks)sender;
+            links.Children.Clear();
+            if (e.NewValue is HistoryRow row && row.Entry.Turn is ChatTurn turn)
+                foreach (string path in turn.GetWrittenFiles()) links.AddFile(path, new Button());
         }
         private async void btnSave_Click(object sender, RoutedEventArgs e)
         {           
@@ -173,6 +182,8 @@ namespace VPet.Plugin.ChatVPet
                 MessageBox.Show("请检查数量、温度、超时和衰减率。压缩保留轮数须小于触发轮数；字符限制须满足：0 < 提要上限 < 整理阈值，且请求上限大于两者之和。衰减率为0到1。");
                 return;
             }
+            try { files.SaveFolders(fileFolders.Paths); }
+            catch (Exception ex) { MessageBox.Show(this, ex.Message, "允许读写文件的目录"); return; }
             plugin.OpenAIConfig = new OpenAIChatConfig
             {
                 ApiKey = tbAPIKey.Text,
@@ -268,8 +279,7 @@ namespace VPet.Plugin.ChatVPet
 
         private async void RetryHistory_Click(object sender, RoutedEventArgs e)
         {
-            if (lbHistory.SelectedItem is string msg && int.TryParse(msg.Split('_')[0], out int id)
-                && history.ElementAtOrDefault(id)?.Turn is ChatTurn turn && plugin.TalkAPI != null)
+            if (lbHistory.SelectedItem is HistoryRow row && row.Entry.Turn is ChatTurn turn && plugin.TalkAPI != null)
             {
                 await plugin.TalkAPI.RetryTurn(turn.TurnId);
                 await LoadDialogue();
@@ -278,15 +288,11 @@ namespace VPet.Plugin.ChatVPet
 
         private async void MenuItem_Click(object sender, RoutedEventArgs e)
         {
-            if (lbHistory.SelectedItem is string msg)
+            if (lbHistory.SelectedItem is HistoryRow row)
             {
-                if (int.TryParse(msg.Split('_')[0], out int id))
-                {
-                    var entry = history[id];
-                    await Task.Run(() => process.DeleteMemory(entry));
-                    await LoadDialogue();
-                    MessageBox.Show("删除成功".Translate());
-                }
+                await Task.Run(() => process.DeleteMemory(row.Entry));
+                await LoadDialogue();
+                MessageBox.Show("删除成功".Translate());
             }
         }
 
@@ -302,12 +308,12 @@ namespace VPet.Plugin.ChatVPet
             if (string.IsNullOrEmpty(search))
             {
                 lbKnow.ItemsSource = Knowledges;
-                lbHistory.ItemsSource = Dialogues;
+                lbHistory.ItemsSource = history;
                 lbTool.ItemsSource = Tools;
                 return;
             }
             lbKnow.ItemsSource = new ObservableCollection<string>(Knowledges.Where(x => x.Contains(search)));
-            lbHistory.ItemsSource = new ObservableCollection<string>(Dialogues.Where(x => x.Contains(search)));
+            lbHistory.ItemsSource = history.Where(row => row.Question.Contains(search) || row.Entry.Answer.Contains(search) || row.Receipts.Contains(search));
             lbTool.ItemsSource = new ObservableCollection<string>(Tools.Where(x => x.Contains(search)));
         }
 
@@ -317,7 +323,7 @@ namespace VPet.Plugin.ChatVPet
             if (string.IsNullOrEmpty(search))
             {
                 lbKnow.ItemsSource = Knowledges;
-                lbHistory.ItemsSource = Dialogues;
+                lbHistory.ItemsSource = history;
                 lbTool.ItemsSource = Tools;
                 return;
             }
@@ -327,19 +333,7 @@ namespace VPet.Plugin.ChatVPet
             lbKnow.ItemsSource = new ObservableCollection<string>(
                 result.Knowledges.Select(x => $"[{x.Score:F3}] {x.Item.KnowledgeData}"));
 
-            ObservableCollection<string> di = new ObservableCollection<string>();
-            for (int i = 0; i < result.Dialogues.Count; i++)
-            {
-                var (item, score) = result.Dialogues[i];
-                int dialogueIndex = Array.IndexOf(history, item);
-                if (dialogueIndex < 0)
-                    continue;
-
-                di.Add($"{dialogueIndex}_[{score:F3}]_Q:{item.Question}");
-                di.Add($"{dialogueIndex}_[{score:F3}]_A:{item.Answer}");
-                di.Add($"{dialogueIndex}_[{score:F3}]_T:{string.Join("; ", item.Turn?.Receipts.Select(x => x.ToContext()) ?? [])}");
-            }
-            lbHistory.ItemsSource = di;
+            lbHistory.ItemsSource = result.Dialogues.Select(hit => new HistoryRow(hit.Item, hit.Score)).ToArray();
 
             lbTool.ItemsSource = new ObservableCollection<string>(
                 result.Tools.Select(x => $"[{x.Score:F3}] {x.Item.Code}: {x.Item.Descriptive}"));

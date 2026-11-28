@@ -16,6 +16,7 @@ namespace ChatVPet.ChatProcess
         public string TurnId { get; set; } = "";
         public string? Expression { get; set; }
         public string? DisplayedList { get; set; }
+        public string[] WrittenFiles { get; set; } = [];
         public bool SuppressSayAnimation { get; set; }
         public bool QuitAfterSpeech { get; set; }
         /// <summary>

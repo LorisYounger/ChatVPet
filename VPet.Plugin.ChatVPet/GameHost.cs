@@ -25,6 +25,9 @@ internal sealed class GameHost(IMainWindow MW, VPetChatProcess VPetChatProcess, 
     {
         VPetChatProcess.RegisterGameTools();
         var tools = VPetChatProcess.Tools;
+        var files = new ChatFiles(receiptSection);
+        tools.First(x => x.Code == "read_file").Execute = files.Read;
+        tools.First(x => x.Code == "write_file").Execute = files.Write;
         tools.First(x => x.Code == "read_state").Execute = (_, args) => ReadState(args);
         tools.First(x => x.Code == "list_items").Execute = (_, args) =>
             {

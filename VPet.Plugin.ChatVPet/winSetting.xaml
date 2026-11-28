@@ -135,6 +135,9 @@
                         <TextBlock x:Name="tbApiTestResult" TextWrapping="Wrap" Margin="0,4" />
                         <CheckBox x:Name="cbScreenshot" Content="允许按聊天请求截图并发送给视觉 API" Margin="0,8" />
                         <ComboBox x:Name="cbScreenScope" SelectedIndex="0"><ComboBoxItem Content="仅桌宠区域" /><ComboBoxItem Content="主屏幕" /></ComboBox>
+                        <TextBlock Text="{ll:Str 允许读写文件的目录}" Margin="0,12,0,4" />
+                        <local:ChatFolderEditor x:Name="fileFolders" />
+                        <TextBlock Text="{ll:Str 只给文件名时保存到默认目录。移除全部目录可关闭文件访问。读取的文本会随对话发送给模型。}" TextWrapping="Wrap" FontSize="12" />
                         <TextBlock Text="联网搜索模式 (由操作模型在 [delegate] 时调用)" Margin="0,12,0,4" />
                         <ComboBox x:Name="cbWebSearchMode" SelectedIndex="0">
                             <ComboBoxItem Content="自动 (按操作 API 识别 DeepSeek / OpenAI)" Tag="auto" />
@@ -327,7 +330,34 @@
                             <ListBox x:Name="lbTool" MaxHeight="500" SelectionChanged="lb_SelectionChanged" />
                         </TabItem>
                         <TabItem Header="{ll:Str 聊天记录}">
-                            <ListBox x:Name="lbHistory" MaxHeight="500" SelectionChanged="lb_SelectionChanged">
+                            <ListBox x:Name="lbHistory" MaxHeight="500" HorizontalContentAlignment="Stretch"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="4,3">
+                                            <TextBlock Text="{Binding Question}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                            <TextBlock Text="{Binding Answer}" Margin="0,2,0,0" TextWrapping="Wrap" />
+                                            <local:WrittenFileLinks DataContextChanged="HistoryFilesChanged">
+                                                <local:WrittenFileLinks.Resources>
+                                                    <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                                        <Setter Property="Margin" Value="0,4,5,0" />
+                                                        <Setter Property="Padding" Value="8,2" />
+                                                        <Setter Property="Background" Value="{DynamicResource SecondaryLight}" />
+                                                        <Setter Property="pu:ButtonHelper.CornerRadius" Value="4" />
+                                                    </Style>
+                                                </local:WrittenFileLinks.Resources>
+                                            </local:WrittenFileLinks>
+                                            <Expander x:Name="receipts" Header="{ll:Str 操作记录}" Margin="0,3,0,0">
+                                                <TextBlock Text="{Binding Receipts}" TextWrapping="Wrap" />
+                                            </Expander>
+                                        </StackPanel>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding Receipts}" Value="">
+                                                <Setter TargetName="receipts" Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
                                 <ListBox.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="重试这一轮结果回复" Click="RetryHistory_Click" />
