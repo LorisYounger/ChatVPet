@@ -52,13 +52,24 @@ public partial class ChatTurn
 
     internal long LastSequence => Results.LastOrDefault(r => r.Reply.Length > 0)?.Sequence ?? Sequence;
 
-    internal IEnumerable<(long Order, ChatMessage Message)> OrderedMessages()
+    internal string HistoryInitialInput() =>
+        ChatProtocol.UserMessage(Original, State, observation: Observation, language: Language);
+
+    internal string HistoryResultInput(ResultExchange result)
     {
-        yield return (Sequence, new("user", InitialInput));
+        if (result.TrainingInput.Length > 0) return result.TrainingInput;
+        if (ResultReference.Length > 0)
+            return ChatProtocol.UserMessage(Original, State, initial: Initial.Body, receipt: ResultReference, language: Language);
+        return result.Input.Length > 800 ? result.Input[..800] + "…" : result.Input;
+    }
+
+    internal IEnumerable<(long Order, ChatMessage Message)> OrderedMessages(bool compactHistory = false)
+    {
+        yield return (Sequence, new("user", compactHistory ? HistoryInitialInput() : InitialInput));
         yield return (Sequence, new("assistant", Initial.Raw));
         foreach (var result in Results.Where(x => x.Reply.Length > 0))
         {
-            yield return (result.Sequence, new("user", result.Input, FromHost: true));
+            yield return (result.Sequence, new("user", compactHistory ? HistoryResultInput(result) : result.Input, FromHost: true));
             yield return (result.Sequence, new("assistant", result.Reply));
         }
     }

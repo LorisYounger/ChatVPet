@@ -38,7 +38,10 @@ namespace ChatVPet.ChatProcess
                 if (Turn.Observation.Length > 0 && !Turn.Receipts.Any(x => x.Tool == "已有图片观察" && x.Status == "observed" && x.Facts == Turn.Observation))
                     yield return "图片观察: " + Turn.Observation;
                 foreach (var receipt in Turn.Receipts.Where(x => x.Tool is not ("历史补查" or "操作判断")))
-                    yield return receipt.ToContext();
+                {
+                    string ctx = receipt.ToContext();
+                    yield return ctx.Length > 400 ? ctx[..400] + "…" : ctx;
+                }
             }
         }
         public float ImportanceWeight_Muti { get; set; } = 2;
@@ -48,22 +51,22 @@ namespace ChatVPet.ChatProcess
         /// <summary>
         /// 转换为消息
         /// </summary>
-        private IEnumerable<(long Order, ChatMessage Message)> OrderedMessages()
+        private IEnumerable<(long Order, ChatMessage Message)> OrderedMessages(bool compactHistory = false)
         {
             if (Turn != null)
             {
-                foreach (var message in Turn.OrderedMessages()) yield return message;
+                foreach (var message in Turn.OrderedMessages(compactHistory)) yield return message;
                 yield break;
             }
             if (Question.Length > 0) yield return (0, new("user", Question));
             if (Answer.Length > 0) yield return (0, new("assistant", Answer));
         }
 
-        public IEnumerable<ChatMessage> ToMessages() => OrderedMessages().Select(m => m.Message);
+        public IEnumerable<ChatMessage> ToMessages(bool compactHistory = false) => OrderedMessages(compactHistory).Select(m => m.Message);
 
         // A receipt can arrive after another player turn. Preserve that order in future requests and exports.
-        public static IEnumerable<(string TurnId, ChatMessage Message)> Timeline(IEnumerable<Dialogue> entries) =>
-            entries.SelectMany(d => d.OrderedMessages().Select(m => (d.DialogueId, m.Order, m.Message)))
+        public static IEnumerable<(string TurnId, ChatMessage Message)> Timeline(IEnumerable<Dialogue> entries, bool compactHistory = false) =>
+            entries.SelectMany(d => d.OrderedMessages(compactHistory).Select(m => (d.DialogueId, m.Order, m.Message)))
                 .OrderBy(m => m.Order).Select(m => (m.DialogueId, m.Message));
 
         public float InCheck(string message, float similarity) => IInCheck.InCheck(message, similarity, this);

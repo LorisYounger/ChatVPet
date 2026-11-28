@@ -26,7 +26,7 @@ public sealed class SessionOptions
     public int ReferenceCharacters { get; set; } = 12000;
     public int SummaryCharacters { get; set; } = 2400;
     public int RequestCharacters { get; set; } = 48000;
-    public double MinimumRerankScore { get; set; } = .1;
+    public double MinimumRerankScore { get; set; } = .015;
 }
 
 public sealed class TestStep

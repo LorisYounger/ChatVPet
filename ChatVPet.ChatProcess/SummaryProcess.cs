@@ -7,7 +7,7 @@ public partial class VPetChatProcess
 {
     public List<ConversationSummary> Summaries { get; set; } = [];
     /// <summary>Soft trigger measured in characters, not model-specific tokens.</summary>
-    public int HistoryCharacterBudget { get; set; } = 16000;
+    public int HistoryCharacterBudget { get; set; } = 8000;
     public int SummaryCharacterLimit { get; set; } = 2400;
     /// <summary>Hard limit for the rendered chat text, including the fixed system and current input.</summary>
     public int RequestCharacterLimit { get; set; } = 48000;
@@ -50,10 +50,14 @@ public partial class VPetChatProcess
                 x.CreatedAt, x.Question, Sequence = x.Turn?.Sequence, InitialAnswer = x.Turn?.Initial.Raw,
                 Callbacks = x.Turn?.Results.Where(r => r.Reply.Length > 0).Select(r => new
                 {
-                    r.Sequence, HostInput = r.Input, ResultAnswer = x.MemoryAnswer.Length > 0 ? r.Reply : null
+                    r.Sequence, HostInput = x.Turn.HistoryResultInput(r), ResultAnswer = x.MemoryAnswer.Length > 0 ? r.Reply : null
                 }),
                 Answer = x.Turn == null ? x.MemoryAnswer : null, Observation = x.Turn?.Observation,
-                Receipts = x.Turn?.Receipts.Where(r => r.Tool is not ("历史补查" or "操作判断")).Select(r => r.ToContext())
+                Receipts = x.Turn?.Receipts.Where(r => r.Tool is not ("历史补查" or "操作判断")).Select(r =>
+                {
+                    string ctx = r.ToContext();
+                    return ctx.Length > 400 ? ctx[..400] + "…" : ctx;
+                })
             })
         });
 
@@ -88,7 +92,7 @@ public partial class VPetChatProcess
             summarize = SummaryAPIAskFunction;
             previous = GetSummary();
             var history = GetUncompressedHistory(previous);
-            var lengths = history.Select(x => x.ToMessages().Sum(t => (long)t.Content.Length)).ToArray();
+            var lengths = history.Select(x => x.ToMessages(compactHistory: true).Sum(t => (long)t.Content.Length)).ToArray();
             long size = lengths.Sum();
             bool overBudget = HistoryCharacterBudget > 0 && size > HistoryCharacterBudget;
             bool requestTooLarge = available.HasValue && size > available.Value;

@@ -58,11 +58,22 @@ public sealed class ModelApiClient : IDisposable
     private JObject Post(string path, object body) => Send(HttpMethod.Post, path, body);
 
     public VPetChatProcess.AIAPIAskResult Chat(string system, IReadOnlyList<ChatMessage> messages, List<ToolUse> tools,
-        double temperature = 1, int maxTokens = 2048, int? seed = null)
+        double temperature = 1, int maxTokens = 2048, int? seed = null, string? reasoningEffort = null)
     {
         var wire = messages.Prepend(new ChatMessage("system", system)).Select(m => new { role = m.Role, content = m.Content });
         var body = new JObject { ["model"] = model, ["messages"] = JArray.FromObject(wire), ["temperature"] = temperature, ["max_tokens"] = maxTokens };
         if (seed.HasValue) body["seed"] = seed.Value;
+        if (!string.IsNullOrWhiteSpace(reasoningEffort))
+        {
+            string effort = reasoningEffort.Trim().ToLowerInvariant();
+            if (effort is "none" or "disabled" or "off")
+                body["thinking"] = new JObject { ["type"] = "disabled" };
+            else if (effort is "low" or "medium" or "high")
+            {
+                body["thinking"] = new JObject { ["type"] = "enabled" };
+                body["reasoning_effort"] = effort;
+            }
+        }
         if (tools.Count > 0)
             body["tools"] = JArray.FromObject(tools.Select(x => new { type = "function", function = new { name = x.Code, description = x.Descriptive, parameters = x.Parameters } }));
         var response = Post("/chat/completions", body);
@@ -83,7 +94,7 @@ public sealed class ModelApiClient : IDisposable
             result.ToolCalls.Add(new ToolCallResult
             {
                 Code = function["name"]!.Value<string>()!, StepId = call["id"]?.Value<string>() ?? "",
-                Args = args.Properties().ToDictionary(x => x.Name, x => x.Value.Type == JTokenType.String ? x.Value.Value<string>()! : x.Value.ToString(Formatting.None))
+                Args = args.Properties().ToDictionary(x => x.Name, x => x.Value.Type == JTokenType.String ? x.Value.Value<string>()! : JsonConvert.SerializeObject(x.Value, Formatting.None))
             });
         }
         return result;
@@ -245,7 +256,7 @@ public sealed class ModelApiClient : IDisposable
             string title = item["title"]?.Value<string>()?.Trim() ?? "";
             string body = item[primaryField]?.Value<string>()?.Trim() ?? "";
             if (body.Length == 0) body = item[fallbackField]?.Value<string>()?.Trim() ?? "";
-            if (body.Length > 600) body = body[..600] + "…";
+            if (body.Length > 350) body = body[..350] + "…";
             string link = item["url"]?.Value<string>()?.Trim() ?? "";
             if (title.Length == 0 && body.Length == 0) continue;
             var parts = new List<string>();

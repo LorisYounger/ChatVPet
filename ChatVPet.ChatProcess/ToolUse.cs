@@ -121,9 +121,7 @@ namespace ChatVPet.ChatProcess
         [JsonIgnore]
         public virtual IEnumerable<string> EmbeddingTexts =>
         [
-            Code,
             Descriptive,
-            .. Args.Select(x => $"{x.Name} {x.Description}"),
             .. _embeddingExamples
         ];
 

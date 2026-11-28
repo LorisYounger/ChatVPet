@@ -28,8 +28,17 @@ internal sealed class GameHost(IMainWindow MW, VPetChatProcess VPetChatProcess, 
         tools.First(x => x.Code == "read_state").Execute = (_, args) => ReadState(args);
         tools.First(x => x.Code == "list_items").Execute = (_, args) =>
             {
-                string search = args.GetValueOrDefault("search", "");
-                var items = MW.Foods.Where(x => x.Name.Contains(search, StringComparison.OrdinalIgnoreCase) || x.TranslateName.Contains(search) || x.Description.Contains(search)).ToList();
+                string search = args.GetValueOrDefault("search", "").Trim();
+                var items = string.IsNullOrEmpty(search)
+                    ? MW.Foods.ToList()
+                    : MW.Foods.Where(x =>
+                        x.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
+                        || x.TranslateName.Contains(search, StringComparison.OrdinalIgnoreCase)
+                        || x.Description.Contains(search, StringComparison.OrdinalIgnoreCase)
+                        || x.Type.ToString().Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+                // 关键词字面未命中时交由服务端 Embedding + Rerank 做语义筛选
+                if (items.Count == 0 && !string.IsNullOrEmpty(search))
+                    items = MW.Foods.ToList();
                 return new HostReceipt { Status = "observed", Facts = items.Count == 0 ? "未找到商品。" : string.Join("; ", items.Select((x, i) => $"{i + 1}. {x.TranslateName} (id:{x.Name}), 现价:{x.Price:F2}")), DisplayedItems = items.Select(x => x.Name).ToList() };
             };
         tools.First(x => x.Code == "buy_item").Execute = BuyItem;
@@ -40,17 +49,83 @@ internal sealed class GameHost(IMainWindow MW, VPetChatProcess VPetChatProcess, 
                 MW.Dispatcher.Invoke(() => MW.Main.WorkTimer.Stop(reason: WorkTimer.FinishWorkInfo.StopReason.MenualStop));
                 return new HostReceipt { Status = MW.Main.State == Main.WorkingState.Nomal ? "applied" : "unknown", Facts = "停止后当前活动: " + MW.Main.State };
             };
-        tools.First(x => x.Code == "list_activities").Execute = (_, args) => new HostReceipt { Status = "observed", Facts = string.Join("; ", MW.Core.Graph!.GraphConfig.Works.Where(x => x.Name.Contains(args.GetValueOrDefault("search", "")) || x.NameTrans.Contains(args.GetValueOrDefault("search", ""))).Select(x => $"{x.NameTrans} (id:{x.Name}), {x.Type}, {x.Time}分钟")) };
+        tools.First(x => x.Code == "list_activities").Execute = (_, args) =>
+            {
+                string search = args.GetValueOrDefault("search", "").Trim();
+                var allWorks = MW.Core.Graph!.GraphConfig.Works;
+                int level = MW.Core.Save!.Level;
+                bool enableFunction = MW.Core.Controller?.EnableFunction ?? MW.Set.EnableFunction;
+                static string WorkTypeAlias(GraphHelper.Work.WorkType t) => t switch
+                {
+                    GraphHelper.Work.WorkType.Work => "工作 打工 work job",
+                    GraphHelper.Work.WorkType.Study => "学习 上课 study",
+                    GraphHelper.Work.WorkType.Play => "玩耍 娱乐 play",
+                    _ => t.ToString()
+                };
+                var matched = string.IsNullOrEmpty(search)
+                    ? allWorks.ToList()
+                    : allWorks.Where(x =>
+                        x.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
+                        || x.NameTrans.Contains(search, StringComparison.OrdinalIgnoreCase)
+                        || WorkTypeAlias(x.Type).Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+                if (matched.Count == 0 && !string.IsNullOrEmpty(search))
+                    matched = allWorks.ToList();
+                return new HostReceipt
+                {
+                    Status = "observed",
+                    Facts = matched.Count == 0
+                        ? "未找到活动。"
+                        : string.Join("; ", matched.Select(x =>
+                        {
+                            string lockNote = enableFunction && level < x.LevelLimit ? $"，需要{x.LevelLimit}级(未解锁)" : x.LevelLimit > 0 ? $"，需要{x.LevelLimit}级" : "";
+                            return $"{x.NameTrans} (id:{x.Name}), {x.Type}, {x.Time}分钟{lockNote}";
+                        }))
+                };
+            };
         tools.First(x => x.Code == "start_activity").Execute = (_, args) =>
             {
                 string target = args.GetValueOrDefault("target", "");
                 var work = MW.Core.Graph!.GraphConfig.Works.Find(x => x.Name == target);
                 if (work == null) return new HostReceipt { Status = "skipped", Facts = "没有这项活动。" };
-                bool started = MW.Dispatcher.Invoke(() => MW.Main.StartWork(work.Double(MW.Set["workmenu"].GetInt("double_" + work.Name, 1))));
+                var save = MW.Core.Save!;
+                bool enableFunction = MW.Core.Controller?.EnableFunction ?? MW.Set.EnableFunction;
+                if (enableFunction && save.Mode == IGameSave.ModeType.Ill)
+                    return new HostReceipt { Status = "skipped", Facts = $"桌宠当前生病了，无法开始 {work.NameTrans}。" };
+                // 与 VPet 的 Work.GetMaxMultiplier 保持一致：未解锁返回 0，否则按当前等级限制最高倍率，避免触发等级不足弹窗
+                int maxMultiplier = enableFunction && save.Level < work.LevelLimit
+                    ? 0
+                    : (int)Math.Max(1, Math.Min(4000, save.Level) / (Math.Max(0L, work.LevelLimit) + 10));
+                if (maxMultiplier == 0)
+                    return new HostReceipt { Status = "skipped", Facts = $"当前等级不足（当前 {save.Level} 级，需要 {work.LevelLimit} 级），无法开始 {work.NameTrans}。" };
+                if (MW.Main.State == Main.WorkingState.Work && MW.Main.NowWork?.Name == work.Name)
+                    return new HostReceipt { Status = "skipped", Facts = $"当前已经在做 {work.NameTrans} 了。" };
+
+                int multiplier = Math.Clamp(MW.Set["workmenu"].GetInt("double_" + work.Name, 1), 1, maxMultiplier);
+                var actualWork = work.Double(multiplier);
+                if (ReferenceEquals(actualWork, work))
+                    actualWork = (GraphHelper.Work)work.Clone();
+                if (!MW.Set["gameconfig"].GetBool("noAutoCal") && actualWork.IsOverLoad())
+                    actualWork.FixOverLoad();
+                if (enableFunction && save.Level < actualWork.LevelLimit)
+                    return new HostReceipt { Status = "skipped", Facts = $"当前等级不足（当前 {save.Level} 级，需要 {actualWork.LevelLimit} 级），无法开始 {work.NameTrans}。" };
+                if (MW.HashCheck && actualWork.IsOverLoad())
+                    return new HostReceipt { Status = "skipped", Facts = $"{work.NameTrans} 数据超模，当前游戏规则不允许开始。" };
+
+                bool started = MW.Dispatcher.Invoke(() => MW.Main.StartWork(actualWork));
                 return new HostReceipt { Status = started ? "applied" : "skipped", Facts = started ? "已开始 " + work.NameTrans : "宿主当前不允许开始 " + work.NameTrans };
             };
         tools.First(x => x.Code == "adjust_state").Execute = AdjustState;
-        tools.First(x => x.Code == "search_animations").Execute = (_, args) => new HostReceipt { Status = "observed", Facts = string.Join(", ", MW.Core.Graph!.GraphsList.Keys.Where(x => x.Contains(args.GetValueOrDefault("search", ""), StringComparison.OrdinalIgnoreCase))) };
+        tools.First(x => x.Code == "search_animations").Execute = (_, args) =>
+            {
+                string search = args.GetValueOrDefault("search", "").Trim();
+                var allKeys = MW.Core.Graph!.GraphsList.Keys;
+                var matched = string.IsNullOrEmpty(search)
+                    ? allKeys.ToList()
+                    : allKeys.Where(x => x.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+                if (matched.Count == 0 && !string.IsNullOrEmpty(search))
+                    matched = allKeys.ToList();
+                return new HostReceipt { Status = "observed", Facts = matched.Count == 0 ? "未找到动画。" : string.Join(", ", matched) };
+            };
         tools.First(x => x.Code == "play_animation").Execute = (turn, args) =>
             {
                 if (turn.Receipts.Any(x => x.Tool == "play_animation" && x.Status == "applied")) return new HostReceipt { Status = "skipped", Facts = "本轮已经播放过动作。" };

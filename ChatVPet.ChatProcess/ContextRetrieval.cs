@@ -16,7 +16,7 @@ public class ContextRetrieval(VPetChatProcess process)
     public int QueryCapacity { get; set; } = 128;
     public int ScoreCapacity { get; set; } = 2048;
     public TimeSpan CacheLifetime { get; set; } = TimeSpan.FromMinutes(10);
-    public float MinimumRerankScore { get; set; } = 0.1f;
+    public float MinimumRerankScore { get; set; } = 0.015f;
     public bool UseCache { get; set; } = true;
     public bool ServiceUnavailable { get; private set; }
     public long EmbeddingRequests { get; private set; }
@@ -53,6 +53,15 @@ public class ContextRetrieval(VPetChatProcess process)
     }
 
     public List<T> Select<T>(string query, IEnumerable<T> source, int limit) where T : class, Iw2vSource, IInCheck
+        => SelectCore(query, source, limit, applyMinRerankScore: true);
+
+    /// <summary>
+    /// 使用 Embedding + Rerank 选出最相关的 Top-K 候选（不做最低分硬截断，适用于浏览商品/活动目录等场景）。
+    /// </summary>
+    public List<T> SelectTop<T>(string query, IEnumerable<T> source, int limit) where T : class, Iw2vSource, IInCheck
+        => SelectCore(query, source, limit, applyMinRerankScore: false);
+
+    private List<T> SelectCore<T>(string query, IEnumerable<T> source, int limit, bool applyMinRerankScore) where T : class, Iw2vSource, IInCheck
     {
         lock (gate)
         {
@@ -60,9 +69,9 @@ public class ContextRetrieval(VPetChatProcess process)
             long requestsBefore = EmbeddingRequests + RerankRequests;
             long hitsBefore = CacheHits;
             if (limit <= 0) return [];
-            var scored = Recall(query, source, out var candidates, out string error);
+            var scored = Recall(query, source, out var candidates, out string error, includeIgnored: !applyMinRerankScore);
             if (candidates.Count == 0) return [];
-            var shortlist = scored.Take(CandidateCount).ToList();
+            var shortlist = scored.Take(Math.Max(CandidateCount, limit)).ToList();
             var selected = shortlist.Select(x => x.Item).Take(limit).ToList();
             float[]? rankedScores = null;
             if (shortlist.Count > 0 && process.AIAPIRerankFunction != null)
@@ -93,8 +102,9 @@ public class ContextRetrieval(VPetChatProcess process)
                             }
                         }
                     }
-                    selected = shortlist.Select((x, i) => (x.Item, Score: pairScores[i])).Where(x => x.Score >= MinimumRerankScore)
-                        .OrderByDescending(x => x.Score).Take(limit).Select(x => x.Item).ToList();
+                    var ranked = shortlist.Select((x, i) => (x.Item, Score: pairScores[i]));
+                    if (applyMinRerankScore) ranked = ranked.Where(x => x.Score >= MinimumRerankScore);
+                    selected = ranked.OrderByDescending(x => x.Score).Take(limit).Select(x => x.Item).ToList();
                     rankedScores = pairScores;
                 }
                 catch (Exception ex)
@@ -121,7 +131,7 @@ public class ContextRetrieval(VPetChatProcess process)
     }
 
     private List<(T Item, string Text, float Score)> Recall<T>(string query, IEnumerable<T> source,
-        out List<(T Item, string Text, string Key)> candidates, out string error) where T : class, Iw2vSource, IInCheck
+        out List<(T Item, string Text, string Key)> candidates, out string error, bool includeIgnored = false) where T : class, Iw2vSource, IInCheck
     {
         error = "";
         ServiceUnavailable = false;
@@ -184,14 +194,16 @@ public class ContextRetrieval(VPetChatProcess process)
             queryVector = [];
             process.LastRetrievalError = "向量服务不可用，使用关键词检索。";
         }
-        return candidates.Select(x =>
+        var results = candidates.Select(x =>
         {
             float keyword = W2VEngine.ComputeKeywordSimilarity(query, x.Item.KeyWords.Concat([x.Text]), process.Localization);
             float similarity = keyword;
             if (queryVector.Length > 0 && currentVectors.TryGetValue(x.Key, out var vector) && vector.Length > 0)
                 similarity = 0.8f * W2VEngine.ComputeCosineSimilarity(queryVector, vector) + 0.2f * keyword;
             return (x.Item, x.Text, Score: x.Item.InCheck(query, similarity));
-        }).Where(x => x.Score < IInCheck.IgnoreValue).OrderBy(x => x.Score).ToList();
+        });
+        if (!includeIgnored) results = results.Where(x => x.Score < IInCheck.IgnoreValue);
+        return results.OrderBy(x => x.Score).ToList();
     }
 
     private static string Digest(string text) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
